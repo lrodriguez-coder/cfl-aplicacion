@@ -11,6 +11,7 @@
   const STORAGE_KEY = 'cfl_aplicacion_v1';
   const WEBHOOK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-submit';
   const OCR_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-ocr';
+  const TRACK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/aplicacion-web-track';
 
   // doc field name → OCR doc_type
   // NOTA: doc_bancos NO se OCR-ea en el form (consume mucho API ~$0.40/banco).
@@ -788,6 +789,7 @@
       const result = await response.json();
 
       if (result.ok || result.aplicacion_id) {
+        track(7, 'enviado');
         clearDraft();
         if (result.aplicacion_id) {
           $('#aplicacionIdMsg').textContent = '#' + result.aplicacion_id;
@@ -808,12 +810,42 @@
   }
 
   // ===== EVENT WIRING =====
+  // ===== TRACKING (progreso del formulario, para el dashboard de aplicaciones) =====
+  function getTrackingId() {
+    let id = '';
+    try { id = localStorage.getItem('cfl_tracking_id') || ''; } catch (e) {}
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          });
+      try { localStorage.setItem('cfl_tracking_id', id); } catch (e) {}
+    }
+    return id;
+  }
+  function track(paso, evento) {
+    try {
+      fetch(TRACK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tracking_id: getTrackingId(), paso: paso, evento: evento, idioma: currentLang }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function wireEvents() {
     $btnNext.addEventListener('click', () => {
       if (!validateStep(currentStep)) return;
       saveDraft();
       if (currentStep === 6) buildSummary();
-      if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
+      if (currentStep < TOTAL_STEPS) {
+        const next = currentStep + 1;
+        showStep(next);
+        track(next, 'paso');
+      }
     });
 
     $btnPrev.addEventListener('click', () => {
@@ -860,6 +892,7 @@
     // restaurar (restricción del navegador) y el usuario debe re-subir documentos.
     // Los campos de texto sí se preservan via localStorage.
     showStep(1);
+    track(1, 'inicio');
   }
 
   if (document.readyState === 'loading') {
