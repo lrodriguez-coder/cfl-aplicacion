@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pap" data-lang="pap">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Curaçao Fast Loans — Aplikashon di Fiansa</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <img src="assets/logo.png" alt="Curaçao Fast Loans" class="logo" onerror="this.src='assets/logo-placeholder.svg'">
+    <div class="hdr-text">
+      <h1>Curaçao Fast Loans</h1>
+      <p class="tagline" data-i18n="header.tagline">Aplikashon di fiansa pèrsonal</p>
+    </div>
+    <select id="langSwitch" class="lang-switch" aria-label="Language">
+      <option value="pap">Papiamentu</option>
+      <option value="es">Español</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="progress-bar" aria-label="Progress">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:14.3%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel" data-i18n="progress.label" data-i18n-vars='{"current":"1","total":"7"}'>Paso 1 di 7</div>
+  </div>
+
+  <form id="appForm" novalidate>
+
+    <!-- ============ PASO 1: Identificación ============ -->
+    <section class="step active" data-step="1">
+      <h2 data-i18n="step1.title">Bo Identifikashon</h2>
+      <p class="hint" data-i18n="step1.hint">Manda un foto klaro di bo sédula. Mi lo ekstrae bo datos outomátikamente.</p>
+
+      <div class="field">
+        <label data-i18n="step3.tipo_empleado">Tipo di empleo *</label>
+        <select name="tipo_empleado" required>
+          <option value="">—</option>
+          <option value="fijo" data-i18n="step3.tipo_empleado_fijo">Fijo (vaste dienst / indefiní)</option>
+          <option value="contrato" data-i18n="step3.tipo_empleado_contrato">Kontrato (temporal)</option>
+          <option value="pensionado" data-i18n="step3.tipo_empleado_pensionado">Pensionado</option>
+        </select>
+        <p class="field-hint" data-i18n="step1.tipo_empleado_hint">Si bo ta pensionado, payslips ta opshonal i bo por usa karta di penshon en su lugar.</p>
+      </div>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step1.cedula">📷 Sédula (ID card) *</span>
+          <input type="file" name="doc_cedula" accept="image/*,application/pdf" required>
+          <div class="upload-preview" data-preview-for="doc_cedula"></div>
+        </label>
+        <div class="ocr-info" data-ocr-info-for="doc_cedula" hidden></div>
+      </div>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step1.id_adicional">📷 Paspoort / Rijbewijs (opshonal)</span>
+          <input type="file" name="doc_id_adicional" accept="image/*,application/pdf">
+          <div class="upload-preview" data-preview-for="doc_id_adicional"></div>
+        </label>
+        <div class="ocr-info" data-ocr-info-for="doc_id_adicional" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============ PASO 2: Documentos Financieros ============ -->
+    <section class="step" data-step="2">
+      <h2 data-i18n="step2.title">Dokumentonan Finansiero</h2>
+      <p class="hint" data-i18n="step2.hint">Manda bo último 3 payslip i 3 estado di banco.</p>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step2.payslips" data-i18n-pensionado="step2.payslips_pensionado">📄 Payslips (mínimo 1, máksimo 3) *</span>
+          <input type="file" name="doc_payslips" accept="image/*,application/pdf" multiple required>
+          <div class="upload-preview" data-preview-for="doc_payslips"></div>
+        </label>
+      </div>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step2.bancos">📄 Estado di Banko (mínimo 1, máksimo 3) *</span>
+          <input type="file" name="doc_bancos" accept="image/*,application/pdf" multiple required>
+          <div class="upload-preview" data-preview-for="doc_bancos"></div>
+        </label>
+      </div>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step2.carta">📄 Karta di Trabou *</span>
+          <input type="file" name="doc_carta_trabajo" accept="image/*,application/pdf" required>
+          <div class="upload-preview" data-preview-for="doc_carta_trabajo"></div>
+        </label>
+      </div>
+
+      <div class="upload-block">
+        <label class="upload-label">
+          <span class="upload-title" data-i18n="step2.aqualectra">📄 Resibo Aqualectra (opshonal)</span>
+          <input type="file" name="doc_aqualectra" accept="image/*,application/pdf">
+          <div class="upload-preview" data-preview-for="doc_aqualectra"></div>
+        </label>
+      </div>
+    </section>
+
+    <!-- ============ PASO 3: Datos Personales ============ -->
+    <section class="step" data-step="3">
+      <h2 data-i18n="step3.title">Bo Datos Pèrsonal</h2>
+      <p class="hint" data-i18n="step3.hint">Verifiká i kompletá bo informashon.</p>
+
+      <div class="field">
+        <label data-i18n="step3.nombre">Nòmber kompleto *</label>
+        <input type="text" name="nombre_completo" required minlength="3">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.cedula_num">Number di sédula *</label>
+        <input type="text" name="numero_id" required pattern="[0-9A-Za-z\-]{5,}">
+      </div>
+
+      <div class="row">
+        <div class="field flex-1">
+          <label data-i18n="step3.fecha_nac">Fecha di nasementu *</label>
+          <input type="date" name="fecha_nacimiento" required max="2008-12-31">
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.tipo_id">Tipo di ID *</label>
+          <input type="text" value="Sédula" readonly class="readonly-field">
+          <input type="hidden" name="tipo_id" value="sedula">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field flex-1">
+          <label data-i18n="step3.telefono_movil">Number di selular *</label>
+          <input type="tel" name="telefono_movil" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.telefono_casa">Number di kas *</label>
+          <input type="tel" name="telefono_casa" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="X XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.empleador" data-i18n-pensionado="step3.empleador_pensionado">Empleador (kompania kaminda bo ta traha) *</label>
+        <input type="text" name="empleador" required minlength="2">
+      </div>
+
+      <div class="row">
+        <div class="field flex-1">
+          <label data-i18n="step3.profesion">Profesión *</label>
+          <input type="text" name="profesion" required minlength="2" placeholder="ej: Ingeniero, Maestro, Contador">
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.cargo">Posishon / Kargo *</label>
+          <input type="text" name="cargo" required minlength="2">
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.salario" data-i18n-pensionado="step3.salario_pensionado">Salario neto mensual (XCG) *</label>
+        <input type="number" name="salario_neto" required min="100" step="0.01">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.banco">Banko ku ta resibí salario/penshon *</label>
+        <select name="banco_debito" required>
+          <option value="">—</option>
+          <option value="ORCOBANK">ORCOBANK</option>
+          <option value="MCB">MCB</option>
+          <option value="VIDANOVA">VIDANOVA</option>
+          <option value="BANCO DI CARIBE">BANCO DI CARIBE</option>
+          <option value="PSB">PSB</option>
+          <option value="RBC">RBC</option>
+          <option value="ACU">ACU</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.email">Email *</label>
+        <input type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" placeholder="nombre@email.com" title="Email válido (ej: nombre@email.com)">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.direccion">Direkshon kompleto *</label>
+        <input type="text" name="direccion" required minlength="3">
+      </div>
+    </section>
+
+    <!-- ============ PASO 4: Salud ============ -->
+    <section class="step" data-step="4">
+      <h2 data-i18n="step4.title">Deklarashon di Salud</h2>
+      <p class="hint" data-i18n="step4.hint">Pa e seguro di bida obligatorio. Tur respuesta ta konfidensial.</p>
+
+      <div class="row">
+        <div class="field flex-1">
+          <label data-i18n="step4.peso">Peso / Weight (kg) *</label>
+          <input type="number" name="peso_kg" required min="30" max="250" step="0.1" placeholder="ej: 75">
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step4.talla">Altura / Height (cm) *</label>
+          <input type="number" name="altura_cm" required min="100" max="250" placeholder="ej: 170">
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.medico">Ki ta bo dòkter di kas? *</label>
+        <input type="text" name="medico_cabecera" required minlength="2" placeholder="Nòmber of 'no tin'">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q1">1/6. ¿Tin bo algun keho SERIO di salud aktualmente? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="dolencia_salud" value="false" required> No</label>
+          <label><input type="radio" name="dolencia_salud" value="true"> Sí</label>
+        </div>
+        <input type="text" name="dolencia_detalle" placeholder="Splika brevemente ki tipo di keho..." class="conditional" data-show-when="dolencia_salud=true">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q2">2/6. ¿Bo a haña un operashon den último 5 aña? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="operacion_5_anos" value="false" required> No</label>
+          <label><input type="radio" name="operacion_5_anos" value="true"> Sí</label>
+        </div>
+        <input type="text" name="operacion_5_anos_detalle" placeholder="Splika ki tipo di operashon i na ki aña..." class="conditional" data-show-when="operacion_5_anos=true">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q3">3/6. ¿Tin bo aktualmente un malesa, dolencia of diskpasidat? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="otra_enfermedad" value="false" required> No</label>
+          <label><input type="radio" name="otra_enfermedad" value="true"> Sí</label>
+        </div>
+        <input type="text" name="otra_enfermedad_detalle" placeholder="Splika ki malesa, dolencia of diskpasidat..." class="conditional" data-show-when="otra_enfermedad=true">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q4">4/6. ¿Bo ta tuma medikamentu ku reseta aktualmente? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="medicamentos_receta" value="false" required> No</label>
+          <label><input type="radio" name="medicamentos_receta" value="true"> Sí</label>
+        </div>
+        <input type="text" name="medicamentos_detalle" placeholder="Kondishon, medikamentu i dosis..." class="conditional" data-show-when="medicamentos_receta=true">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q5">5/6. ¿Bo tin AIDS of bo ta HIV-positivo? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="hiv" value="false" required> No</label>
+          <label><input type="radio" name="hiv" value="true"> Sí</label>
+        </div>
+        <input type="text" name="hiv_detalle" placeholder="Desde ki aña..." class="conditional" data-show-when="hiv=true">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step4.q7">6/6. ¿Tin otro kos importante di bo salud ku por afektá e seguro? *</label>
+        <div class="radio-group">
+          <label><input type="radio" name="circunstancias_salud" value="false" required> No</label>
+          <label><input type="radio" name="circunstancias_salud" value="true"> Sí</label>
+        </div>
+        <input type="text" name="circunstancias_detalle" placeholder="Splika brevemente..." class="conditional" data-show-when="circunstancias_salud=true">
+      </div>
+    </section>
+
+    <!-- ============ PASO 5: Contacto + Referencias ============ -->
+    <section class="step" data-step="5">
+      <h2 data-i18n="step5.title">Kontakto i Referensia</h2>
+
+      <fieldset class="fieldset">
+        <legend data-i18n="step5.ref1">Referensia 1 (obligatorio)</legend>
+        <div class="field">
+          <label data-i18n="step5.ref_nombre">Nòmber i fam kompleto *</label>
+          <input type="text" name="ref1_nombre" required minlength="4">
+        </div>
+        <div class="row">
+          <div class="field flex-1">
+            <label data-i18n="step5.ref_tel">Telefòn *</label>
+            <input type="tel" name="ref1_telefono" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+          </div>
+          <div class="field flex-1">
+            <label data-i18n="step5.ref_rel">Relashon *</label>
+            <select name="ref1_relacion" required>
+              <option value="">—</option>
+              <option value="famia">Famia</option>
+              <option value="amigu">Amigu</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend data-i18n="step5.ref2">Referensia 2 (opshonal)</legend>
+        <div class="field">
+          <label data-i18n="step5.ref_nombre">Nòmber i fam kompleto</label>
+          <input type="text" name="ref2_nombre" minlength="4">
+        </div>
+        <div class="row">
+          <div class="field flex-1">
+            <label data-i18n="step5.ref_tel">Telefòn</label>
+            <input type="tel" name="ref2_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+          </div>
+          <div class="field flex-1">
+            <label data-i18n="step5.ref_rel">Relashon</label>
+            <select name="ref2_relacion">
+              <option value="">—</option>
+              <option value="famia">Famia</option>
+              <option value="amigu">Amigu</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+    </section>
+
+    <!-- ============ PASO 6: Datos Préstamo ============ -->
+    <section class="step" data-step="6">
+      <h2 data-i18n="step6.title">Bo Fiansa</h2>
+      <p class="hint" data-i18n="step6.hint">Tasa: 23.5% pa aña (standing order). Tin un plan di spar inkluí ku CFL ta debolbé ora bo paga.</p>
+
+      <div class="field">
+        <label data-i18n="step6.monto">Monto ku bo desea presta (500 – 5000 XCG) *</label>
+        <input type="number" name="monto_solicitado" required min="500" max="5000" step="50" value="2000">
+        <div class="slider-wrap">
+          <input type="range" min="500" max="5000" step="50" value="2000" data-sync="monto_solicitado">
+          <div class="slider-marks"><span>500</span><span>5000</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step6.plazo">Plazo (3 – 36 lunan) *</label>
+        <input type="number" name="plazo_meses" required min="3" max="36" step="1" value="12">
+        <div class="slider-wrap">
+          <input type="range" min="3" max="36" step="1" value="12" data-sync="plazo_meses">
+          <div class="slider-marks"><span>3</span><span>36</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step6.proposito">Pa kiko bo ta usa e fiansa? *</label>
+        <textarea name="proposito" required minlength="3" rows="3"></textarea>
+      </div>
+
+      <div class="quote-box" id="quoteBox" aria-live="polite">
+        <h3 data-i18n="step6.quote">💰 Kuota estimá</h3>
+        <div class="quote-row"><span data-i18n="step6.q_monto">Monto:</span><strong id="qMonto">XCG 2,000.00</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_plazo">Plazo:</span><strong id="qPlazo">12 lunan</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_cuota">Kuota mensual:</span><strong id="qCuota">XCG —</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_total">Total a pagar:</span><strong id="qTotal">XCG —</strong></div>
+      </div>
+    </section>
+
+    <!-- ============ PASO 7: Confirmación ============ -->
+    <section class="step" data-step="7">
+      <h2 data-i18n="step7.title">Konfirmá bo Aplikashon</h2>
+      <p class="hint" data-i18n="step7.hint">Revisa tur informashon abou. Ora bo dal "Submit", bo aplikashon ta entregá.</p>
+
+      <div class="summary" id="summary"></div>
+
+      <div class="legal-notes" data-i18n="step7.legal_notes_title_wrap">
+        <h3 data-i18n="step7.legal_notes_title">Declarations</h3>
+        <p data-i18n="step7.legal_health">Submitting this application declares have fully and truthfully answered the previous questions and is aware that afterward any incorrect or incomplete health declaration may lead to decline or modification of the rights under the insurance contract.</p>
+        <p data-i18n="step7.legal_aska">Submitting the application, also declares that he/she has no objection to the medical advisor of Aska Insurance seeks medical information from his/her doctor or specialist.</p>
+        <p data-i18n="step7.legal_credit_check">Submitting this application, we have been authorized to check your credit background with third party provider and this also allow to check your information with your employer.</p>
+        <p data-i18n="step7.legal_credit_registration">Curacao Fast Loans N.V. participates in a system of credit registration and may perform credit checks as part of the acceptance and monitoring procedure relating to credits.</p>
+      </div>
+
+      <label class="terms">
+        <input type="checkbox" name="acepta_terminos" required>
+        <span data-i18n="step7.terms">Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href="#" target="_blank">Términos i Kondishon</a> i <a href="#" target="_blank">Polítika di Privasidat</a> di CFL.</span>
+      </label>
+    </section>
+
+    <!-- ============ Confirmación Final ============ -->
+    <section class="step" data-step="done">
+      <div class="done-box">
+        <div class="done-icon">✓</div>
+        <h2 data-i18n="done.title">Aplikashon entregá!</h2>
+        <p data-i18n="done.body">Bo aplikashon a wordu risibí. Un agente di CFL lo tuma kontakto den 3–5 dia.</p>
+        <p class="aplicacion-id" id="aplicacionIdMsg"></p>
+        <p data-i18n="done.thanks">Danki pa bo konfiansa na Curaçao Fast Loans.</p>
+      </div>
+    </section>
+
+    <!-- ============ Navegación ============ -->
+    <div class="nav-buttons">
+      <button type="button" id="btnPrev" class="btn btn-secondary" data-i18n="nav.prev">← Anterior</button>
+      <button type="button" id="btnNext" class="btn btn-primary" data-i18n="nav.next">Próksimo →</button>
+      <button type="submit" id="btnSubmit" class="btn btn-primary btn-submit" data-i18n="nav.submit">Entregá aplikashon</button>
+    </div>
+
+  </form>
+
+  <div class="errors" id="errors" role="alert" aria-live="assertive"></div>
+
+</main>
+
+<footer class="ftr">
+  <p>Curaçao Fast Loans N.V. · +5999 526 8480 · <a href="https://curloans.com">curloans.com</a></p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

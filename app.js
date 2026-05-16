@@ -1,0 +1,870 @@
+/* =============================================================================
+   CFL - Aplicación de Préstamo Web
+   Lógica: multi-step navigation + auto-save + uploads + i18n + submit
+============================================================================= */
+
+(function () {
+  'use strict';
+
+  // ===== CONFIG =====
+  const TOTAL_STEPS = 7;
+  const STORAGE_KEY = 'cfl_aplicacion_v1';
+  const WEBHOOK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-submit';
+  const OCR_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-ocr';
+
+  // doc field name → OCR doc_type
+  // NOTA: doc_bancos NO se OCR-ea en el form (consume mucho API ~$0.40/banco).
+  // Se guarda el archivo igual via submit. El analista o un workflow async procesa
+  // la extracción completa cuando se abra la aplicación.
+  const OCR_TYPES = {
+    doc_cedula: 'cedula',
+    doc_id_adicional: 'id_adicional',
+    doc_payslips: 'payslip',
+    doc_carta_trabajo: 'carta',
+    doc_aqualectra: 'aqualectra',
+  };
+
+  // OCR result → form field auto-fill mapping (only filled if field is empty)
+  // Keys son los que devuelve el workflow OCR (prompts WhatsApp)
+  const OCR_FIELD_MAP = {
+    cedula: {
+      nombre_completo: 'nombre_completo',
+      numero_id: 'numero_id',
+      fecha_nacimiento: 'fecha_nacimiento',
+    },
+    payslip: {
+      empleador: 'empleador',
+      cargo: 'cargo',
+      salario_neto_total: 'salario_neto',
+    },
+    carta: {
+      empleador: 'empleador',
+      cargo: 'cargo',
+      salario_neto: 'salario_neto',
+      tipo_empleo: 'tipo_empleado',
+    },
+    banco: {
+      direccion_titular: 'direccion',
+    },
+    aqualectra: {
+      direccion: 'direccion',
+    },
+  };
+
+  // ===== STATE =====
+  let currentStep = 1;
+  let i18nTexts = {};
+  let currentLang = 'pap';
+
+  // OCR results per doc_type, indexed por input.name (e.g., doc_cedula → {nombre_completo, ...})
+  // Para payslips/bancos guardamos array (1 por archivo subido)
+  const ocrResults = {
+    doc_cedula: null,
+    doc_id_adicional: null,
+    doc_payslips: [],
+    doc_bancos: [],
+    doc_carta_trabajo: null,
+    doc_aqualectra: null,
+  };
+
+  // ===== DOM REFS =====
+  const $form = document.getElementById('appForm');
+  const $btnPrev = document.getElementById('btnPrev');
+  const $btnNext = document.getElementById('btnNext');
+  const $btnSubmit = document.getElementById('btnSubmit');
+  const $progressFill = document.getElementById('progressFill');
+  const $progressLabel = document.getElementById('progressLabel');
+  const $errors = document.getElementById('errors');
+  const $langSwitch = document.getElementById('langSwitch');
+
+  // ===== UTILITIES =====
+  function $$(selector, ctx) { return Array.from((ctx || document).querySelectorAll(selector)); }
+  function $(selector, ctx) { return (ctx || document).querySelector(selector); }
+
+  function showStep(n) {
+    $$('.step').forEach(s => s.classList.remove('active'));
+    const target = $('.step[data-step="' + n + '"]');
+    if (target) target.classList.add('active');
+    currentStep = n;
+    updateProgress();
+    updateNavButtons();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateProgress() {
+    if (currentStep === 'done') {
+      $progressFill.style.width = '100%';
+      $progressLabel.style.display = 'none';
+      return;
+    }
+    const pct = (currentStep / TOTAL_STEPS) * 100;
+    $progressFill.style.width = pct + '%';
+    $progressLabel.style.display = '';
+    const label = t('progress.label', { current: currentStep, total: TOTAL_STEPS })
+      || 'Paso ' + currentStep + ' di ' + TOTAL_STEPS;
+    $progressLabel.textContent = label;
+  }
+
+  function updateNavButtons() {
+    if (currentStep === 'done') {
+      $btnPrev.style.display = 'none';
+      $btnNext.style.display = 'none';
+      $btnSubmit.style.display = 'none';
+      return;
+    }
+    $btnPrev.style.display = currentStep === 1 ? 'none' : '';
+    $btnNext.style.display = currentStep === TOTAL_STEPS ? 'none' : '';
+    $btnSubmit.style.display = currentStep === TOTAL_STEPS ? '' : 'none';
+  }
+
+  function validateStep(n) {
+    const step = $('.step[data-step="' + n + '"]');
+    if (!step) return true;
+    // 1) Required fields - check todo: presencia + pattern + type
+    const requiredFields = $$('input[required], select[required], textarea[required]', step);
+    // 2) Optional fields con pattern - validar SOLO si tienen valor (para no rechazar vacío)
+    const patternFields = $$('input[pattern]:not([required])', step);
+    const errs = [];
+    const errMsgs = [];
+    requiredFields.forEach(f => {
+      f.classList.remove('invalid');
+      if (!f.checkValidity()) {
+        f.classList.add('invalid');
+        errs.push(f.name);
+        // Mensaje específico según el tipo de error
+        if (f.validity.patternMismatch) {
+          errMsgs.push((f.title || f.name) + ': ' + (t('error.format') || 'formato inválido'));
+        } else if (f.validity.typeMismatch && f.type === 'email') {
+          errMsgs.push(f.name + ': ' + (t('error.email') || 'email inválido'));
+        } else if (f.validity.valueMissing) {
+          errMsgs.push(f.name + ': ' + (t('error.required') || 'requerido'));
+        } else if (f.validity.rangeUnderflow || f.validity.rangeOverflow) {
+          errMsgs.push(f.name + ': ' + (t('error.range') || 'valor fuera de rango'));
+        } else {
+          errMsgs.push(f.name + ': ' + (t('error.invalid') || 'inválido'));
+        }
+      }
+    });
+    patternFields.forEach(f => {
+      f.classList.remove('invalid');
+      if (f.value && f.value.trim() !== '' && !f.checkValidity()) {
+        f.classList.add('invalid');
+        errs.push(f.name);
+        errMsgs.push((f.title || f.name) + ': ' + (t('error.format') || 'formato inválido'));
+      }
+    });
+    // Conditional required fields (e.g., dolencia_detalle solo si dolencia_salud=true)
+    $$('.conditional.visible', step).forEach(c => {
+      if (c.value === '' || c.value === null) {
+        c.classList.add('invalid');
+        errs.push(c.name);
+        errMsgs.push(c.name + ': ' + (t('error.required') || 'requerido'));
+      }
+    });
+    // Sanity peso/altura: la altura en cm de una persona siempre supera el peso en kg.
+    // Si peso >= altura el usuario casi seguro invirtió los dos campos.
+    if (n === 4) {
+      const pesoEl = step.querySelector('[name="peso_kg"]');
+      const alturaEl = step.querySelector('[name="altura_cm"]');
+      if (pesoEl && alturaEl && pesoEl.value && alturaEl.value &&
+          Number(pesoEl.value) >= Number(alturaEl.value)) {
+        pesoEl.classList.add('invalid');
+        alturaEl.classList.add('invalid');
+        errs.push('peso_kg');
+        errMsgs.push(t('error.peso_altura') ||
+          'Revisá peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los pusiste al revés?');
+      }
+    }
+    if (errs.length > 0) {
+      showErrors(errMsgs.length > 0 ? errMsgs : [t('error.fill_required') || 'Por favor kompletá tur fildt rekerí.']);
+      return false;
+    }
+    clearErrors();
+    return true;
+  }
+
+  function showErrors(messages) {
+    $errors.innerHTML = '<ul>' + messages.map(m => '<li>' + m + '</li>').join('') + '</ul>';
+    $errors.classList.add('show');
+  }
+  function clearErrors() {
+    $errors.innerHTML = '';
+    $errors.classList.remove('show');
+  }
+
+  // ===== AUTO-SAVE =====
+  function saveDraft() {
+    const data = {};
+    new FormData($form).forEach((val, key) => {
+      if (val instanceof File) return; // Files not auto-saved
+      if (data[key] !== undefined) {
+        if (!Array.isArray(data[key])) data[key] = [data[key]];
+        data[key].push(val);
+      } else {
+        data[key] = val;
+      }
+    });
+    data._step = currentStep;
+    data._lang = currentLang;
+    data._updated = new Date().toISOString();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) { /* localStorage full or disabled */ }
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+
+  function restoreDraft() {
+    const draft = loadDraft();
+    if (!draft) return;
+    Object.keys(draft).forEach(key => {
+      if (key.startsWith('_')) return;
+      const elements = $$('[name="' + key + '"]');
+      elements.forEach(el => {
+        if (el.type === 'radio' || el.type === 'checkbox') {
+          el.checked = String(el.value) === String(draft[key]);
+        } else if (el.type !== 'file') {
+          el.value = draft[key];
+        }
+      });
+    });
+    // Trigger conditional updates
+    updateConditionals();
+    syncSliders();
+    updateQuote();
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
+  // ===== CONDITIONAL FIELDS (e.g., detalle dolencia si dolencia_salud=true) =====
+  function updateConditionals() {
+    $$('.conditional[data-show-when]').forEach(el => {
+      const condition = el.dataset.showWhen; // e.g., "dolencia_salud=true"
+      const [name, expected] = condition.split('=');
+      const source = document.querySelector('[name="' + name + '"]:checked');
+      const shouldShow = source && source.value === expected;
+      el.classList.toggle('visible', shouldShow);
+      if (!shouldShow) el.value = '';
+    });
+    updatePensionadoMode();
+  }
+
+  // ===== Modo pensionado: ajusta labels y required de payslips =====
+  function updatePensionadoMode() {
+    const tipoSel = $('[name="tipo_empleado"]');
+    if (!tipoSel) return;
+    const isPensionado = tipoSel.value === 'pensionado';
+
+    // Toggle labels: tienen data-i18n (default) y data-i18n-pensionado (alt)
+    $$('[data-i18n-pensionado]').forEach(el => {
+      const key = isPensionado ? el.dataset.i18nPensionado : el.dataset.i18n;
+      if (!key) return;
+      const text = t(key);
+      if (text) {
+        if (/<\w+[^>]*>/.test(text)) el.innerHTML = text;
+        else el.textContent = text;
+      }
+    });
+
+    // Payslips: required si NO pensionado
+    const payslipsInput = $('[name="doc_payslips"]');
+    if (payslipsInput) {
+      if (isPensionado) payslipsInput.removeAttribute('required');
+      else payslipsInput.setAttribute('required', '');
+    }
+  }
+
+  // ===== SLIDERS (sync number input ↔ range slider) =====
+  function syncSliders() {
+    $$('[data-sync]').forEach(slider => {
+      const targetName = slider.dataset.sync;
+      const number = $('[name="' + targetName + '"]');
+      if (!number) return;
+      slider.value = number.value;
+      slider.addEventListener('input', () => {
+        number.value = slider.value;
+        if (targetName === 'monto_solicitado' || targetName === 'plazo_meses') updateQuote();
+      });
+      number.addEventListener('input', () => {
+        slider.value = number.value;
+        if (targetName === 'monto_solicitado' || targetName === 'plazo_meses') updateQuote();
+      });
+    });
+  }
+
+  // ===== QUOTE CALCULATION (Step 6) =====
+  // Tabla de referencia oficial CFL — cuota por cada 1000 XCG por término.
+  // Promedios calculados de la tabla publicada en curloans.com (incluye interés,
+  // garantía, seguro de vida y plan de ahorro).
+  const CFL_CUOTA_TABLE = [
+    { meses: 6,  cuotaPer1000: 242.86 },
+    { meses: 12, cuotaPer1000: 128.18 },
+    { meses: 18, cuotaPer1000: 91.35 },
+    { meses: 24, cuotaPer1000: 65.81 },
+    { meses: 36, cuotaPer1000: 48.53 },
+  ];
+
+  function calcularCuotaCFL(monto, plazo) {
+    const table = CFL_CUOTA_TABLE;
+    if (plazo <= table[0].meses) {
+      return (monto / 1000) * table[0].cuotaPer1000;
+    }
+    if (plazo >= table[table.length - 1].meses) {
+      return (monto / 1000) * table[table.length - 1].cuotaPer1000;
+    }
+    for (let i = 0; i < table.length - 1; i++) {
+      if (plazo >= table[i].meses && plazo <= table[i + 1].meses) {
+        const t1 = table[i].meses;
+        const t2 = table[i + 1].meses;
+        const c1 = table[i].cuotaPer1000;
+        const c2 = table[i + 1].cuotaPer1000;
+        const ratio = (plazo - t1) / (t2 - t1);
+        const cuota1000 = c1 + (c2 - c1) * ratio;
+        return (monto / 1000) * cuota1000;
+      }
+    }
+    return 0;
+  }
+
+  function updateQuote() {
+    const monto = parseFloat($('[name="monto_solicitado"]').value) || 0;
+    const plazo = parseInt($('[name="plazo_meses"]').value) || 0;
+    if (!monto || !plazo) return;
+    const cuota = calcularCuotaCFL(monto, plazo);
+    const total = cuota * plazo;
+    const $qMonto = $('#qMonto');
+    const $qPlazo = $('#qPlazo');
+    const $qCuota = $('#qCuota');
+    const $qTotal = $('#qTotal');
+    const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if ($qMonto) $qMonto.textContent = 'XCG ' + fmt(monto);
+    if ($qPlazo) $qPlazo.textContent = plazo + ' ' + (t('step6.q_meses') || 'lunan');
+    if ($qCuota) $qCuota.textContent = 'XCG ' + fmt(cuota);
+    if ($qTotal) $qTotal.textContent = 'XCG ' + fmt(total);
+  }
+
+  // ===== FILE UPLOADS (preview + OCR auto-fill) =====
+  function setupUploads() {
+    $$('input[type="file"]').forEach(input => {
+      input.addEventListener('change', e => {
+        const preview = $('[data-preview-for="' + input.name + '"]');
+        if (!preview) return;
+        preview.innerHTML = '';
+        const files = Array.from(input.files || []);
+        if (files.length === 0) return;
+        const label = input.closest('.upload-label');
+        if (label) label.classList.add('has-file');
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.alt = file.name;
+            preview.appendChild(img);
+          } else {
+            const div = document.createElement('div');
+            div.className = 'file-name';
+            div.textContent = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+            preview.appendChild(div);
+          }
+        });
+
+        // doc_bancos: NO se hace OCR en el form (consume mucho API).
+        // El archivo se sube igual y se procesa después en backend.
+        if (input.name === 'doc_bancos') {
+          setOcrStatus(
+            preview,
+            '📥 ' + (t('ocr.banco_received') || 'Estado di banko risibí — análisis se hará al procesar'),
+            'ok'
+          );
+          return;
+        }
+
+        // OCR auto-fill + store results para submit (igual que pipeline WhatsApp)
+        const ocrType = OCR_TYPES[input.name];
+        if (ocrType && files.length > 0) {
+          // Reset stored results para este input antes de procesar
+          if (Array.isArray(ocrResults[input.name])) {
+            ocrResults[input.name] = [];
+          } else {
+            ocrResults[input.name] = null;
+          }
+          // Procesar TODOS los archivos (no solo el primero) en serie
+          (async () => {
+            for (let i = 0; i < files.length; i++) {
+              await runOcr(files[i], ocrType, preview, input.name, i);
+            }
+          })();
+        }
+      });
+    });
+  }
+
+  // ===== OCR =====
+  function setOcrStatus(container, message, kind) {
+    let badge = container.querySelector('.ocr-status');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.className = 'ocr-status';
+      container.appendChild(badge);
+    }
+    badge.dataset.kind = kind || 'info';
+    badge.textContent = message;
+  }
+
+  function storeOcrResult(inputName, idx, data) {
+    if (Array.isArray(ocrResults[inputName])) {
+      ocrResults[inputName][idx] = data;
+    } else {
+      ocrResults[inputName] = data;
+    }
+  }
+
+  async function runOcr(file, docType, container, inputName, idx) {
+    const suffix = (Array.isArray(ocrResults[inputName])) ? ' (' + (idx + 1) + ')' : '';
+    setOcrStatus(container, '🔎 ' + (t('ocr.analyzing') || 'Analizando documento…') + suffix, 'loading');
+    try {
+      const fd = new FormData();
+      fd.append('doc_type', docType);
+      fd.append('file', file);
+      const res = await fetch(OCR_URL, { method: 'POST', body: fd });
+      if (!res.ok) {
+        // 524 / 504 = Cloudflare/server timeout. Para bank statements grandes (>100s),
+        // el análisis completo lo hace el backend al procesar la aplicación.
+        if (res.status === 524 || res.status === 504 || res.status === 408) {
+          storeOcrResult(inputName, idx, { _timeout: true });
+          setOcrStatus(
+            container,
+            '📥 ' + (t('ocr.received_async') || 'Documento recibido — se analizará al enviar la solicitud'),
+            'ok'
+          );
+          return;
+        }
+        throw new Error('HTTP ' + res.status);
+      }
+      const result = await res.json();
+      if (!result.ok || !result.data) {
+        storeOcrResult(inputName, idx, null);
+        setOcrStatus(container, '⚠️ ' + (t('ocr.no_data') || 'No se pudo leer el documento'), 'warn');
+        return;
+      }
+      storeOcrResult(inputName, idx, result.data);
+      // Auto-fill solo desde el PRIMER archivo (los demás se mandan al backend)
+      const filled = (idx === 0) ? applyOcrAutoFill(docType, result.data) : [];
+      if (filled.length === 0) {
+        setOcrStatus(container, '✓ ' + (t('ocr.read_ok') || 'Documento leído') + suffix, 'ok');
+      } else {
+        setOcrStatus(
+          container,
+          '✓ ' + (t('ocr.filled') || 'Auto-completados') + ': ' + filled.join(', '),
+          'ok'
+        );
+        saveDraft();
+      }
+    } catch (err) {
+      console.warn('OCR error:', err);
+      storeOcrResult(inputName, idx, null);
+      setOcrStatus(container, '⚠️ ' + (t('ocr.error') || 'No fue posible analizar el documento'), 'warn');
+    }
+  }
+
+  function applyOcrAutoFill(docType, data) {
+    // id_adicional no llena form fields, solo muestra preview readonly
+    if (docType === 'id_adicional') {
+      renderIdAdicionalPreview(data);
+      return ['preview'];
+    }
+    // cedula: además del auto-fill, muestra preview con todos los datos extraídos
+    if (docType === 'cedula') {
+      renderCedulaPreview(data);
+    }
+    const map = OCR_FIELD_MAP[docType] || {};
+    const filledLabels = [];
+    Object.keys(map).forEach(srcKey => {
+      const targetName = map[srcKey];
+      let val = data[srcKey];
+      if (val === null || val === undefined || val === '') return;
+      const field = $('[name="' + targetName + '"]');
+      if (!field) return;
+      // Mapeo especial para tipo_empleado (carta usa fijo|temporal|independiente; form usa fijo|contrato|pensionado|otro)
+      if (targetName === 'tipo_empleado') {
+        const lower = String(val).toLowerCase();
+        if (lower.includes('pension') || lower.includes('jubilad') || lower.includes('penshon')) val = 'pensionado';
+        else if (lower.includes('fij') || lower.includes('perman') || lower.includes('indefin')) val = 'fijo';
+        else if (lower.includes('tempor') || lower.includes('contrat')) val = 'contrato';
+        else val = 'otro';
+      }
+      // Cuando se sube un doc nuevo, OCR siempre sobrescribe (el usuario espera ver
+      // los datos del documento que acaba de subir). Si quiere corregir, lo hace después.
+      field.value = String(val);
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.classList.add('ocr-filled');
+      filledLabels.push(targetName);
+    });
+    // Si OCR llenó tipo_empleado, actualizar el modo pensionado (labels + required)
+    if (filledLabels.includes('tipo_empleado')) {
+      updatePensionadoMode();
+    }
+    return filledLabels;
+  }
+
+  function renderCedulaPreview(data) {
+    const box = document.querySelector('[data-ocr-info-for="doc_cedula"]');
+    if (!box) return;
+    if (!data || data.error) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    const rows = [];
+    if (data.nombre_completo) rows.push(['Nòmber kompleto', data.nombre_completo]);
+    if (data.numero_id) rows.push(['ID Number', data.numero_id]);
+    if (data.fecha_nacimiento) rows.push(['Nasementu', data.fecha_nacimiento]);
+    if (data.fecha_vencimiento) rows.push(['Vense', data.fecha_vencimiento]);
+    if (data.nacionalidad) rows.push(['Nacionalidat', data.nacionalidad]);
+    if (data.pais_nacimiento) rows.push(['Pais nasementu', data.pais_nacimiento]);
+    if (data.sexo) rows.push(['Sekso', data.sexo]);
+    if (data.estado_civil) rows.push(['Estado sivil', data.estado_civil]);
+    if (!rows.length) {
+      box.hidden = true;
+      return;
+    }
+    box.innerHTML = '<div class="ocr-info-header">📋 Datos di sédula (auto-detektá — esakí ta wat ta guardá)</div>' +
+      '<dl class="ocr-info-list">' +
+      rows.map(([k, v]) => '<dt>' + k + ':</dt><dd>' + escapeHtml(String(v)) + '</dd>').join('') +
+      '</dl>';
+    box.hidden = false;
+  }
+
+  function renderIdAdicionalPreview(data) {
+    const box = document.querySelector('[data-ocr-info-for="doc_id_adicional"]');
+    if (!box) return;
+    if (!data || data.error) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    const tipo = (data.tipo_documento || '').toLowerCase();
+    const tipoLabel = tipo === 'paspoort' ? 'Paspoort'
+                    : tipo === 'rijbewijs' ? 'Rijbewijs'
+                    : 'Documento';
+    const rows = [];
+    if (data.numero) rows.push(['Number', data.numero]);
+    if (data.nombre_completo) rows.push(['Nòmber', data.nombre_completo]);
+    if (data.fecha_vencimiento) rows.push(['Vense', data.fecha_vencimiento]);
+    if (data.pais_emisor) rows.push(['Pais emisor', data.pais_emisor]);
+    if (!rows.length) {
+      box.hidden = true;
+      return;
+    }
+    box.innerHTML = '<div class="ocr-info-header">📄 ' + tipoLabel + ' (auto-detektá)</div>' +
+      '<dl class="ocr-info-list">' +
+      rows.map(([k, v]) => '<dt>' + k + ':</dt><dd>' + escapeHtml(String(v)) + '</dd>').join('') +
+      '</dl>';
+    box.hidden = false;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  // ===== SUMMARY (Step 7) =====
+  function buildSummary() {
+    const $summary = $('#summary');
+    if (!$summary) return;
+    const data = new FormData($form);
+    const get = (name) => data.get(name);
+    const has = (name) => {
+      const v = data.get(name);
+      return v !== null && v !== undefined && String(v).trim() !== '';
+    };
+    const valBool = (name) => {
+      const v = data.get(name);
+      return v === 'true'
+        ? '✓ ' + (t('common.yes') || 'Sí')
+        : '✗ ' + (t('common.no') || 'No');
+    };
+    const fileCount = (name) => {
+      const inp = $('[name="' + name + '"]');
+      return (inp && inp.files) ? inp.files.length : 0;
+    };
+    // Construye <dt>/<dd> solo si hay valor
+    const row = (label, value) => (value === null || value === undefined || value === '' || value === '—')
+      ? ''
+      : '<dt>' + label + ':</dt><dd>' + value + '</dd>';
+    const rowAlways = (label, value) =>
+      '<dt>' + label + ':</dt><dd>' + (value || '—') + '</dd>';
+    // Pregunta Si/No con detalle opcional cuando es Sí
+    const yesNoDetail = (label, boolName, detailName, suffix) => {
+      const isYes = get(boolName) === 'true';
+      let val = isYes ? '✓ ' + (t('common.yes') || 'Sí') : '✗ ' + (t('common.no') || 'No');
+      if (isYes && has(detailName)) {
+        val += ' — ' + get(detailName) + (suffix || '');
+      }
+      return '<dt>' + label + ':</dt><dd>' + val + '</dd>';
+    };
+
+    // ===== Datos OCR del pasaporte / rijbewijs =====
+    const idAdic = ocrResults.doc_id_adicional;
+    let idAdicRows = '';
+    if (idAdic && !idAdic.error && !idAdic._timeout) {
+      const tipo = (idAdic.tipo_documento || '').toLowerCase();
+      const tipoLabel = tipo === 'paspoort' ? 'Paspoort'
+                      : tipo === 'rijbewijs' ? 'Rijbewijs'
+                      : 'Dok. adishonal';
+      idAdicRows = row(tipoLabel, idAdic.numero)
+                 + row('Vense', idAdic.fecha_vencimiento)
+                 + row('Pais emisor', idAdic.pais_emisor);
+    }
+
+    // ===== Datos OCR del aqualectra (extra info útil para verificación de domicilio) =====
+    const aqua = ocrResults.doc_aqualectra;
+    let aquaRows = '';
+    if (aqua && !aqua.error && !aqua._timeout) {
+      aquaRows = row('Titular Aqualectra', aqua.titular)
+               + row('Kliente# Aqualectra', aqua.numero_cliente);
+    }
+
+    $summary.innerHTML =
+      '<h4>' + (t('summary.personal') || 'Datos Personales') + '</h4>' +
+      '<dl>' +
+        rowAlways(t('step3.nombre') || 'Nòmber kompleto', get('nombre_completo')) +
+        rowAlways(t('step3.cedula_num') || 'Number sédula', get('numero_id')) +
+        idAdicRows +
+        rowAlways(t('step3.fecha_nac') || 'Nasementu', get('fecha_nacimiento')) +
+        rowAlways(t('step3.tipo_empleado') || 'Tipo empleo',
+                  (t('step3.tipo_empleado_' + (get('tipo_empleado') || 'otro')) || get('tipo_empleado') || '—')) +
+        rowAlways(t('step3.profesion') || 'Profesión', get('profesion')) +
+        rowAlways(
+          (get('tipo_empleado') === 'pensionado'
+            ? (t('step3.empleador_pensionado') || 'Pagador di penshon')
+            : (t('step3.empleador') || 'Empleador')),
+          get('empleador')) +
+        rowAlways(t('step3.cargo') || 'Kargo', get('cargo')) +
+        rowAlways(
+          (get('tipo_empleado') === 'pensionado'
+            ? (t('step3.salario_pensionado') || 'Penshon neto')
+            : (t('step3.salario') || 'Salario neto')),
+          'XCG ' + (get('salario_neto') || '0')) +
+        rowAlways(t('step3.banco') || 'Banko', get('banco_debito')) +
+        rowAlways(t('step3.email') || 'Email', get('email')) +
+        rowAlways(t('step3.direccion') || 'Direkshon', get('direccion')) +
+      '</dl>' +
+
+      '<h4>' + (t('summary.prestamo') || 'Fiansa') + '</h4>' +
+      '<dl>' +
+        rowAlways(t('step6.monto') || 'Monto', 'XCG ' + (get('monto_solicitado') || '0')) +
+        rowAlways(t('step6.plazo') || 'Plazo', (get('plazo_meses') || '0') + ' ' + (t('step6.q_meses') || 'lunan')) +
+        rowAlways(t('step6.proposito') || 'Propósito', get('proposito')) +
+      '</dl>' +
+
+      '<h4>' + (t('summary.contacto') || 'Kontakto') + '</h4>' +
+      '<dl>' +
+        rowAlways(t('step3.telefono_movil') || 'Selular', get('telefono_movil')) +
+        row(t('step3.telefono_casa') || 'Tel kas', get('telefono_casa')) +
+        rowAlways(t('step5.ref1') || 'Ref 1',
+                  (get('ref1_nombre') || '—') + ' (' + (get('ref1_relacion') || '—') + ') — ' + (get('ref1_telefono') || '—')) +
+        (has('ref2_nombre')
+          ? rowAlways(t('step5.ref2') || 'Ref 2',
+                      get('ref2_nombre') + ' (' + (get('ref2_relacion') || '—') + ') — ' + (get('ref2_telefono') || '—'))
+          : '') +
+      '</dl>' +
+
+      '<h4>' + (t('summary.salud') || 'Salud') + '</h4>' +
+      '<dl>' +
+        rowAlways((t('step4.peso') || 'Peso') + ' / ' + (t('step4.talla') || 'Altura'),
+                  (get('peso_kg') || '0') + ' kg / ' + (get('altura_cm') || '0') + ' cm') +
+        rowAlways('Dòkter di kas', get('medico_cabecera')) +
+        yesNoDetail(t('step4.q1') || '1/6 Keho serio', 'dolencia_salud', 'dolencia_detalle') +
+        yesNoDetail(t('step4.q2') || '2/6 Operashon 5a', 'operacion_5_anos', 'operacion_5_anos_detalle') +
+        yesNoDetail(t('step4.q3') || '3/6 Malesa/Diskpasidat', 'otra_enfermedad', 'otra_enfermedad_detalle') +
+        yesNoDetail(t('step4.q4') || '4/6 Medikamentu', 'medicamentos_receta', 'medicamentos_detalle') +
+        yesNoDetail(t('step4.q5') || '5/6 HIV', 'hiv', 'hiv_detalle') +
+        yesNoDetail(t('step4.q7') || '6/6 Otro', 'circunstancias_salud', 'circunstancias_detalle') +
+      '</dl>' +
+
+      '<h4>' + (t('summary.docs') || 'Dokumentonan') + '</h4>' +
+      '<dl>' +
+        rowAlways('Sédula', fileCount('doc_cedula') > 0 ? '✓' : '—') +
+        rowAlways('ID adicional', fileCount('doc_id_adicional') > 0 ? '✓' : '—') +
+        rowAlways('Payslips', fileCount('doc_payslips') + '/3') +
+        rowAlways('Estado di banko', fileCount('doc_bancos') + '/3') +
+        rowAlways('Karta trabou', fileCount('doc_carta_trabajo') > 0 ? '✓' : '—') +
+        rowAlways('Aqualectra', fileCount('doc_aqualectra') > 0 ? '✓' : '—') +
+        aquaRows +
+      '</dl>';
+  }
+
+  // ===== I18N =====
+  function t(key, vars) {
+    const parts = key.split('.');
+    let result = i18nTexts;
+    for (const p of parts) {
+      if (result && typeof result === 'object' && p in result) result = result[p];
+      else return null;
+    }
+    if (typeof result !== 'string') return null;
+    if (vars) {
+      Object.keys(vars).forEach(k => {
+        result = result.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+      });
+    }
+    return result;
+  }
+
+  function applyI18n() {
+    $$('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      const vars = el.dataset.i18nVars ? JSON.parse(el.dataset.i18nVars) : null;
+      const text = t(key, vars);
+      if (!text) return;
+      // Si el string de traducción contiene HTML (ej: links de términos),
+      // se renderiza como HTML; si no, como texto plano (más seguro).
+      if (/<\w+[^>]*>/.test(text)) {
+        el.innerHTML = text;
+      } else {
+        el.textContent = text;
+      }
+    });
+  }
+
+  async function loadI18n(lang) {
+    try {
+      const res = await fetch('i18n/' + lang + '.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('lang not found');
+      i18nTexts = await res.json();
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.documentElement.dataset.lang = lang;
+      $langSwitch.value = lang;
+      applyI18n();
+      updateProgress();
+    } catch (e) {
+      // fallback: don't break the form
+      console.warn('No se pudo cargar idioma ' + lang + ':', e.message);
+    }
+  }
+
+  // ===== SUBMIT =====
+  async function submitForm(e) {
+    e.preventDefault();
+    if (!validateStep(7)) return;
+    if (!$('[name="acepta_terminos"]').checked) {
+      showErrors([t('error.terms') || 'Debes aseptá e términos i kondishon.']);
+      return;
+    }
+
+    $btnSubmit.disabled = true;
+    $btnSubmit.textContent = t('nav.submitting') || 'Mandando...';
+    clearErrors();
+
+    try {
+      // Solo campos de texto. Los documentos ya los procesó el OCR al subirlos;
+      // reenviar los binarios infla el POST y puede pasar el límite del webhook (causa de 500).
+      const fd = new FormData();
+      new FormData($form).forEach((val, key) => {
+        if (val instanceof File) return;
+        fd.append(key, val);
+      });
+      fd.append('_lang', currentLang);
+      fd.append('_submitted_at', new Date().toISOString());
+      // Resultados OCR (para que el backend los use igual que pipeline WhatsApp)
+      fd.append('_ocr_results', JSON.stringify(ocrResults));
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        body: fd
+      });
+
+      if (!response.ok) throw new Error('Server returned ' + response.status);
+      const result = await response.json();
+
+      if (result.ok || result.aplicacion_id) {
+        clearDraft();
+        if (result.aplicacion_id) {
+          $('#aplicacionIdMsg').textContent = '#' + result.aplicacion_id;
+        }
+        showStep('done');
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+      showErrors([
+        (t('error.submit') || 'Hubo un problema al enviar.') +
+        ' (' + err.message + ')'
+      ]);
+      $btnSubmit.disabled = false;
+      $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
+    }
+  }
+
+  // ===== EVENT WIRING =====
+  function wireEvents() {
+    $btnNext.addEventListener('click', () => {
+      if (!validateStep(currentStep)) return;
+      saveDraft();
+      if (currentStep === 6) buildSummary();
+      if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
+    });
+
+    $btnPrev.addEventListener('click', () => {
+      if (currentStep > 1) showStep(currentStep - 1);
+    });
+
+    $form.addEventListener('submit', submitForm);
+
+    $form.addEventListener('change', e => {
+      saveDraft();
+      if (e.target.type === 'radio') updateConditionals();
+      if (e.target.name === 'tipo_empleado') updatePensionadoMode();
+    });
+
+    $form.addEventListener('input', () => {
+      // Debounce auto-save
+      clearTimeout(window._cflSaveTimer);
+      window._cflSaveTimer = setTimeout(saveDraft, 800);
+    });
+
+    $langSwitch.addEventListener('change', e => {
+      loadI18n(e.target.value);
+      saveDraft();
+    });
+  }
+
+  // ===== INIT =====
+  async function init() {
+    setupUploads();
+    syncSliders();
+    wireEvents();
+
+    // Detect preferred language: localStorage > browser > pap
+    const draft = loadDraft();
+    const browserLang = (navigator.language || 'pap').toLowerCase().slice(0, 2);
+    const preferred =
+      (draft && draft._lang) ||
+      (['pap', 'es', 'en'].includes(browserLang) ? browserLang : 'pap');
+
+    await loadI18n(preferred);
+    restoreDraft();
+
+    // Siempre arrancar en Step 1 después de refresh — los file inputs no se pueden
+    // restaurar (restricción del navegador) y el usuario debe re-subir documentos.
+    // Los campos de texto sí se preservan via localStorage.
+    showStep(1);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
