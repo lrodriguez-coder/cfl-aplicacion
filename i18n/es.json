@@ -1,0 +1,128 @@
+{
+  "header": { "tagline": "Solicitud de préstamo personal" },
+  "progress": { "label": "Paso {current} de {total}" },
+  "nav": {
+    "prev": "← Anterior",
+    "next": "Siguiente →",
+    "submit": "Enviar solicitud",
+    "submitting": "Enviando..."
+  },
+  "common": { "yes": "Sí", "no": "No" },
+  "error": {
+    "fill_required": "Por favor complete todos los campos requeridos.",
+    "format": "formato inválido",
+    "email": "email inválido",
+    "required": "requerido",
+    "range": "valor fuera de rango",
+    "invalid": "inválido",
+    "peso_altura": "Revise peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los puso al revés?",
+    "terms": "Debe aceptar los términos y condiciones.",
+    "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo."
+  },
+  "step1": {
+    "title": "Identificación",
+    "hint": "Suba una foto clara de su cédula. Extraeremos sus datos automáticamente.",
+    "tipo_empleado_hint": "Si es pensionado, los recibos de salario son opcionales — puede usar carta de pensión en su lugar.",
+    "cedula": "📷 Cédula de identidad *",
+    "id_adicional": "📷 Pasaporte / Licencia (opcional)"
+  },
+  "step2": {
+    "title": "Documentos Financieros",
+    "hint": "Suba sus últimos 3 recibos de salario y 3 estados de cuenta bancarios.",
+    "payslips": "📄 Recibos de salario (mínimo 1, máximo 3) *",
+    "payslips_pensionado": "📄 Carta de pensión (opcional para pensionados)",
+    "bancos": "📄 Estados de cuenta bancarios (mínimo 1, máximo 3) *",
+    "carta": "📄 Carta de trabajo *",
+    "aqualectra": "📄 Recibo Aqualectra (opcional)"
+  },
+  "step3": {
+    "title": "Datos Personales",
+    "hint": "Verifique y complete su información.",
+    "nombre": "Nombre completo",
+    "cedula_num": "Número de cédula",
+    "fecha_nac": "Fecha de nacimiento",
+    "tipo_id": "Tipo de ID",
+    "tipo_empleado": "Tipo de empleo",
+    "tipo_empleado_fijo": "Fijo (vaste dienst / indefinido)",
+    "tipo_empleado_contrato": "Contrato (temporal)",
+    "tipo_empleado_pensionado": "Pensionado",
+    "tipo_empleado_otro": "Otro (independiente / freelance)",
+    "telefono_movil": "Número celular *",
+    "telefono_casa": "Número de casa *",
+    "profesion": "Profesión",
+    "empleador": "Empleador (empresa donde trabaja)",
+    "empleador_pensionado": "Pagador de pensión (ej: SVB, fondo de pensión)",
+    "cargo": "Posición / Cargo",
+    "salario": "Salario neto mensual (XCG)",
+    "salario_pensionado": "Pensión neta mensual (XCG)",
+    "banco": "Banco donde recibe salario/pensión",
+    "email": "Email",
+    "direccion": "Dirección completa"
+  },
+  "step4": {
+    "title": "Declaración de Salud",
+    "hint": "Para el seguro de vida obligatorio. Todas las respuestas son confidenciales.",
+    "peso": "Peso (kg)",
+    "talla": "Altura/Estatura (cm)",
+    "medico": "¿Cuál es su médico de cabecera? (nombre o \"no tengo\")",
+    "q1": "1/6. ¿Tiene alguna queja SERIA de salud actualmente?",
+    "q2": "2/6. ¿Ha tenido una operación en los últimos 5 años?",
+    "q3": "3/6. ¿Tiene actualmente una enfermedad, dolencia o discapacidad?",
+    "q4": "4/6. ¿Toma medicamentos con receta actualmente?",
+    "q5": "5/6. ¿Tiene AIDS o es HIV-positivo?",
+    "q7": "6/6. ¿Hay algo más sobre su salud que pueda afectar el seguro?"
+  },
+  "step5": {
+    "title": "Contacto y Referencias",
+    "tel_casa": "Teléfono de casa (opcional)",
+    "ref1": "Referencia 1 (obligatorio)",
+    "ref2": "Referencia 2 (opcional)",
+    "ref_nombre": "Nombre y apellido completo",
+    "ref_tel": "Teléfono",
+    "ref_rel": "Relación"
+  },
+  "step6": {
+    "title": "Su Préstamo",
+    "hint": "Tasa: 23.5% anual (standing order). Incluye plan de ahorro que CFL devuelve al pagar.",
+    "monto": "Monto que desea pedir prestado (500 – 5000 XCG)",
+    "plazo": "Plazo (3 – 36 meses)",
+    "proposito": "¿Para qué usará el préstamo?",
+    "quote": "💰 Cuota estimada",
+    "q_monto": "Monto:",
+    "q_plazo": "Plazo:",
+    "q_cuota": "Cuota mensual:",
+    "q_total": "Total a pagar:",
+    "q_meses": "meses"
+  },
+  "step7": {
+    "title": "Confirme su Solicitud",
+    "hint": "Revise toda la información abajo. Al hacer click en \"Enviar\", su solicitud queda registrada.",
+    "legal_notes_title": "Declaraciones",
+    "legal_health": "Al enviar esta solicitud declaro haber respondido las preguntas anteriores de manera completa y veraz, y reconozco que cualquier declaración de salud incorrecta o incompleta puede llevar al rechazo o modificación de los derechos bajo el contrato de seguro.",
+    "legal_aska": "Al enviar la solicitud, declaro además que no tengo objeción a que el asesor médico de Aska Insurance solicite información médica a mi doctor o especialista.",
+    "legal_credit_check": "Al enviar esta solicitud, autorizo a verificar mi historial crediticio con proveedores externos, así como a verificar mi información con mi empleador.",
+    "legal_credit_registration": "Curaçao Fast Loans N.V. participa en un sistema de registro de créditos y puede realizar verificaciones crediticias como parte del procedimiento de aceptación y monitoreo de créditos.",
+    "terms": "Confirmo que toda la información es correcta y acepto los <a href='#' target='_blank'>Términos y Condiciones</a> y la <a href='#' target='_blank'>Política de Privacidad</a> de CFL."
+  },
+  "summary": {
+    "personal": "Datos Personales",
+    "prestamo": "Préstamo",
+    "contacto": "Contacto",
+    "salud": "Salud",
+    "docs": "Documentos"
+  },
+  "done": {
+    "title": "¡Solicitud enviada!",
+    "body": "Su solicitud ha sido recibida. Un agente de CFL le contactará en 3–5 días.",
+    "thanks": "Gracias por su confianza en Curaçao Fast Loans."
+  },
+  "ocr": {
+    "analyzing": "Analizando documento…",
+    "read_ok": "Documento leído",
+    "filled": "Auto-completados",
+    "no_data": "No se pudo leer el documento",
+    "error": "No fue posible analizar el documento",
+    "received_async": "Documento recibido — se analizará al enviar la solicitud",
+    "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend"
+  }
+}

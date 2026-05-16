@@ -1,0 +1,128 @@
+{
+  "header": { "tagline": "Aplikashon di fiansa pèrsonal" },
+  "progress": { "label": "Paso {current} di {total}" },
+  "nav": {
+    "prev": "← Anterior",
+    "next": "Próksimo →",
+    "submit": "Entregá aplikashon",
+    "submitting": "Mandando..."
+  },
+  "common": { "yes": "Sí", "no": "No" },
+  "error": {
+    "fill_required": "Por fabor kompletá tur fildt rekerí.",
+    "format": "formato inválido",
+    "email": "email malu",
+    "required": "rekerí",
+    "range": "balor fuera di rango",
+    "invalid": "inválido",
+    "peso_altura": "Chèk peso i altura: e altura (cm) mester ta mas haltu ku e peso (kg). Bo a invertí nan?",
+    "terms": "Bo mester aseptá e términos i kondishon.",
+    "submit": "A pasa un eror mandando bo aplikashon. Por fabor purba bèk."
+  },
+  "step1": {
+    "title": "Bo Identifikashon",
+    "hint": "Manda un foto klaro di bo sédula. Mi lo ekstrae bo datos outomátikamente.",
+    "tipo_empleado_hint": "Si bo ta pensionado, payslips ta opshonal i bo por usa karta di penshon en su lugar.",
+    "cedula": "📷 Sédula (ID card) *",
+    "id_adicional": "📷 Paspoort / Rijbewijs (opshonal)"
+  },
+  "step2": {
+    "title": "Dokumentonan Finansiero",
+    "hint": "Manda bo último 3 payslip i 3 estado di banko.",
+    "payslips": "📄 Payslips (mínimo 1, máksimo 3) *",
+    "payslips_pensionado": "📄 Karta di penshon (opshonal pa pensionado)",
+    "bancos": "📄 Estado di Banko (mínimo 1, máksimo 3) *",
+    "carta": "📄 Karta di Trabou *",
+    "aqualectra": "📄 Resibo Aqualectra (opshonal)"
+  },
+  "step3": {
+    "title": "Bo Datos Pèrsonal",
+    "hint": "Verifiká i kompletá bo informashon.",
+    "nombre": "Nòmber kompleto",
+    "cedula_num": "Number di sédula",
+    "fecha_nac": "Fecha di nasementu",
+    "tipo_id": "Tipo di ID",
+    "tipo_empleado": "Tipo di empleo",
+    "tipo_empleado_fijo": "Fijo (vaste dienst / indefiní)",
+    "tipo_empleado_contrato": "Kontrato (temporal)",
+    "tipo_empleado_pensionado": "Pensionado",
+    "tipo_empleado_otro": "Otro (independiente / freelance)",
+    "telefono_movil": "Number di selular *",
+    "telefono_casa": "Number di kas *",
+    "profesion": "Profeshon",
+    "empleador": "Empleador (kompania kaminda bo ta traha)",
+    "empleador_pensionado": "Pagador di penshon (eh: SVB, fondo di penshon)",
+    "cargo": "Posishon / Kargo",
+    "salario": "Salario neto mensual (XCG)",
+    "salario_pensionado": "Penshon neto mensual (XCG)",
+    "banco": "Banko ku ta resibí salario/penshon",
+    "email": "Email",
+    "direccion": "Direkshon kompleto"
+  },
+  "step4": {
+    "title": "Deklarashon di Salud",
+    "hint": "Pa e seguro di bida obligatorio. Tur respuesta ta konfidensial.",
+    "peso": "Peso (kg)",
+    "talla": "Altura/Statura (cm)",
+    "medico": "Ki ta bo dòkter di kas? (nòmber of \"no tin\")",
+    "q1": "1/6. ¿Tin bo algun keho SERIO di salud aktualmente?",
+    "q2": "2/6. ¿Bo a haña un operashon den último 5 aña?",
+    "q3": "3/6. ¿Tin bo aktualmente un malesa, dolencia of diskpasidat?",
+    "q4": "4/6. ¿Bo ta tuma medikamentu ku reseta aktualmente?",
+    "q5": "5/6. ¿Bo tin AIDS of bo ta HIV-positivo?",
+    "q7": "6/6. ¿Tin otro kos importante di bo salud ku por afektá e seguro?"
+  },
+  "step5": {
+    "title": "Kontakto i Referensia",
+    "tel_casa": "Number di telefòn di kas (opshonal)",
+    "ref1": "Referensia 1 (obligatorio)",
+    "ref2": "Referensia 2 (opshonal)",
+    "ref_nombre": "Nòmber i fam kompleto",
+    "ref_tel": "Telefòn",
+    "ref_rel": "Relashon"
+  },
+  "step6": {
+    "title": "Bo Fiansa",
+    "hint": "Tasa: 23.5% pa aña (standing order). Tin un plan di spar inkluí ku CFL ta debolbé ora bo paga.",
+    "monto": "Monto ku bo desea presta (500 – 5000 XCG)",
+    "plazo": "Plazo (3 – 36 lunan)",
+    "proposito": "Pa kiko bo ta usa e fiansa?",
+    "quote": "💰 Kuota estimá",
+    "q_monto": "Monto:",
+    "q_plazo": "Plazo:",
+    "q_cuota": "Kuota mensual:",
+    "q_total": "Total a pagar:",
+    "q_meses": "lunan"
+  },
+  "step7": {
+    "title": "Konfirmá bo Aplikashon",
+    "hint": "Revisa tur informashon abou. Ora bo dal \"Submit\", bo aplikashon ta entregá.",
+    "legal_notes_title": "Deklarashon",
+    "legal_health": "Ku entrega di e aplikashon aki, mi ta deklará ku mi a kontestá tur e pregunta anterior kompletu i ku berdat, i mi sa ku kualkier deklarashon di salud no korekto of inkompleto por hiba na refusal of modifikashon di e derechinan bao di e kontrato di seguro.",
+    "legal_aska": "Ku entrega di e aplikashon, mi ta deklará tambe ku mi no tin obheshon ku e konsehero médiko di Aska Insurance buska informashon médiko serka mi dòkter of spesialista.",
+    "legal_credit_check": "Ku entrega di e aplikashon, ami ta outorisá bo pa chèk mi historial di krédito ku tersero proveedornan, i tambe pa chèk mi informashon serka mi empleador.",
+    "legal_credit_registration": "Curaçao Fast Loans N.V. ta partisipá den un sistema di registrashon di krédito i por hasi chèk di krédito komo parti di e prosedura di akseptashon i monitoreo di kréditonan.",
+    "terms": "Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href='#' target='_blank'>Términos i Kondishon</a> i <a href='#' target='_blank'>Polítika di Privasidat</a> di CFL."
+  },
+  "summary": {
+    "personal": "Datos Pèrsonal",
+    "prestamo": "Fiansa",
+    "contacto": "Kontakto",
+    "salud": "Salud",
+    "docs": "Dokumentonan"
+  },
+  "done": {
+    "title": "Aplikashon entregá!",
+    "body": "Bo aplikashon a wordu risibí. Un agente di CFL lo tuma kontakto den 3–5 dia.",
+    "thanks": "Danki pa bo konfiansa na Curaçao Fast Loans."
+  },
+  "ocr": {
+    "analyzing": "Ta analisá dokumento…",
+    "read_ok": "Dokumento lesá",
+    "filled": "Outo-kompletá",
+    "no_data": "No por a lesa e dokumento",
+    "error": "No por a analisá e dokumento",
+    "received_async": "Dokumento risibí — lo wordu analisá ora di entregá aplikashon",
+    "banco_received": "Estado di banko risibí ✓ — analisis se hará na backend"
+  }
+}

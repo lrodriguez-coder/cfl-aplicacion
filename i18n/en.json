@@ -1,0 +1,128 @@
+{
+  "header": { "tagline": "Personal loan application" },
+  "progress": { "label": "Step {current} of {total}" },
+  "nav": {
+    "prev": "← Previous",
+    "next": "Next →",
+    "submit": "Submit application",
+    "submitting": "Submitting..."
+  },
+  "common": { "yes": "Yes", "no": "No" },
+  "error": {
+    "fill_required": "Please complete all required fields.",
+    "format": "invalid format",
+    "email": "invalid email",
+    "required": "required",
+    "range": "out of range",
+    "invalid": "invalid",
+    "peso_altura": "Check weight and height: height (cm) must be greater than weight (kg). Did you swap them?",
+    "terms": "You must accept the terms and conditions.",
+    "submit": "There was an error submitting your application. Please try again."
+  },
+  "step1": {
+    "title": "Identification",
+    "hint": "Upload a clear photo of your ID. We will extract your information automatically.",
+    "tipo_empleado_hint": "If you are a pensioner, payslips are optional — you can use a pension letter instead.",
+    "cedula": "📷 ID card *",
+    "id_adicional": "📷 Passport / Driver's license (optional)"
+  },
+  "step2": {
+    "title": "Financial Documents",
+    "hint": "Upload your last 3 payslips and 3 bank statements.",
+    "payslips": "📄 Payslips (min 1, max 3) *",
+    "payslips_pensionado": "📄 Pension letter (optional for pensioners)",
+    "bancos": "📄 Bank statements (min 1, max 3) *",
+    "carta": "📄 Employment letter *",
+    "aqualectra": "📄 Aqualectra bill (optional)"
+  },
+  "step3": {
+    "title": "Personal Information",
+    "hint": "Review and complete your information.",
+    "nombre": "Full name",
+    "cedula_num": "ID number",
+    "fecha_nac": "Date of birth",
+    "tipo_id": "ID type",
+    "tipo_empleado": "Employment type",
+    "tipo_empleado_fijo": "Fixed (vaste dienst / permanent)",
+    "tipo_empleado_contrato": "Contract (temporary)",
+    "tipo_empleado_pensionado": "Pensioner",
+    "tipo_empleado_otro": "Other (self-employed / freelance)",
+    "telefono_movil": "Mobile number *",
+    "telefono_casa": "Home number *",
+    "profesion": "Profession",
+    "empleador": "Employer (company where you work)",
+    "empleador_pensionado": "Pension payer (e.g. SVB, pension fund)",
+    "cargo": "Position / Role",
+    "salario": "Net monthly salary (XCG)",
+    "salario_pensionado": "Net monthly pension (XCG)",
+    "banco": "Bank where you receive salary/pension",
+    "email": "Email",
+    "direccion": "Full address"
+  },
+  "step4": {
+    "title": "Health Declaration",
+    "hint": "For mandatory life insurance. All answers are confidential.",
+    "peso": "Weight (kg)",
+    "talla": "Height / Stature (cm)",
+    "medico": "Who is your family doctor? (name or \"none\")",
+    "q1": "1/6. Do you currently have any SERIOUS health complaints?",
+    "q2": "2/6. Have you had an operation in the last 5 years?",
+    "q3": "3/6. Do you currently have an illness, ailment or disability?",
+    "q4": "4/6. Are you currently taking prescription medication?",
+    "q5": "5/6. Do you have AIDS or are you HIV-positive?",
+    "q7": "6/6. Is there anything else about your health that could affect the insurance?"
+  },
+  "step5": {
+    "title": "Contact and References",
+    "tel_casa": "Home phone (optional)",
+    "ref1": "Reference 1 (required)",
+    "ref2": "Reference 2 (optional)",
+    "ref_nombre": "Full name",
+    "ref_tel": "Phone",
+    "ref_rel": "Relationship"
+  },
+  "step6": {
+    "title": "Your Loan",
+    "hint": "Rate: 23.5% annual (standing order). Includes savings plan that CFL returns when you finish paying.",
+    "monto": "Amount you wish to borrow (500 – 5000 XCG)",
+    "plazo": "Term (3 – 36 months)",
+    "proposito": "What will you use the loan for?",
+    "quote": "💰 Estimated installment",
+    "q_monto": "Amount:",
+    "q_plazo": "Term:",
+    "q_cuota": "Monthly installment:",
+    "q_total": "Total payable:",
+    "q_meses": "months"
+  },
+  "step7": {
+    "title": "Confirm Your Application",
+    "hint": "Review all information below. When you click \"Submit\", your application is registered.",
+    "legal_notes_title": "Declarations",
+    "legal_health": "Submitting this application declares have fully and truthfully answered the previous questions and is aware that afterward any incorrect or incomplete health declaration may lead to decline or modification of the rights under the insurance contract.",
+    "legal_aska": "Submitting the application, also declares that he/she has no objection to the medical advisor of Aska Insurance seeks medical information from his/her doctor or specialist.",
+    "legal_credit_check": "Submitting this application, we have been authorized to check your credit background with third party provider and this also allow to check your information with your employer.",
+    "legal_credit_registration": "Curacao Fast Loans N.V. participates in a system of credit registration and may perform credit checks as part of the acceptance and monitoring procedure relating to credits.",
+    "terms": "I confirm all information is correct and I accept CFL's <a href='#' target='_blank'>Terms and Conditions</a> and <a href='#' target='_blank'>Privacy Policy</a>."
+  },
+  "summary": {
+    "personal": "Personal Information",
+    "prestamo": "Loan",
+    "contacto": "Contact",
+    "salud": "Health",
+    "docs": "Documents"
+  },
+  "done": {
+    "title": "Application submitted!",
+    "body": "Your application has been received. A CFL agent will contact you within 3–5 days.",
+    "thanks": "Thank you for your trust in Curaçao Fast Loans."
+  },
+  "ocr": {
+    "analyzing": "Analyzing document…",
+    "read_ok": "Document read",
+    "filled": "Auto-filled",
+    "no_data": "Could not read the document",
+    "error": "Could not analyze the document",
+    "received_async": "Document received — will be analyzed when you submit",
+    "banco_received": "Bank statement received ✓ — full analysis runs in backend"
+  }
+}

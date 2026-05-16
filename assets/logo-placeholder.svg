@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120">
+  <!-- Placeholder logo. Reemplazar por logo.png con el logo real CFL -->
+  <rect width="200" height="120" rx="12" fill="#2A1E5C"/>
+  <ellipse cx="60" cy="40" rx="32" ry="14" fill="#43B5A5"/>
+  <ellipse cx="100" cy="48" rx="36" ry="14" fill="#2A1E5C"/>
+  <ellipse cx="140" cy="56" rx="32" ry="14" fill="#B299D0"/>
+  <text x="100" y="90" font-family="Arial, sans-serif" font-weight="800" font-size="18" fill="white" text-anchor="middle">CURACAO</text>
+  <text x="100" y="108" font-family="Arial, sans-serif" font-weight="800" font-size="14" fill="white" text-anchor="middle">FAST LOANS</text>
+</svg>
