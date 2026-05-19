@@ -205,6 +205,19 @@
           'Revisá peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los pusiste al revés?');
       }
     }
+    // Paso 6: no permitir aplicar si la cuota de referencia es 0
+    if (n === 6) {
+      const montoEl = step.querySelector('[name="monto_solicitado"]');
+      const plazoEl = step.querySelector('[name="plazo_meses"]');
+      const m = parseFloat(montoEl && montoEl.value) || 0;
+      const p = parseInt(plazoEl && plazoEl.value, 10) || 0;
+      const cuotaRef = (m > 0 && p > 0) ? calcularCuotaCFL(m, p) : 0;
+      if (!(cuotaRef > 0)) {
+        if (montoEl) montoEl.classList.add('invalid');
+        errs.push('monto_solicitado');
+        errMsgs.push(t('error.cuota_cero') || 'La cuota de referencia no puede ser 0. Revise el monto y el plazo.');
+      }
+    }
     if (errs.length > 0) {
       showErrors(errMsgs.length > 0 ? errMsgs : [t('error.fill_required') || 'Por favor kompletá tur fildt rekerí.']);
       return false;

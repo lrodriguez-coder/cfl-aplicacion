@@ -18,7 +18,8 @@
     "peso_altura": "Check weight and height: height (cm) must be greater than weight (kg). Did you swap them?",
     "terms": "You must accept the terms and conditions.",
     "submit": "There was an error submitting your application. Please try again.",
-    "doc_required": "A required document is missing"
+    "doc_required": "A required document is missing",
+    "cuota_cero": "The reference installment cannot be 0. Check the amount and term."
   },
   "intro": {
     "title": "📋 Before you start",
@@ -95,8 +96,8 @@
   "step6": {
     "title": "Your Loan",
     "hint": "Rate: 23.5% annual (standing order). Includes savings plan that CFL returns when you finish paying.",
-    "monto": "Amount you wish to borrow (500 – 5000 XCG)",
-    "plazo": "Term (3 – 36 months)",
+    "monto": "Amount you wish to borrow (1000 – 4000 XCG)",
+    "plazo": "Term (6 – 36 months)",
     "proposito": "What will you use the loan for?",
     "quote": "💰 Estimated installment",
     "q_monto": "Amount:",

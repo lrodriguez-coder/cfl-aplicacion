@@ -18,7 +18,8 @@
     "peso_altura": "Revise peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los puso al revés?",
     "terms": "Debe aceptar los términos y condiciones.",
     "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo.",
-    "doc_required": "Falta subir un documento obligatorio"
+    "doc_required": "Falta subir un documento obligatorio",
+    "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo."
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -95,8 +96,8 @@
   "step6": {
     "title": "Su Préstamo",
     "hint": "Tasa: 23.5% anual (standing order). Incluye plan de ahorro que CFL devuelve al pagar.",
-    "monto": "Monto que desea pedir prestado (500 – 5000 XCG)",
-    "plazo": "Plazo (3 – 36 meses)",
+    "monto": "Monto que desea pedir prestado (1000 – 4000 XCG)",
+    "plazo": "Plazo (6 – 36 meses)",
     "proposito": "¿Para qué usará el préstamo?",
     "quote": "💰 Cuota estimada",
     "q_monto": "Monto:",
