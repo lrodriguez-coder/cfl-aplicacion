@@ -120,11 +120,26 @@
     $btnSubmit.style.display = currentStep === TOTAL_STEPS ? '' : 'none';
   }
 
+  // Etiqueta legible de cada documento, para los mensajes de validación.
+  const DOC_LABEL_I18N = {
+    doc_cedula: 'step1.cedula',
+    doc_id_adicional: 'step1.id_adicional',
+    doc_payslips: 'step2.payslips',
+    doc_bancos: 'step2.bancos',
+    doc_carta_trabajo: 'step2.carta',
+    doc_aqualectra: 'step2.aqualectra'
+  };
+  function docLabelFor(f) {
+    const key = DOC_LABEL_I18N[f.name];
+    const label = (key && t(key)) || f.name;
+    return String(label).replace(/\*/g, '').replace(/^[^0-9A-Za-zÀ-ÿ]+/, '').trim();
+  }
+
   function validateStep(n) {
     const step = $('.step[data-step="' + n + '"]');
     if (!step) return true;
     // 1) Required fields - check todo: presencia + pattern + type
-    const requiredFields = $$('input[required], select[required], textarea[required]', step);
+    const requiredFields = $$('input[required]:not([type="file"]), select[required], textarea[required]', step);
     // 2) Optional fields con pattern - validar SOLO si tienen valor (para no rechazar vacío)
     const patternFields = $$('input[pattern]:not([required])', step);
     const errs = [];
@@ -154,6 +169,18 @@
         f.classList.add('invalid');
         errs.push(f.name);
         errMsgs.push((f.title || f.name) + ': ' + (t('error.format') || 'formato inválido'));
+      }
+    });
+    // Documentos obligatorios: no dejar avanzar si falta alguno (respeta modo pensionado)
+    $$('input[type="file"][required]', step).forEach(f => {
+      const lbl = f.closest('.upload-label');
+      f.classList.remove('invalid');
+      if (lbl) lbl.classList.remove('invalid');
+      if (!f.files || f.files.length === 0) {
+        f.classList.add('invalid');
+        if (lbl) lbl.classList.add('invalid');
+        errs.push(f.name);
+        errMsgs.push((t('error.doc_required') || 'Falta subir un documento obligatorio') + ': ' + docLabelFor(f));
       }
     });
     // Conditional required fields (e.g., dolencia_detalle solo si dolencia_salud=true)

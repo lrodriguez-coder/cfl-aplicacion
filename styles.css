@@ -684,3 +684,40 @@ select.ocr-filled {
   color: var(--cfl-text);
   font-weight: 500;
 }
+
+/* ====== Nota inicial (lista de documentos requeridos) ====== */
+.intro-note {
+  background: rgba(214, 165, 60, 0.10);
+  border: 1px solid var(--cfl-border);
+  border-left: 4px solid var(--cfl-warning);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.5rem;
+}
+.intro-note p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+.intro-note-title {
+  font-weight: 700;
+  color: var(--cfl-primary);
+  font-size: 1rem;
+}
+.intro-note-subtitle {
+  font-weight: 600;
+  color: var(--cfl-primary);
+}
+.intro-note-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+.intro-note-list li {
+  margin: 0.25rem 0;
+}
+
+/* Documento obligatorio faltante: marca el recuadro de subida en rojo */
+.upload-label.invalid {
+  border-color: var(--cfl-error);
+  background: #FDF3F2;
+}
