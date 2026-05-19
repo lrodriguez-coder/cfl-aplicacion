@@ -17,7 +17,18 @@
     "invalid": "inválido",
     "peso_altura": "Revise peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los puso al revés?",
     "terms": "Debe aceptar los términos y condiciones.",
-    "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo."
+    "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo.",
+    "doc_required": "Falta subir un documento obligatorio"
+  },
+  "intro": {
+    "title": "📋 Antes de empezar",
+    "body": "Reúna TODOS sus documentos antes de iniciar la solicitud. El sistema no le permitirá avanzar a la siguiente página si falta un documento obligatorio.",
+    "docs_title": "Documentos necesarios para aplicar:",
+    "doc_cedula": "Cédula de identidad (foto clara)",
+    "doc_payslips": "Recibos de salario más recientes (1 a 3) — o carta de pensión si es pensionado",
+    "doc_bancos": "Estados de cuenta bancarios (1 a 3)",
+    "doc_carta": "Carta de trabajo",
+    "doc_opcionales": "Opcionales: pasaporte o licencia, recibo de Aqualectra"
   },
   "step1": {
     "title": "Identificación",

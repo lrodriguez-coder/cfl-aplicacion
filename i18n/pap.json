@@ -17,7 +17,18 @@
     "invalid": "inválido",
     "peso_altura": "Chèk peso i altura: e altura (cm) mester ta mas haltu ku e peso (kg). Bo a invertí nan?",
     "terms": "Bo mester aseptá e términos i kondishon.",
-    "submit": "A pasa un eror mandando bo aplikashon. Por fabor purba bèk."
+    "submit": "A pasa un eror mandando bo aplikashon. Por fabor purba bèk.",
+    "doc_required": "Ta falta un dokumento obligatorio"
+  },
+  "intro": {
+    "title": "📋 Promé ku bo kuminsá",
+    "body": "Rekohé TUR bo dokumentonan promé ku bo kuminsá e aplikashon. E sistema lo no laga bo pasa pa e siguiente página si ta falta un dokumento obligatorio.",
+    "docs_title": "Dokumentonan ku bo tin mester pa aplika:",
+    "doc_cedula": "Sédula (foto klaro)",
+    "doc_payslips": "Último payslips (1 te 3) — of karta di penshon si bo ta pensionado",
+    "doc_bancos": "Estado di kuenta di banko (1 te 3)",
+    "doc_carta": "Karta di trabou",
+    "doc_opcionales": "Opshonal: paspoort of rijbewijs, resibo di Aqualectra"
   },
   "step1": {
     "title": "Bo Identifikashon",

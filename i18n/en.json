@@ -17,7 +17,18 @@
     "invalid": "invalid",
     "peso_altura": "Check weight and height: height (cm) must be greater than weight (kg). Did you swap them?",
     "terms": "You must accept the terms and conditions.",
-    "submit": "There was an error submitting your application. Please try again."
+    "submit": "There was an error submitting your application. Please try again.",
+    "doc_required": "A required document is missing"
+  },
+  "intro": {
+    "title": "📋 Before you start",
+    "body": "Gather ALL your documents before starting the application. The system will not let you move to the next page if a required document is missing.",
+    "docs_title": "Documents needed to apply:",
+    "doc_cedula": "ID card (clear photo)",
+    "doc_payslips": "Recent payslips (1 to 3) — or pension letter if you are a pensioner",
+    "doc_bancos": "Bank statements (1 to 3)",
+    "doc_carta": "Employment letter",
+    "doc_opcionales": "Optional: passport or driver's license, Aqualectra bill"
   },
   "step1": {
     "title": "Identification",
