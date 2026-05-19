@@ -304,12 +304,14 @@
       }
     });
 
-    // Payslips: required si NO pensionado
-    const payslipsInput = $('[name="doc_payslips"]');
-    if (payslipsInput) {
-      if (isPensionado) payslipsInput.removeAttribute('required');
-      else payslipsInput.setAttribute('required', '');
-    }
+    // Pensionado: payslips y carta de trabajo NO son obligatorios
+    // (no tiene empleo; usa carta de pensión en su lugar).
+    ['doc_payslips', 'doc_carta_trabajo'].forEach(name => {
+      const input = $('[name="' + name + '"]');
+      if (!input) return;
+      if (isPensionado) input.removeAttribute('required');
+      else input.setAttribute('required', '');
+    });
   }
 
   // ===== SLIDERS (sync number input ↔ range slider) =====
