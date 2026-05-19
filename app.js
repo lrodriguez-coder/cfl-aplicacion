@@ -12,6 +12,8 @@
   const WEBHOOK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-submit';
   const OCR_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-ocr';
   const TRACK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/aplicacion-web-track';
+  const UPLOAD_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-upload';
+  const LINK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-vincular';
 
   // doc field name → OCR doc_type
   // NOTA: doc_bancos NO se OCR-ea en el form (consume mucho API ~$0.40/banco).
@@ -363,7 +365,10 @@
         if (files.length === 0) return;
         const label = input.closest('.upload-label');
         if (label) label.classList.add('has-file');
-        files.forEach(file => {
+        files.forEach((file, fidx) => {
+          // Sube cada documento a S3 al adjuntarlo (en paralelo con el OCR).
+          // Aplica a TODOS los tipos, incluidos los estados de banco.
+          uploadDoc(file, input.name, fidx);
           if (file.type.startsWith('image/')) {
             const img = document.createElement('img');
             img.src = URL.createObjectURL(file);
@@ -793,6 +798,7 @@
         clearDraft();
         if (result.aplicacion_id) {
           $('#aplicacionIdMsg').textContent = '#' + result.aplicacion_id;
+          vincularDocumentos(result.aplicacion_id);
         }
         showStep('done');
       } else {
@@ -831,6 +837,32 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracking_id: getTrackingId(), paso: paso, evento: evento, idioma: currentLang }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // Sube un documento a S3 (workflow web-aplicacion-upload). Fire-and-forget:
+  // no bloquea la UI; el archivo queda guardado y registrado en web_doc_uploads.
+  function uploadDoc(file, docType, idx) {
+    try {
+      const fd = new FormData();
+      fd.append('doc_type', docType);
+      fd.append('idx', String(idx || 0));
+      fd.append('tracking_id', getTrackingId());
+      fd.append('file', file);
+      fetch(UPLOAD_URL, { method: 'POST', body: fd, keepalive: true }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // Al entregar la solicitud, enlaza los documentos subidos con la aplicación
+  // creada (copia las URLs S3 a aplicaciones.url_* para que Access los baje).
+  function vincularDocumentos(aplicacionId) {
+    try {
+      fetch(LINK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tracking_id: getTrackingId(), aplicacion_id: aplicacionId }),
         keepalive: true
       }).catch(function () {});
     } catch (e) {}
