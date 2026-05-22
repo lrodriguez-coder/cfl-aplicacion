@@ -19,7 +19,9 @@
     "terms": "Bo mester aseptá e términos i kondishon.",
     "submit": "A pasa un eror mandando bo aplikashon. Por fabor purba bèk.",
     "doc_required": "Ta falta un dokumento obligatorio",
-    "cuota_cero": "E kuota di referensia no por ta 0. Chèk e monto i e plazo."
+    "cuota_cero": "E kuota di referensia no por ta 0. Chèk e monto i e plazo.",
+    "doc_tipo_incorrecto": "{doc}: e dokumento ku bo a manda ta parse {detected}. Manda e dokumento korekto.",
+    "doc_vencido": "{doc}: e dokumento a vense ({date}). Manda un dokumento bálido."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -135,6 +137,21 @@
     "no_data": "No por a lesa e dokumento",
     "error": "No por a analisá e dokumento",
     "received_async": "Dokumento risibí — lo wordu analisá ora di entregá aplikashon",
-    "banco_received": "Estado di banko risibí ✓ — analisis se hará na backend"
+    "banco_received": "Estado di banko risibí ✓ — analisis se hará na backend",
+    "checking_type": "Ta verifiká tipo di dokumento…",
+    "tipo_mismatch": "Esaki ta parse {detected}, mester ta {expected}",
+    "expired": "Dokumento vensí (a vense {date})"
+  },
+  "tipo": {
+    "cedula": "un sédula",
+    "id_adicional": "un paspoort of rijbewijs",
+    "paspoort": "un paspoort",
+    "rijbewijs": "un rijbewijs",
+    "payslip": "un payslip",
+    "bank_statement": "un estado di banko",
+    "employment_letter": "un karta di trabou",
+    "aqualectra": "un resibo di Aqualectra",
+    "otro": "otro tipo di dokumento",
+    "unknown": "un dokumento no rekonosí"
   }
 }

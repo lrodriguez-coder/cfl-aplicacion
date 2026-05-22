@@ -19,7 +19,9 @@
     "terms": "Debe aceptar los términos y condiciones.",
     "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo.",
     "doc_required": "Falta subir un documento obligatorio",
-    "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo."
+    "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo.",
+    "doc_tipo_incorrecto": "{doc}: el archivo subido parece {detected}. Suba el documento correcto.",
+    "doc_vencido": "{doc}: el documento está vencido (venció el {date}). Suba un documento vigente."
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -135,6 +137,21 @@
     "no_data": "No se pudo leer el documento",
     "error": "No fue posible analizar el documento",
     "received_async": "Documento recibido — se analizará al enviar la solicitud",
-    "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend"
+    "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend",
+    "checking_type": "Verificando tipo de documento…",
+    "tipo_mismatch": "Esto parece {detected}, se esperaba {expected}",
+    "expired": "Documento vencido (venció el {date})"
+  },
+  "tipo": {
+    "cedula": "una cédula",
+    "id_adicional": "un pasaporte o licencia",
+    "paspoort": "un pasaporte",
+    "rijbewijs": "una licencia de conducir",
+    "payslip": "un recibo de salario",
+    "bank_statement": "un estado de cuenta bancario",
+    "employment_letter": "una carta de trabajo",
+    "aqualectra": "un recibo de Aqualectra",
+    "otro": "otro tipo de documento",
+    "unknown": "un documento no reconocido"
   }
 }

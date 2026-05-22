@@ -19,7 +19,9 @@
     "terms": "You must accept the terms and conditions.",
     "submit": "There was an error submitting your application. Please try again.",
     "doc_required": "A required document is missing",
-    "cuota_cero": "The reference installment cannot be 0. Check the amount and term."
+    "cuota_cero": "The reference installment cannot be 0. Check the amount and term.",
+    "doc_tipo_incorrecto": "{doc}: the uploaded file looks like {detected}. Please upload the correct document.",
+    "doc_vencido": "{doc}: the document is expired (expired on {date}). Please upload a valid document."
   },
   "intro": {
     "title": "📋 Before you start",
@@ -135,6 +137,21 @@
     "no_data": "Could not read the document",
     "error": "Could not analyze the document",
     "received_async": "Document received — will be analyzed when you submit",
-    "banco_received": "Bank statement received ✓ — full analysis runs in backend"
+    "banco_received": "Bank statement received ✓ — full analysis runs in backend",
+    "checking_type": "Checking document type…",
+    "tipo_mismatch": "This looks like {detected}, expected {expected}",
+    "expired": "Expired document (expired on {date})"
+  },
+  "tipo": {
+    "cedula": "an ID card",
+    "id_adicional": "a passport or license",
+    "paspoort": "a passport",
+    "rijbewijs": "a driver's license",
+    "payslip": "a payslip",
+    "bank_statement": "a bank statement",
+    "employment_letter": "an employment letter",
+    "aqualectra": "an Aqualectra bill",
+    "otro": "another type of document",
+    "unknown": "an unrecognized document"
   }
 }

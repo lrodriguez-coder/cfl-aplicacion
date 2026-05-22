@@ -54,6 +54,19 @@
     },
   };
 
+  // Tipo de documento esperado por slot. El OCR devuelve `tipo_detectado`
+  // (qué documento ve Claude realmente); si no coincide, se bloquea el avance.
+  const EXPECTED_TIPO = {
+    doc_cedula: ['cedula'],
+    doc_id_adicional: ['paspoort', 'rijbewijs'],
+    doc_payslips: ['payslip'],
+    doc_bancos: ['bank_statement'],
+    doc_carta_trabajo: ['employment_letter'],
+    doc_aqualectra: ['aqualectra'],
+  };
+  // Slots cuya vigencia se verifica (el OCR devuelve fecha_vencimiento).
+  const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional'];
+
   // ===== STATE =====
   let currentStep = 1;
   let i18nTexts = {};
@@ -69,6 +82,10 @@
     doc_carta_trabajo: null,
     doc_aqualectra: null,
   };
+
+  // Resultado de validación por slot: { tipo:'ok'|'mismatch'|'unknown',
+  // expired:bool, detected:string, vence:string }. Se rehace en cada subida.
+  const docCheck = {};
 
   // ===== DOM REFS =====
   const $form = document.getElementById('appForm');
@@ -181,6 +198,28 @@
         if (lbl) lbl.classList.add('invalid');
         errs.push(f.name);
         errMsgs.push((t('error.doc_required') || 'Falta subir un documento obligatorio') + ': ' + docLabelFor(f));
+      }
+    });
+    // Tipo de documento incorrecto / documento vencido (aplica a TODOS los file inputs con archivo)
+    $$('input[type="file"]', step).forEach(f => {
+      if (!f.files || f.files.length === 0) return;
+      const lbl = f.closest('.upload-label');
+      f.classList.remove('invalid');
+      if (lbl) lbl.classList.remove('invalid');
+      const c = docCheck[f.name];
+      if (!c) return;
+      if (c.tipo === 'mismatch') {
+        f.classList.add('invalid');
+        if (lbl) lbl.classList.add('invalid');
+        errs.push(f.name);
+        errMsgs.push(t('error.doc_tipo_incorrecto', { doc: docLabelFor(f), detected: tipoLabel(c.detected) })
+          || (docLabelFor(f) + ': documento incorrecto'));
+      } else if (c.expired) {
+        f.classList.add('invalid');
+        if (lbl) lbl.classList.add('invalid');
+        errs.push(f.name);
+        errMsgs.push(t('error.doc_vencido', { doc: docLabelFor(f), date: c.vence })
+          || (docLabelFor(f) + ': documento vencido'));
       }
     });
     // Conditional required fields (e.g., dolencia_detalle solo si dolencia_salud=true)
@@ -404,6 +443,7 @@
         if (!preview) return;
         preview.innerHTML = '';
         const files = Array.from(input.files || []);
+        docCheck[input.name] = undefined; // re-validar tipo/vigencia en cada nueva selección
         if (files.length === 0) return;
         const label = input.closest('.upload-label');
         if (label) label.classList.add('has-file');
@@ -424,14 +464,31 @@
           }
         });
 
-        // doc_bancos: NO se hace OCR en el form (consume mucho API).
-        // El archivo se sube igual y se procesa después en backend.
+        // doc_bancos: NO se hace OCR completo en el form (consume mucho API),
+        // pero SÍ se hace una clasificación liviana para validar que el archivo
+        // sea realmente un estado de banco. La extracción completa va al backend.
         if (input.name === 'doc_bancos') {
-          setOcrStatus(
-            preview,
-            '📥 ' + (t('ocr.banco_received') || 'Estado di banko risibí — análisis se hará al procesar'),
-            'ok'
-          );
+          setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
+          (async () => {
+            for (let i = 0; i < files.length; i++) {
+              await classifyDoc(files[i], input.name, i);
+            }
+            const c = docCheck[input.name];
+            if (c && c.tipo === 'mismatch') {
+              setOcrStatus(
+                preview,
+                '⚠️ ' + (t('ocr.tipo_mismatch', { detected: tipoLabel(c.detected), expected: expectedTipoLabel(input.name) })
+                  || 'Tipo de documento incorrecto'),
+                'warn'
+              );
+            } else {
+              setOcrStatus(
+                preview,
+                '📥 ' + (t('ocr.banco_received') || 'Estado di banko risibí — análisis se hará al procesar'),
+                'ok'
+              );
+            }
+          })();
           return;
         }
 
@@ -475,6 +532,74 @@
     }
   }
 
+  // ===== VALIDACIÓN DE DOCUMENTOS (tipo + vigencia) =====
+  // Vencido si fecha_vencimiento (YYYY-MM-DD) es anterior a hoy.
+  function isExpired(vence) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(vence || '').trim());
+    if (!m) return false;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (isNaN(d.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  }
+
+  function tipoLabel(tipo) {
+    return (tipo && t('tipo.' + tipo)) || t('tipo.unknown') || 'un documento';
+  }
+  function expectedTipoLabel(inputName) {
+    const KEY = {
+      doc_cedula: 'cedula',
+      doc_id_adicional: 'id_adicional',
+      doc_payslips: 'payslip',
+      doc_bancos: 'bank_statement',
+      doc_carta_trabajo: 'employment_letter',
+      doc_aqualectra: 'aqualectra',
+    };
+    return tipoLabel(KEY[inputName]);
+  }
+
+  // Evalúa un resultado OCR/clasificación de UN archivo: detecta tipo y vigencia,
+  // y actualiza el agregado docCheck[inputName]. Devuelve el detalle de este archivo.
+  function evaluateDoc(inputName, data, idx) {
+    const expected = EXPECTED_TIPO[inputName];
+    const cur = docCheck[inputName] || { tipo: 'unknown', expired: false };
+    let detected = (data && data.tipo_detectado) ? String(data.tipo_detectado).toLowerCase() : null;
+    // banco/aqualectra devuelven un error explícito cuando el doc no es del tipo
+    if (!detected && data && (data.error === 'no_bank_statement' || data.error === 'no_aqualectra')) {
+      detected = 'otro';
+    }
+    let tipoStatus = 'unknown';
+    if (expected && detected) tipoStatus = (expected.indexOf(detected) !== -1) ? 'ok' : 'mismatch';
+    if (tipoStatus === 'mismatch') cur.tipo = 'mismatch';
+    else if (cur.tipo !== 'mismatch' && tipoStatus === 'ok') cur.tipo = 'ok';
+    if (detected) cur.detected = detected;
+    // Vigencia (solo cédula / ID adicional)
+    let expired = false, vence = null;
+    if (EXPIRY_DOCS.indexOf(inputName) !== -1) {
+      vence = data && data.fecha_vencimiento;
+      expired = isExpired(vence);
+      if (expired) { cur.expired = true; cur.vence = vence; }
+    }
+    docCheck[inputName] = cur;
+    return { tipoStatus: tipoStatus, expired: expired, detected: detected, vence: vence };
+  }
+
+  // Clasificación liviana para el estado de banco (no pasa por OCR completo):
+  // solo pide el tipo de documento. No bloquea si la clasificación falla.
+  async function classifyDoc(file, inputName, idx) {
+    try {
+      const fd = new FormData();
+      fd.append('doc_type', 'clasificar');
+      fd.append('file', file);
+      const res = await fetch(OCR_URL, { method: 'POST', body: fd });
+      if (!res.ok) return;
+      const result = await res.json();
+      const data = (result && result.data) || null;
+      if (data) evaluateDoc(inputName, data, idx);
+    } catch (e) { /* clasificación opcional: no bloquea */ }
+  }
+
   async function runOcr(file, docType, container, inputName, idx) {
     const suffix = (Array.isArray(ocrResults[inputName])) ? ' (' + (idx + 1) + ')' : '';
     setOcrStatus(container, '🔎 ' + (t('ocr.analyzing') || 'Analizando documento…') + suffix, 'loading');
@@ -504,9 +629,28 @@
         return;
       }
       storeOcrResult(inputName, idx, result.data);
+      // Validar tipo de documento (y vigencia) antes de auto-rellenar.
+      const chk = evaluateDoc(inputName, result.data, idx);
+      if (chk.tipoStatus === 'mismatch') {
+        // No auto-rellenar desde un documento del tipo equivocado.
+        setOcrStatus(
+          container,
+          '⚠️ ' + (t('ocr.tipo_mismatch', { detected: tipoLabel(chk.detected), expected: expectedTipoLabel(inputName) })
+            || 'Tipo de documento incorrecto') + suffix,
+          'warn'
+        );
+        return;
+      }
       // Auto-fill solo desde el PRIMER archivo (los demás se mandan al backend)
       const filled = (idx === 0) ? applyOcrAutoFill(docType, result.data) : [];
-      if (filled.length === 0) {
+      if (chk.expired) {
+        setOcrStatus(
+          container,
+          '⚠️ ' + (t('ocr.expired', { date: chk.vence }) || 'Documento vencido') + suffix,
+          'warn'
+        );
+        saveDraft();
+      } else if (filled.length === 0) {
         setOcrStatus(container, '✓ ' + (t('ocr.read_ok') || 'Documento leído') + suffix, 'ok');
       } else {
         setOcrStatus(
