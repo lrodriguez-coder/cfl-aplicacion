@@ -5,7 +5,8 @@
     "prev": "← Anterior",
     "next": "Próksimo →",
     "submit": "Entregá aplikashon",
-    "submitting": "Mandando..."
+    "submitting": "Mandando...",
+    "waiting_uploads": "Ta spera dokumentonan..."
   },
   "common": { "yes": "Sí", "no": "No" },
   "error": {
@@ -71,7 +72,18 @@
     "salario_pensionado": "Penshon neto mensual (XCG)",
     "banco": "Banko ku ta resibí salario/penshon",
     "email": "Email",
-    "direccion": "Direkshon kompleto"
+    "direccion": "Direkshon kompleto",
+    "fecha_venc_cedula": "Fecha di vensemento di sédula *",
+    "sexo": "Seksu *",
+    "sexo_m": "Maskulin",
+    "sexo_f": "Feminin",
+    "estado_civil": "Estado sivil *",
+    "civil_soltero": "Soltero",
+    "civil_casado": "Kasá",
+    "civil_divorciado": "Divorsiá",
+    "civil_viudo": "Biuda",
+    "nacionalidad": "Nashonalidat *",
+    "pais_nacimiento": "Pais di nasementu *"
   },
   "step4": {
     "title": "Deklarashon di Salud",
@@ -134,8 +146,8 @@
     "analyzing": "Ta analisá dokumento…",
     "read_ok": "Dokumento lesá",
     "filled": "Outo-kompletá",
-    "no_data": "No por a lesa e dokumento",
-    "error": "No por a analisá e dokumento",
+    "no_data": "No por a saka e datos. Kompletá nan manualmente den e siguiente paso.",
+    "error": "No por a lesa e dokumento outomátikamente. Kompletá e datos a man den e siguiente paso.",
     "received_async": "Dokumento risibí — lo wordu analisá ora di entregá aplikashon",
     "banco_received": "Estado di banko risibí ✓ — analisis se hará na backend",
     "checking_type": "Ta verifiká tipo di dokumento…",

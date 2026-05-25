@@ -34,6 +34,11 @@
       nombre_completo: 'nombre_completo',
       numero_id: 'numero_id',
       fecha_nacimiento: 'fecha_nacimiento',
+      sexo: 'sexo',
+      estado_civil: 'estado_civil',
+      nacionalidad: 'nacionalidad',
+      pais_nacimiento: 'pais_nacimiento',
+      fecha_vencimiento: 'fecha_venc_id1',
     },
     payslip: {
       empleador: 'empleador',
@@ -958,6 +963,24 @@
     $btnSubmit.textContent = t('nav.submitting') || 'Mandando...';
     clearErrors();
 
+    // Antes de entregar, esperar a que TODAS las subidas de documentos terminen.
+    // Si alguna falló (tras reintentos), abortar y pedir al cliente que reintente.
+    $btnSubmit.textContent = t('nav.waiting_uploads') || 'Esperando documentos...';
+    const upRes = await waitForUploads();
+    if (!upRes.ok) {
+      const lista = upRes.fallidos.map(function (f) {
+        return docLabelFor({ name: f.docType }) + (f.idx > 0 ? ' #' + (f.idx + 1) : '');
+      }).join(', ');
+      showErrors([
+        (t('error.uploads_failed') || 'No se pudo subir estos documentos al servidor:') + ' ' + lista,
+        t('error.uploads_retry') || 'Por favor adjúntelos de nuevo y vuelva a Enviar.'
+      ]);
+      $btnSubmit.disabled = false;
+      $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
+      return;
+    }
+    $btnSubmit.textContent = t('nav.submitting') || 'Mandando...';
+
     try {
       // Solo campos de texto. Los documentos ya los procesó el OCR al subirlos;
       // reenviar los binarios infla el POST y puede pasar el límite del webhook (causa de 500).
@@ -968,6 +991,21 @@
       });
       fd.append('_lang', currentLang);
       fd.append('_submitted_at', new Date().toISOString());
+
+      // Si el OCR no llenó los datos del cédula (sexo/estado_civil/etc), usar
+      // los valores del formulario como respaldo. El backend lee ocr.doc_cedula.
+      const cedulaOcr = Object.assign({}, ocrResults.doc_cedula || {});
+      const fGet = function (n) { const el = $('[name="' + n + '"]'); return el ? String(el.value || '').trim() : ''; };
+      const overlay = {
+        sexo: fGet('sexo'),
+        estado_civil: fGet('estado_civil'),
+        nacionalidad: fGet('nacionalidad'),
+        pais_nacimiento: fGet('pais_nacimiento'),
+        fecha_vencimiento: fGet('fecha_venc_id1')
+      };
+      for (const k in overlay) { if (overlay[k]) cedulaOcr[k] = overlay[k]; }
+      ocrResults.doc_cedula = cedulaOcr;
+
       // Resultados OCR (para que el backend los use igual que pipeline WhatsApp)
       fd.append('_ocr_results', JSON.stringify(ocrResults));
 
@@ -1028,17 +1066,59 @@
     } catch (e) {}
   }
 
-  // Sube un documento a S3 (workflow web-aplicacion-upload). Fire-and-forget:
-  // no bloquea la UI; el archivo queda guardado y registrado en web_doc_uploads.
+  // ===== Upload tracker — garantiza que TODOS los documentos llegan a S3 =====
+  // Cada subida queda registrada acá; submitForm espera a que todas terminen
+  // (con reintentos automáticos) antes de entregar la solicitud.
+  const uploadTracker = {};
+
   function uploadDoc(file, docType, idx) {
-    try {
-      const fd = new FormData();
-      fd.append('doc_type', docType);
-      fd.append('idx', String(idx || 0));
-      fd.append('tracking_id', getTrackingId());
-      fd.append('file', file);
-      fetch(UPLOAD_URL, { method: 'POST', body: fd, keepalive: true }).catch(function () {});
-    } catch (e) {}
+    const safeIdx = idx || 0;
+    const key = docType + '_' + safeIdx;
+    const entry = { file: file, docType: docType, idx: safeIdx, state: 'pending', attempts: 0 };
+    entry.promise = uploadAttempt(entry);
+    uploadTracker[key] = entry;
+    return entry.promise;
+  }
+
+  async function uploadAttempt(entry) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      entry.attempts = attempt + 1;
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timeoutId = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, 45000) : null;
+      try {
+        const fd = new FormData();
+        fd.append('doc_type', entry.docType);
+        fd.append('idx', String(entry.idx));
+        fd.append('tracking_id', getTrackingId());
+        fd.append('file', entry.file);
+        const opts = { method: 'POST', body: fd };
+        if (ctrl) opts.signal = ctrl.signal;
+        const res = await fetch(UPLOAD_URL, opts);
+        if (timeoutId) clearTimeout(timeoutId);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        entry.state = 'done';
+        return;
+      } catch (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (attempt < 2) {
+          await new Promise(function (r) { setTimeout(r, 1500 * (attempt + 1)); });
+          continue;
+        }
+        entry.state = 'failed';
+        console.warn('uploadDoc fallo definitivo:', entry.docType, entry.idx, err);
+        return;
+      }
+    }
+  }
+
+  // Espera a que todas las subidas pendientes terminen (éxito o fallo tras
+  // reintentos). Devuelve { ok, fallidos } para que submitForm decida si entregar.
+  async function waitForUploads() {
+    const entries = Object.values(uploadTracker);
+    if (entries.length === 0) return { ok: true, fallidos: [] };
+    await Promise.all(entries.map(function (e) { return e.promise; }));
+    const fallidos = entries.filter(function (e) { return e.state === 'failed'; });
+    return { ok: fallidos.length === 0, fallidos: fallidos };
   }
 
   // Al entregar la solicitud, enlaza los documentos subidos con la aplicación

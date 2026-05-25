@@ -5,7 +5,8 @@
     "prev": "← Anterior",
     "next": "Siguiente →",
     "submit": "Enviar solicitud",
-    "submitting": "Enviando..."
+    "submitting": "Enviando...",
+    "waiting_uploads": "Esperando documentos..."
   },
   "common": { "yes": "Sí", "no": "No" },
   "error": {
@@ -71,7 +72,18 @@
     "salario_pensionado": "Pensión neta mensual (XCG)",
     "banco": "Banco donde recibe salario/pensión",
     "email": "Email",
-    "direccion": "Dirección completa"
+    "direccion": "Dirección completa",
+    "fecha_venc_cedula": "Fecha de vencimiento de la cédula *",
+    "sexo": "Sexo *",
+    "sexo_m": "Masculino",
+    "sexo_f": "Femenino",
+    "estado_civil": "Estado civil *",
+    "civil_soltero": "Soltero",
+    "civil_casado": "Casado",
+    "civil_divorciado": "Divorciado",
+    "civil_viudo": "Viudo",
+    "nacionalidad": "Nacionalidad *",
+    "pais_nacimiento": "País de nacimiento *"
   },
   "step4": {
     "title": "Declaración de Salud",
@@ -134,8 +146,8 @@
     "analyzing": "Analizando documento…",
     "read_ok": "Documento leído",
     "filled": "Auto-completados",
-    "no_data": "No se pudo leer el documento",
-    "error": "No fue posible analizar el documento",
+    "no_data": "No pudimos extraer datos. Complete los datos manualmente en el siguiente paso.",
+    "error": "No pudimos leer el documento automáticamente. Complete los datos a mano en el siguiente paso.",
     "received_async": "Documento recibido — se analizará al enviar la solicitud",
     "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend",
     "checking_type": "Verificando tipo de documento…",

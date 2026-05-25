@@ -150,6 +150,43 @@
 
       <div class="row">
         <div class="field flex-1">
+          <label data-i18n="step3.fecha_venc_cedula">Fecha di vensemento di sédula *</label>
+          <input type="date" name="fecha_venc_id1" required>
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.sexo">Seksu *</label>
+          <select name="sexo" required>
+            <option value="">—</option>
+            <option value="M" data-i18n="step3.sexo_m">Maskulin</option>
+            <option value="F" data-i18n="step3.sexo_f">Feminin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field flex-1">
+          <label data-i18n="step3.estado_civil">Estado sivil *</label>
+          <select name="estado_civil" required>
+            <option value="">—</option>
+            <option value="soltero" data-i18n="step3.civil_soltero">Soltero</option>
+            <option value="kasá" data-i18n="step3.civil_casado">Kasá</option>
+            <option value="divorsiá" data-i18n="step3.civil_divorciado">Divorsiá</option>
+            <option value="biuda" data-i18n="step3.civil_viudo">Biuda</option>
+          </select>
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.nacionalidad">Nashonalidat *</label>
+          <input type="text" name="nacionalidad" required minlength="2">
+        </div>
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.pais_nacimiento">Pais di nasementu *</label>
+        <input type="text" name="pais_nacimiento" required minlength="2">
+      </div>
+
+      <div class="row">
+        <div class="field flex-1">
           <label data-i18n="step3.telefono_movil">Number di selular *</label>
           <input type="tel" name="telefono_movil" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
         </div>

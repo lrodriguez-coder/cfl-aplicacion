@@ -5,7 +5,8 @@
     "prev": "← Previous",
     "next": "Next →",
     "submit": "Submit application",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "waiting_uploads": "Waiting for documents..."
   },
   "common": { "yes": "Yes", "no": "No" },
   "error": {
@@ -71,7 +72,18 @@
     "salario_pensionado": "Net monthly pension (XCG)",
     "banco": "Bank where you receive salary/pension",
     "email": "Email",
-    "direccion": "Full address"
+    "direccion": "Full address",
+    "fecha_venc_cedula": "ID card expiry date *",
+    "sexo": "Sex *",
+    "sexo_m": "Male",
+    "sexo_f": "Female",
+    "estado_civil": "Marital status *",
+    "civil_soltero": "Single",
+    "civil_casado": "Married",
+    "civil_divorciado": "Divorced",
+    "civil_viudo": "Widowed",
+    "nacionalidad": "Nationality *",
+    "pais_nacimiento": "Country of birth *"
   },
   "step4": {
     "title": "Health Declaration",
@@ -134,8 +146,8 @@
     "analyzing": "Analyzing document…",
     "read_ok": "Document read",
     "filled": "Auto-filled",
-    "no_data": "Could not read the document",
-    "error": "Could not analyze the document",
+    "no_data": "Could not extract data. Please fill the fields manually in the next step.",
+    "error": "Could not read the document automatically. Please fill the fields manually in the next step.",
     "received_async": "Document received — will be analyzed when you submit",
     "banco_received": "Bank statement received ✓ — full analysis runs in backend",
     "checking_type": "Checking document type…",
