@@ -71,6 +71,7 @@
     "salario": "Salario neto mensual (XCG)",
     "salario_pensionado": "Penshon neto mensual (XCG)",
     "banco": "Banko ku ta resibí salario/penshon",
+    "cuenta_bancaria": "Number di kuenta di banko",
     "email": "Email",
     "direccion": "Direkshon kompleto",
     "fecha_venc_cedula": "Fecha di vensemento di sédula *",

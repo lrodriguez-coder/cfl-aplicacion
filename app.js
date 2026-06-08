@@ -852,6 +852,7 @@
             : (t('step3.salario') || 'Salario neto')),
           'XCG ' + (get('salario_neto') || '0')) +
         rowAlways(t('step3.banco') || 'Banko', get('banco_debito')) +
+        rowAlways(t('step3.cuenta_bancaria') || 'Number di kuenta', get('cuenta_bancaria_debito')) +
         rowAlways(t('step3.email') || 'Email', get('email')) +
         rowAlways(t('step3.direccion') || 'Direkshon', get('direccion')) +
       '</dl>' +

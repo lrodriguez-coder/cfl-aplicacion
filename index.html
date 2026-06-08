@@ -232,6 +232,11 @@
       </div>
 
       <div class="field">
+        <label data-i18n="step3.cuenta_bancaria">Number di kuenta di banko *</label>
+        <input type="text" name="cuenta_bancaria_debito" required minlength="5" maxlength="30" pattern="[0-9\s\-]{5,30}" placeholder="ej: 12345678" inputmode="numeric" autocomplete="off" title="Solamente number, espasio of guion. 5-30 karakteres.">
+      </div>
+
+      <div class="field">
         <label data-i18n="step3.email">Email *</label>
         <input type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" placeholder="nombre@email.com" title="Email válido (ej: nombre@email.com)">
       </div>
