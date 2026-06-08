@@ -71,6 +71,7 @@
     "salario": "Net monthly salary (XCG)",
     "salario_pensionado": "Net monthly pension (XCG)",
     "banco": "Bank where you receive salary/pension",
+    "cuenta_bancaria": "Bank account number",
     "email": "Email",
     "direccion": "Full address",
     "fecha_venc_cedula": "ID card expiry date *",

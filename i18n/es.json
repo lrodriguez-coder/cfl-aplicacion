@@ -71,6 +71,7 @@
     "salario": "Salario neto mensual (XCG)",
     "salario_pensionado": "Pensión neta mensual (XCG)",
     "banco": "Banco donde recibe salario/pensión",
+    "cuenta_bancaria": "Número de cuenta bancaria",
     "email": "Email",
     "direccion": "Dirección completa",
     "fecha_venc_cedula": "Fecha de vencimiento de la cédula *",
