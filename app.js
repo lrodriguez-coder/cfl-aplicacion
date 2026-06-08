@@ -1042,19 +1042,17 @@
 
   // ===== EVENT WIRING =====
   // ===== TRACKING (progreso del formulario, para el dashboard de aplicaciones) =====
+  let _trackingIdMemo = '';
   function getTrackingId() {
-    let id = '';
-    try { id = localStorage.getItem('cfl_tracking_id') || ''; } catch (e) {}
-    if (!id) {
-      id = (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-          });
-      try { localStorage.setItem('cfl_tracking_id', id); } catch (e) {}
-    }
-    return id;
+    if (_trackingIdMemo) return _trackingIdMemo;
+    try { localStorage.removeItem('cfl_tracking_id'); } catch (e) {}
+    _trackingIdMemo = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    return _trackingIdMemo;
   }
   function track(paso, evento) {
     try {
