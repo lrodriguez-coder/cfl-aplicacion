@@ -94,6 +94,7 @@
     "email_verify_btn": "Verifiká",
     "email_verify_confirm_btn": "Konfirmá",
     "email_verify_hint": "Nos a manda un kodigo di 6 sifras na bo email. Pone e kodigo aki:",
+    "email_verify_check_spam": "⚠️ Si bo no mira e mensahe den bo inbox, check tambe Junk / Spam / Promoshon.",
     "email_verify_sending": "Ta manda kodigo...",
     "email_verify_sent": "Kodigo mandá. Check bo email.",
     "email_verify_cooldown": "Warda un par di sekonda promé bo pidi otro kodigo.",

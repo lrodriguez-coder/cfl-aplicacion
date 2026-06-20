@@ -362,6 +362,14 @@ input[readonly] {
   font-style: italic;
   margin-top: 0.3rem;
 }
+.email-spam-note {
+  background: #fff7ed;
+  border-left: 3px solid #f59e0b;
+  padding: 0.4rem 0.6rem;
+  margin: 0.4rem 0;
+  color: #92400e;
+  font-size: 0.8rem;
+}
 .email-typo-suggestion a {
   color: #2563eb;
   font-weight: 600;

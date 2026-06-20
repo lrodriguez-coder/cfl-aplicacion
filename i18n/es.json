@@ -94,6 +94,7 @@
     "email_verify_btn": "Verificar",
     "email_verify_confirm_btn": "Confirmar",
     "email_verify_hint": "Te enviamos un código de 6 dígitos a tu email. Ingrésalo abajo:",
+    "email_verify_check_spam": "⚠️ Si no lo ves en la bandeja de entrada, revisá también Junk / Spam / Promociones.",
     "email_verify_sending": "Enviando código...",
     "email_verify_sent": "Código enviado. Revisá tu email.",
     "email_verify_cooldown": "Esperá unos segundos antes de pedir otro código.",

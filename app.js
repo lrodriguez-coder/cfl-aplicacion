@@ -548,8 +548,11 @@
   }
 
   // Re-renderiza el Step 2 según tipo_empleado + frecuencia_salario actuales.
-  // Preserva los archivos ya seleccionados si el slot sobrevive al re-render
-  // (mismo name = doc_payslips_1 mantiene su File).
+  // CRÍTICO: solo re-renderiza si la config cambió. Si la misma combinación
+  // tipo+frec se vuelve a calcular, NO toca el DOM — así no perdemos los
+  // archivos ya cargados cuando el cliente vuelve al Paso 2 después de
+  // navegar a Paso 1/3/etc.
+  let lastDynamicSlotsSignature = null;
   function renderDynamicSlots() {
     const payslipsContainer = $('#payslipsSlots');
     const bancosContainer = $('#bancosSlots');
@@ -557,17 +560,21 @@
     const today = new Date();
     const { payslips, bancos } = computePeriods(today);
     const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
+    const freq = ($('[name="frecuencia_salario"]') || {}).value || '';
 
-    // Capturar archivos actuales por nombre (para reintentar restaurar tras re-render)
-    const surviving = {};
-    $$('input[type="file"]', payslipsContainer).forEach(inp => {
-      if (inp.files && inp.files.length > 0) surviving[inp.name] = inp.files;
-    });
-    $$('input[type="file"]', bancosContainer).forEach(inp => {
-      if (inp.files && inp.files.length > 0) surviving[inp.name] = inp.files;
-    });
+    // Signature: tipo + freq + idioma + año-mes del primer slot (para que
+    // si pasa de mes mientras el cliente está aplicando, se actualice).
+    const sig = [
+      tipo, freq, currentLang,
+      payslips.map(p => p.key).join(','),
+      bancos.map(p => p.key).join(',')
+    ].join('|');
+    if (sig === lastDynamicSlotsSignature) {
+      updateUploadCounter();
+      return;
+    }
+    lastDynamicSlotsSignature = sig;
 
-    // Si aún no hay tipo/frec elegidos, mostramos un hint para que sepa qué falta
     if (payslips.length === 0) {
       payslipsContainer.innerHTML = '<p class="hint">' +
         (t('step2.choose_tipo_first') || 'Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 1.') +
@@ -580,12 +587,6 @@
     bancosContainer.innerHTML = bancos
       .map((p, i) => buildSlotHTML('doc_bancos', i + 1, p.label, true))
       .join('');
-
-    // Restaurar archivos si el slot del mismo nombre sigue ahí (solo aplica si
-    // el usuario hubo subido y el re-render no removió ese slot).
-    // NOTA: Por seguridad del browser no podemos setear input.files
-    // programmatically con archivos arbitrarios. Si el usuario cambia tipo/freq
-    // después de cargar archivos, va a tener que re-cargarlos. Es aceptable.
 
     updateUploadCounter();
   }
