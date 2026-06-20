@@ -14,6 +14,17 @@
   const TRACK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/aplicacion-web-track';
   const UPLOAD_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-upload';
   const LINK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-vincular';
+  const EMAIL_VERIFY_SEND_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-send';
+  const EMAIL_VERIFY_CONFIRM_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-confirm';
+
+  // Master switch: si está en false la verificación de email se vuelve
+  // opcional (el cliente puede enviar sin verificar). Útil para apagar
+  // rápido si el workflow n8n tiene un problema.
+  const EMAIL_VERIFY_REQUIRED = true;
+
+  // Bypass total de validación entre pasos (solo para revisar UI sin que
+  // bloquee). En producción siempre false.
+  const BYPASS_STEP_VALIDATION = false;
 
   // doc field name → OCR doc_type
   // NOTA: doc_bancos NO se OCR-ea en el form (consume mucho API ~$0.40/banco).
@@ -151,13 +162,30 @@
     doc_carta_trabajo: 'step2.carta',
     doc_aqualectra: 'step2.aqualectra'
   };
+  // Nombre base de un slot dinámico (doc_payslips_1 → doc_payslips). Permite
+  // que toda la lógica de OCR / EXPECTED_TIPO / DOC_LABEL_I18N siga
+  // funcionando con sufijos numéricos.
+  function baseDocName(name) {
+    if (!name) return name;
+    return name.replace(/_\d+$/, '');
+  }
   function docLabelFor(f) {
-    const key = DOC_LABEL_I18N[f.name];
-    const label = (key && t(key)) || f.name;
-    return String(label).replace(/\*/g, '').replace(/^[^0-9A-Za-zÀ-ÿ]+/, '').trim();
+    // Si el input tiene data-period-label (slot dinámico), usar ese como
+    // sufijo para que el mensaje de error diga "Payslip — Mei 2026".
+    const periodLbl = f.dataset && f.dataset.periodLabel;
+    const base = baseDocName(f.name);
+    const key = DOC_LABEL_I18N[base];
+    const label = (key && t(key)) || base;
+    const main = String(label).replace(/\*/g, '').replace(/^[^0-9A-Za-zÀ-ÿ]+/, '').trim();
+    return periodLbl ? main + ' — ' + periodLbl : main;
   }
 
   function validateStep(n) {
+    // TEMPORAL: bypass total mientras Leonard revisa el form.
+    if (BYPASS_STEP_VALIDATION) {
+      clearErrors();
+      return true;
+    }
     const step = $('.step[data-step="' + n + '"]');
     if (!step) return true;
     // 1) Required fields - check todo: presencia + pattern + type
@@ -235,6 +263,17 @@
         errMsgs.push(c.name + ': ' + (t('error.required') || 'requerido'));
       }
     });
+    // Email verificado: en Step 3, exigimos que el email esté confirmado por código
+    // antes de seguir. Bypass si EMAIL_VERIFY_REQUIRED=false.
+    if (n === 3 && EMAIL_VERIFY_REQUIRED) {
+      const emailInput = step.querySelector('[name="email"]');
+      if (emailInput && emailInput.value && !isEmailVerified()) {
+        emailInput.classList.add('invalid');
+        errs.push('email');
+        errMsgs.push(t('step3.email_verify_required') ||
+          'Verificá tu email antes de continuar (clic en "Verificar").');
+      }
+    }
     // Sanity peso/altura: la altura en cm de una persona siempre supera el peso en kg.
     // Si peso >= altura el usuario casi seguro invirtió los dos campos.
     if (n === 4) {
@@ -341,6 +380,14 @@
       el.classList.toggle('visible', shouldShow);
       if (!shouldShow) el.value = '';
     });
+    // Conditional fields que se muestran según valor de un <select>.
+    $$('.conditional[data-show-when-select]').forEach(el => {
+      const [name, expected] = el.dataset.showWhenSelect.split('=');
+      const source = document.querySelector('select[name="' + name + '"]');
+      const shouldShow = source && source.value === expected;
+      el.classList.toggle('visible', shouldShow);
+      if (!shouldShow) el.value = '';
+    });
     updatePensionadoMode();
   }
 
@@ -361,14 +408,202 @@
       }
     });
 
-    // Pensionado: payslips y carta de trabajo NO son obligatorios
-    // (no tiene empleo; usa carta de pensión en su lugar).
-    ['doc_payslips', 'doc_carta_trabajo'].forEach(name => {
-      const input = $('[name="' + name + '"]');
-      if (!input) return;
-      if (isPensionado) input.removeAttribute('required');
-      else input.setAttribute('required', '');
+    // Pensionado: carta de trabajo NO es obligatoria (no tiene empleo).
+    const cartaInput = $('[name="doc_carta_trabajo"]');
+    if (cartaInput) {
+      if (isPensionado) cartaInput.removeAttribute('required');
+      else cartaInput.setAttribute('required', '');
+    }
+
+    // Ocultar/mostrar el selector de frecuencia salarial.
+    const freqField = $('#frecuenciaSalarioField');
+    if (freqField) {
+      const showFreq = tipoSel.value === 'fijo' || tipoSel.value === 'contrato';
+      freqField.style.display = showFreq ? '' : 'none';
+      // Si lo ocultamos, limpiamos su valor para que no contamine el submit.
+      if (!showFreq) {
+        const freqSel = freqField.querySelector('[name="frecuencia_salario"]');
+        if (freqSel) freqSel.value = '';
+      }
+    }
+
+    // Re-renderizar los slots dinámicos de Step 2 según tipo + frecuencia.
+    renderDynamicSlots();
+  }
+
+  // ===== SLOTS DINÁMICOS (Step 2 — payslips + bancos) =====
+  // Nombres de meses por idioma. Index 0 = enero.
+  const MONTH_NAMES = {
+    pap: ['Yanüari', 'Febrüari', 'Mart', 'Aprel', 'Mei', 'Yüni',
+          'Yüli', 'Ougùstùs', 'Sèptèmber', 'Òktober', 'Novèmber', 'Desèmber'],
+    es:  ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+    en:  ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'],
+  };
+
+  function monthLabel(year, monthIdx0) {
+    const arr = MONTH_NAMES[currentLang] || MONTH_NAMES.pap;
+    return arr[monthIdx0] + ' ' + year;
+  }
+
+  // Retorna los últimos N meses completos (más reciente primero).
+  // Hoy 19-jun-2026 con n=3 → [{y:2026,m:4},{y:2026,m:3},{y:2026,m:2}] = may, apr, mar.
+  function lastCompleteMonths(today, n) {
+    const out = [];
+    let y = today.getFullYear();
+    let m = today.getMonth() - 1; // mes anterior (índice 0)
+    for (let i = 0; i < n; i++) {
+      if (m < 0) { m = 11; y -= 1; }
+      out.push({ year: y, month: m });
+      m -= 1;
+    }
+    return out;
+  }
+
+  // Última quincena del mes (16-fin) — devuelve el día final correcto.
+  function lastDayOfMonth(year, monthIdx0) {
+    return new Date(year, monthIdx0 + 1, 0).getDate();
+  }
+
+  // 6 últimas quincenas completas a partir de los últimos 3 meses (más reciente primero).
+  // Cada quincena: { year, month, q:1|2, label }.
+  function lastBiweeklyPeriods(today, monthsBack) {
+    const months = lastCompleteMonths(today, monthsBack);
+    const out = [];
+    // Para cada mes, agregar Q2 (16-fin) primero, luego Q1 (1-15) — orden más reciente primero
+    months.forEach(({ year, month }) => {
+      const end = lastDayOfMonth(year, month);
+      out.push({ year, year2: year, month, q: 2,
+        label: '16-' + end + ' ' + monthLabel(year, month) });
+      out.push({ year, year2: year, month, q: 1,
+        label: '1-15 ' + monthLabel(year, month) });
     });
+    return out;
+  }
+
+  // Calcula los períodos requeridos según tipo_empleado + frecuencia_salario.
+  // Devuelve { payslips: [{key, label}], bancos: [{key, label}] }.
+  function computePeriods(today) {
+    const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
+    const freq = ($('[name="frecuencia_salario"]') || {}).value || '';
+    const bancos = lastCompleteMonths(today, 3).map(p => ({
+      key: p.year + '_' + (p.month + 1),
+      label: monthLabel(p.year, p.month)
+    }));
+    let payslips = [];
+    if (tipo === 'pensionado') {
+      // 1 slot: carta de pensión actual (no tiene período fijo).
+      payslips = [{ key: 'pension', label: t('step2.pension_doc_label') || 'Karta di penshon' }];
+    } else if (tipo === 'fijo' || tipo === 'contrato') {
+      if (freq === 'mensual') {
+        payslips = bancos.map(p => ({ key: p.key, label: p.label }));
+      } else if (freq === 'quincenal') {
+        payslips = lastBiweeklyPeriods(today, 3).map(p => ({
+          key: p.year + '_' + (p.month + 1) + '_q' + p.q,
+          label: p.label
+        }));
+      }
+    }
+    return { payslips, bancos };
+  }
+
+  // Genera un upload-block HTML para un slot dinámico.
+  function buildSlotHTML(basename, idx, periodLabel, isRequired) {
+    const name = basename + '_' + idx;
+    const reqStar = isRequired ? ' *' : '';
+    const reqAttr = isRequired ? ' required' : '';
+    // Cada slot lleva en el título el TIPO + el período, así el cliente sabe
+    // exactamente qué subir aunque navegue por los slots sin leer el header.
+    // Bank statements: SOLO PDF (lo que el banco genera del internet banking).
+    // Payslips: PDF o foto.
+    let icon, typeLabel, accept, pdfOnlyHint;
+    if (basename === 'doc_bancos') {
+      icon = '🏦';
+      typeLabel = t('step2.slot_banco') || 'Bank statement';
+      accept = 'application/pdf';
+      pdfOnlyHint = '<p class="slot-hint">' +
+        (t('step2.banco_pdf_only') || 'Solo PDF — descargá del internet banking del banco.') + '</p>';
+    } else if (basename === 'doc_payslips') {
+      icon = '💰';
+      typeLabel = t('step2.slot_payslip') || 'Payslip';
+      accept = 'image/*,application/pdf';
+      pdfOnlyHint = '';
+    } else {
+      icon = '📄';
+      typeLabel = '';
+      accept = 'image/*,application/pdf';
+      pdfOnlyHint = '';
+    }
+    const fullLabel = typeLabel ? (typeLabel + ' — ' + periodLabel) : periodLabel;
+    return '<div class="upload-block dynamic-slot">' +
+      '<label class="upload-label">' +
+        '<span class="upload-title">' + icon + ' ' + fullLabel + reqStar + '</span>' +
+        '<input type="file" name="' + name + '" data-period-label="' + periodLabel + '"' +
+          ' accept="' + accept + '"' + reqAttr + '>' +
+        '<div class="upload-preview" data-preview-for="' + name + '"></div>' +
+      '</label>' +
+      pdfOnlyHint +
+    '</div>';
+  }
+
+  // Re-renderiza el Step 2 según tipo_empleado + frecuencia_salario actuales.
+  // Preserva los archivos ya seleccionados si el slot sobrevive al re-render
+  // (mismo name = doc_payslips_1 mantiene su File).
+  function renderDynamicSlots() {
+    const payslipsContainer = $('#payslipsSlots');
+    const bancosContainer = $('#bancosSlots');
+    if (!payslipsContainer || !bancosContainer) return;
+    const today = new Date();
+    const { payslips, bancos } = computePeriods(today);
+    const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
+
+    // Capturar archivos actuales por nombre (para reintentar restaurar tras re-render)
+    const surviving = {};
+    $$('input[type="file"]', payslipsContainer).forEach(inp => {
+      if (inp.files && inp.files.length > 0) surviving[inp.name] = inp.files;
+    });
+    $$('input[type="file"]', bancosContainer).forEach(inp => {
+      if (inp.files && inp.files.length > 0) surviving[inp.name] = inp.files;
+    });
+
+    // Si aún no hay tipo/frec elegidos, mostramos un hint para que sepa qué falta
+    if (payslips.length === 0) {
+      payslipsContainer.innerHTML = '<p class="hint">' +
+        (t('step2.choose_tipo_first') || 'Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 1.') +
+        '</p>';
+    } else {
+      payslipsContainer.innerHTML = payslips
+        .map((p, i) => buildSlotHTML('doc_payslips', i + 1, p.label, tipo !== 'pensionado'))
+        .join('');
+    }
+    bancosContainer.innerHTML = bancos
+      .map((p, i) => buildSlotHTML('doc_bancos', i + 1, p.label, true))
+      .join('');
+
+    // Restaurar archivos si el slot del mismo nombre sigue ahí (solo aplica si
+    // el usuario hubo subido y el re-render no removió ese slot).
+    // NOTA: Por seguridad del browser no podemos setear input.files
+    // programmatically con archivos arbitrarios. Si el usuario cambia tipo/freq
+    // después de cargar archivos, va a tener que re-cargarlos. Es aceptable.
+
+    updateUploadCounter();
+  }
+
+  // Cuenta documentos required cargados / total y muestra en #uploadCounter.
+  function updateUploadCounter() {
+    const step2 = $('.step[data-step="2"]');
+    if (!step2) return;
+    const counter = $('#uploadCounter');
+    if (!counter) return;
+    const requiredInputs = $$('input[type="file"][required]', step2);
+    const total = requiredInputs.length;
+    const done = requiredInputs.filter(i => i.files && i.files.length > 0).length;
+    const $done = $('#uploadCounterDone');
+    const $total = $('#uploadCounterTotal');
+    if ($done) $done.textContent = done;
+    if ($total) $total.textContent = total;
+    counter.classList.toggle('complete', done === total && total > 0);
   }
 
   // ===== SLIDERS (sync number input ↔ range slider) =====
@@ -472,7 +707,7 @@
         // doc_bancos: NO se hace OCR completo en el form (consume mucho API),
         // pero SÍ se hace una clasificación liviana para validar que el archivo
         // sea realmente un estado de banco. La extracción completa va al backend.
-        if (input.name === 'doc_bancos') {
+        if (baseDocName(input.name) === 'doc_bancos') {
           setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
           (async () => {
             for (let i = 0; i < files.length; i++) {
@@ -498,13 +733,18 @@
         }
 
         // OCR auto-fill + store results para submit (igual que pipeline WhatsApp)
-        const ocrType = OCR_TYPES[input.name];
+        const ocrType = OCR_TYPES[baseDocName(input.name)];
         if (ocrType && files.length > 0) {
-          // Reset stored results para este input antes de procesar
-          if (Array.isArray(ocrResults[input.name])) {
-            ocrResults[input.name] = [];
-          } else {
-            ocrResults[input.name] = null;
+          // Para slots dinámicos NO reseteamos el array completo (cada slot
+          // guarda en su propio índice via storeOcrResult). Para slots
+          // legacy (cedula, carta, aqualectra), sí reseteamos.
+          const isDynamic = /_\d+$/.test(input.name);
+          if (!isDynamic) {
+            if (Array.isArray(ocrResults[input.name])) {
+              ocrResults[input.name] = [];
+            } else {
+              ocrResults[input.name] = null;
+            }
           }
           // Procesar TODOS los archivos (no solo el primero) en serie
           (async () => {
@@ -514,6 +754,73 @@
           })();
         }
       });
+    });
+
+    // Event delegation para slots dinámicos generados después de init.
+    // Replicamos un subset mínimo del listener directo de arriba:
+    // preview + uploadDoc + (clasificación o OCR según base name).
+    document.addEventListener('change', e => {
+      const input = e.target;
+      if (!input || input.type !== 'file') return;
+      if (!input.name) return;
+      const base = baseDocName(input.name);
+      // Solo nos interesan los slots dinámicos (sufijo numérico).
+      if (!/_\d+$/.test(input.name)) return;
+      const preview = $('[data-preview-for="' + input.name + '"]');
+      if (!preview) return;
+      preview.innerHTML = '';
+      const files = Array.from(input.files || []);
+      docCheck[input.name] = undefined;
+      if (files.length === 0) {
+        updateUploadCounter();
+        return;
+      }
+      const label = input.closest('.upload-label');
+      if (label) label.classList.add('has-file');
+      files.forEach((file, fidx) => {
+        uploadDoc(file, input.name, fidx);
+        if (file.type.startsWith('image/')) {
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          img.alt = file.name;
+          preview.appendChild(img);
+        } else {
+          const div = document.createElement('div');
+          div.className = 'file-name';
+          div.textContent = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+          preview.appendChild(div);
+        }
+      });
+      if (base === 'doc_bancos') {
+        setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
+        (async () => {
+          for (let i = 0; i < files.length; i++) {
+            await classifyDoc(files[i], input.name, i);
+          }
+          const c = docCheck[input.name];
+          if (c && c.tipo === 'mismatch') {
+            setOcrStatus(preview,
+              '⚠️ ' + (t('ocr.tipo_mismatch', { detected: tipoLabel(c.detected), expected: expectedTipoLabel(input.name) })
+                || 'Tipo di dokumento inkorekto'), 'warn');
+          } else {
+            setOcrStatus(preview,
+              '📥 ' + (t('ocr.banco_received') || 'Estado di banko risibí — análisis se hará al procesar'), 'ok');
+          }
+          updateUploadCounter();
+        })();
+        return;
+      }
+      const ocrType = OCR_TYPES[base];
+      if (ocrType) {
+        (async () => {
+          for (let i = 0; i < files.length; i++) {
+            await runOcr(files[i], ocrType, preview, input.name, i);
+          }
+          updateUploadCounter();
+        })();
+      } else {
+        updateUploadCounter();
+      }
     });
   }
 
@@ -530,10 +837,15 @@
   }
 
   function storeOcrResult(inputName, idx, data) {
-    if (Array.isArray(ocrResults[inputName])) {
-      ocrResults[inputName][idx] = data;
+    const base = baseDocName(inputName);
+    // Para slots dinámicos (doc_payslips_2 → base doc_payslips), el índice
+    // viene del sufijo del nombre, no del idx pasado por la iteración.
+    const m = /_(\d+)$/.exec(inputName);
+    const realIdx = m ? Number(m[1]) - 1 : idx;
+    if (Array.isArray(ocrResults[base])) {
+      ocrResults[base][realIdx] = data;
     } else {
-      ocrResults[inputName] = data;
+      ocrResults[base] = data;
     }
   }
 
@@ -945,6 +1257,8 @@
       $langSwitch.value = lang;
       applyI18n();
       updateProgress();
+      // Los slots dinámicos usan el nombre de mes del idioma actual, re-renderizar.
+      try { renderDynamicSlots(); } catch (err) {}
     } catch (e) {
       // fallback: don't break the form
       console.warn('No se pudo cargar idioma ' + lang + ':', e.message);
@@ -1037,6 +1351,216 @@
       ]);
       $btnSubmit.disabled = false;
       $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
+    }
+  }
+
+  // ===== EMAIL VERIFICATION =====
+  // Flujo: cliente escribe email → click "Verificar" → llama email-verify-send
+  // → ingresa código → click "Confirmar" → llama email-verify-confirm.
+  // emailVerifiedFor guarda el email exacto que se verificó; si lo cambia, se
+  // invalida y tiene que verificar de nuevo.
+  let emailVerifiedFor = null;
+  let resendCooldownTimer = null;
+
+  // Lista corta de typos comunes en dominios populares.
+  const EMAIL_TYPO_MAP = {
+    'gnail.com': 'gmail.com',
+    'gmial.com': 'gmail.com',
+    'gmai.com': 'gmail.com',
+    'gmal.com': 'gmail.com',
+    'gmail.co': 'gmail.com',
+    'hotnail.com': 'hotmail.com',
+    'hotmal.com': 'hotmail.com',
+    'yhaoo.com': 'yahoo.com',
+    'yaho.com': 'yahoo.com',
+    'outlok.com': 'outlook.com',
+    'outloo.com': 'outlook.com',
+    'live.co': 'live.com',
+  };
+
+  function suggestEmailFix(email) {
+    if (!email || !email.includes('@')) return null;
+    const [user, domain] = email.toLowerCase().split('@');
+    const fix = EMAIL_TYPO_MAP[domain];
+    return fix ? (user + '@' + fix) : null;
+  }
+
+  function isEmailVerified() {
+    if (!EMAIL_VERIFY_REQUIRED) return true;
+    const emailInput = $('[name="email"]');
+    if (!emailInput) return true;
+    return emailVerifiedFor && emailInput.value.trim().toLowerCase() === emailVerifiedFor;
+  }
+
+  function setVerifyStatus(msg, kind) {
+    const el = $('#emailVerifyStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.dataset.kind = kind || '';
+  }
+
+  function startResendCooldown(seconds) {
+    const resendBtn = $('#emailVerifyResendBtn');
+    if (!resendBtn) return;
+    if (resendCooldownTimer) clearInterval(resendCooldownTimer);
+    let remaining = seconds;
+    resendBtn.hidden = false;
+    resendBtn.disabled = true;
+    const baseText = t('step3.email_verify_resend') || 'Manda kodigo atrobe';
+    function tick() {
+      if (remaining <= 0) {
+        clearInterval(resendCooldownTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = baseText;
+        return;
+      }
+      resendBtn.textContent = baseText + ' (' + remaining + 's)';
+      remaining -= 1;
+    }
+    tick();
+    resendCooldownTimer = setInterval(tick, 1000);
+  }
+
+  async function sendVerificationCode() {
+    const emailInput = $('[name="email"]');
+    if (!emailInput) return;
+    const email = emailInput.value.trim().toLowerCase();
+    if (!email || !emailInput.checkValidity()) {
+      setVerifyStatus(t('step3.email_verify_invalid') || 'Email inválido', 'warn');
+      return;
+    }
+    const verifyBtn = $('#emailVerifyBtn');
+    const panel = $('#emailVerifyPanel');
+    if (verifyBtn) verifyBtn.disabled = true;
+    setVerifyStatus(t('step3.email_verify_sending') || 'Enviando código...', 'loading');
+    try {
+      const res = await fetch(EMAIL_VERIFY_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, tracking_id: getTrackingId(), lang: currentLang })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) {
+        if (panel) panel.hidden = false;
+        setVerifyStatus(t('step3.email_verify_sent') || 'Código enviado. Revisá tu email.', 'ok');
+        startResendCooldown(data.cooldown_seconds || 60);
+        const codeInput = $('#emailVerifyCode');
+        if (codeInput) codeInput.focus();
+      } else if (data.reason === 'cooldown') {
+        if (panel) panel.hidden = false;
+        setVerifyStatus(t('step3.email_verify_cooldown') || 'Esperá unos segundos antes de pedir otro código.', 'warn');
+        startResendCooldown(data.cooldown_seconds || 60);
+      } else {
+        setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+      }
+    } catch (e) {
+      console.warn('email verify send failed', e);
+      setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+    } finally {
+      if (verifyBtn) verifyBtn.disabled = false;
+    }
+  }
+
+  async function confirmVerificationCode() {
+    const emailInput = $('[name="email"]');
+    const codeInput = $('#emailVerifyCode');
+    if (!emailInput || !codeInput) return;
+    const email = emailInput.value.trim().toLowerCase();
+    const code = codeInput.value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      setVerifyStatus(t('step3.email_verify_code_format') || 'El código son 6 dígitos.', 'warn');
+      return;
+    }
+    const confirmBtn = $('#emailVerifyConfirmBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
+    setVerifyStatus(t('step3.email_verify_checking') || 'Verificando...', 'loading');
+    try {
+      const res = await fetch(EMAIL_VERIFY_CONFIRM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, code: code, tracking_id: getTrackingId() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok && data.verified) {
+        emailVerifiedFor = email;
+        const panel = $('#emailVerifyPanel');
+        const success = $('#emailVerifySuccess');
+        const verifyBtn = $('#emailVerifyBtn');
+        if (panel) panel.hidden = true;
+        if (success) success.hidden = false;
+        if (verifyBtn) verifyBtn.hidden = true;
+        emailInput.readOnly = true;
+        setVerifyStatus('', '');
+        clearInterval(resendCooldownTimer);
+      } else if (data.reason === 'wrong_code') {
+        setVerifyStatus(
+          (t('step3.email_verify_wrong', { left: data.attempts_left }) ||
+            'Código incorrecto. Te quedan ' + data.attempts_left + ' intentos.'),
+          'warn'
+        );
+      } else if (data.reason === 'exhausted') {
+        setVerifyStatus(t('step3.email_verify_exhausted') || 'Demasiados intentos. Pedí un código nuevo.', 'warn');
+      } else if (data.reason === 'no_active_code') {
+        setVerifyStatus(t('step3.email_verify_no_active') || 'No hay código activo. Pedí uno nuevo.', 'warn');
+      } else {
+        setVerifyStatus(t('step3.email_verify_error') || 'No pudimos verificar el código.', 'warn');
+      }
+    } catch (e) {
+      console.warn('email verify confirm failed', e);
+      setVerifyStatus(t('step3.email_verify_error') || 'No pudimos verificar el código.', 'warn');
+    } finally {
+      if (confirmBtn) confirmBtn.disabled = false;
+    }
+  }
+
+  function resetEmailVerification() {
+    emailVerifiedFor = null;
+    const panel = $('#emailVerifyPanel');
+    const success = $('#emailVerifySuccess');
+    const verifyBtn = $('#emailVerifyBtn');
+    const emailInput = $('[name="email"]');
+    if (panel) panel.hidden = true;
+    if (success) success.hidden = true;
+    if (verifyBtn) verifyBtn.hidden = false;
+    if (emailInput) emailInput.readOnly = false;
+    setVerifyStatus('', '');
+    clearInterval(resendCooldownTimer);
+  }
+
+  function wireEmailVerification() {
+    const emailInput = $('[name="email"]');
+    const verifyBtn = $('#emailVerifyBtn');
+    const confirmBtn = $('#emailVerifyConfirmBtn');
+    const resendBtn = $('#emailVerifyResendBtn');
+    const typoEl = $('#emailTypoSuggestion');
+
+    if (verifyBtn) verifyBtn.addEventListener('click', sendVerificationCode);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmVerificationCode);
+    if (resendBtn) resendBtn.addEventListener('click', sendVerificationCode);
+
+    if (emailInput) {
+      emailInput.addEventListener('input', () => {
+        // Si cambió el email después de verificar, reset.
+        if (emailVerifiedFor && emailInput.value.trim().toLowerCase() !== emailVerifiedFor) {
+          resetEmailVerification();
+        }
+        // Anti-typo: sugerir dominio correcto.
+        if (!typoEl) return;
+        const fix = suggestEmailFix(emailInput.value.trim());
+        if (fix) {
+          typoEl.hidden = false;
+          typoEl.innerHTML = (t('step3.email_typo_q') || '¿Querías decir') +
+            ' <a href="#" id="emailTypoFix">' + fix + '</a>?';
+          const link = $('#emailTypoFix');
+          if (link) link.addEventListener('click', e => {
+            e.preventDefault();
+            emailInput.value = fix;
+            typoEl.hidden = true;
+          });
+        } else {
+          typoEl.hidden = true;
+        }
+      });
     }
   }
 
@@ -1154,7 +1678,11 @@
     $form.addEventListener('change', e => {
       saveDraft();
       if (e.target.type === 'radio') updateConditionals();
+      if (e.target.tagName === 'SELECT') updateConditionals();
       if (e.target.name === 'tipo_empleado') updatePensionadoMode();
+      if (e.target.name === 'frecuencia_salario') renderDynamicSlots();
+      // Cualquier upload en Step 2 actualiza el contador.
+      if (e.target.type === 'file') updateUploadCounter();
     });
 
     $form.addEventListener('input', () => {
@@ -1174,6 +1702,7 @@
     setupUploads();
     syncSliders();
     wireEvents();
+    wireEmailVerification();
 
     // Detect preferred language: localStorage > browser > pap
     const draft = loadDraft();
@@ -1184,6 +1713,11 @@
 
     await loadI18n(preferred);
     restoreDraft();
+
+    // Render inicial de los slots de Step 2 según tipo_empleado / frecuencia_salario
+    // restaurados desde el draft. Si todavía no fueron elegidos muestra hint.
+    updatePensionadoMode();
+    renderDynamicSlots();
 
     // Siempre arrancar en Step 1 después de refresh — los file inputs no se pueden
     // restaurar (restricción del navegador) y el usuario debe re-subir documentos.

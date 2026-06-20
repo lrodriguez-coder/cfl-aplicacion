@@ -49,7 +49,7 @@
           <li data-i18n="intro.doc_payslips">Último payslips (1 te 3) — of karta di penshon si bo ta pensionado</li>
           <li data-i18n="intro.doc_bancos">Estado di kuenta di banko (1 te 3)</li>
           <li data-i18n="intro.doc_carta">Karta di trabou</li>
-          <li data-i18n="intro.doc_opcionales">Opshonal: paspoort of rijbewijs, resibo di Aqualectra</li>
+          <li data-i18n="intro.doc_opcionales">Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn òf uittreksel di Kranshi)</li>
         </ul>
       </div>
 
@@ -62,6 +62,17 @@
           <option value="pensionado" data-i18n="step3.tipo_empleado_pensionado">Pensionado</option>
         </select>
         <p class="field-hint" data-i18n="step1.tipo_empleado_hint">Si bo ta pensionado, payslips ta opshonal i bo por usa karta di penshon en su lugar.</p>
+      </div>
+
+      <!-- Frecuencia salario: visible solo si tipo_empleado es fijo o contrato -->
+      <div class="field" id="frecuenciaSalarioField" style="display:none;">
+        <label data-i18n="step1.frecuencia_salario">Ki frekuensia bo ta haña salario? *</label>
+        <select name="frecuencia_salario">
+          <option value="">—</option>
+          <option value="mensual" data-i18n="step1.frecuencia_mensual">Tur luna (mensual)</option>
+          <option value="quincenal" data-i18n="step1.frecuencia_quincenal">Kada 2 siman (kinsenal)</option>
+        </select>
+        <p class="field-hint" data-i18n="step1.frecuencia_hint">Esaki ta determiná kuantu payslip bo mester karga (3 si ta mensual, 6 si ta kinsenal).</p>
       </div>
 
       <div class="upload-block">
@@ -86,24 +97,24 @@
     <!-- ============ PASO 2: Documentos Financieros ============ -->
     <section class="step" data-step="2">
       <h2 data-i18n="step2.title">Dokumentonan Finansiero</h2>
-      <p class="hint" data-i18n="step2.hint">Manda bo último 3 payslip i 3 estado di banco.</p>
+      <p class="hint" data-i18n="step2.hint">Karga bo último 3 luna di payslip i estado di banko.</p>
 
-      <div class="upload-block">
-        <label class="upload-label">
-          <span class="upload-title" data-i18n="step2.payslips" data-i18n-pensionado="step2.payslips_pensionado">📄 Payslips (mínimo 1, máksimo 3) *</span>
-          <input type="file" name="doc_payslips" accept="image/*,application/pdf" multiple required>
-          <div class="upload-preview" data-preview-for="doc_payslips"></div>
-        </label>
+      <!-- Contador dinámico (se actualiza desde JS) -->
+      <div class="upload-counter" id="uploadCounter">
+        <span class="upload-counter-text"><span id="uploadCounterDone">0</span> / <span id="uploadCounterTotal">0</span> <span data-i18n="step2.counter_label">dokumento kargá</span></span>
       </div>
 
-      <div class="upload-block">
-        <label class="upload-label">
-          <span class="upload-title" data-i18n="step2.bancos">📄 Estado di Banko (mínimo 1, máksimo 3) *</span>
-          <input type="file" name="doc_bancos" accept="image/*,application/pdf" multiple required>
-          <div class="upload-preview" data-preview-for="doc_bancos"></div>
-        </label>
-      </div>
+      <!-- PAYSLIPS: slots generados dinámicamente por JS según tipo_empleado + frecuencia -->
+      <h3 class="section-subheader" data-i18n="step2.payslips_header" data-i18n-pensionado="step2.pension_header">Payslips</h3>
+      <p class="hint" data-i18n="step2.payslips_explain" data-i18n-pensionado="step2.pension_explain">Karga un payslip pa kada luna — esakinan ta usa pa konfirmá bo entrada di salario.</p>
+      <div id="payslipsSlots" class="dynamic-slots"></div>
 
+      <!-- BANK STATEMENTS: siempre 3 slots (últimos 3 meses) — solo PDF -->
+      <h3 class="section-subheader" data-i18n="step2.bancos_header">Estado di Banko</h3>
+      <p class="hint" data-i18n="step2.bancos_explain">Karga un estado di banko pa kada luna — solamente PDF di e internet banking di bo banko.</p>
+      <div id="bancosSlots" class="dynamic-slots"></div>
+
+      <!-- CARTA DI TRABOU + AQUALECTRA quedan fijos -->
       <div class="upload-block">
         <label class="upload-label">
           <span class="upload-title" data-i18n="step2.carta">📄 Karta di Trabou *</span>
@@ -114,10 +125,11 @@
 
       <div class="upload-block">
         <label class="upload-label">
-          <span class="upload-title" data-i18n="step2.aqualectra">📄 Resibo Aqualectra (opshonal)</span>
+          <span class="upload-title" data-i18n="step2.comprobante_domicilio">📄 Resibo di Aqualectra, telefòn òf uittreksel di Kranshi (opshonal)</span>
           <input type="file" name="doc_aqualectra" accept="image/*,application/pdf">
           <div class="upload-preview" data-preview-for="doc_aqualectra"></div>
         </label>
+        <p class="field-hint" data-i18n="step2.comprobante_hint">Komprobante di adres. Bo por usa kualke un di esakinan.</p>
       </div>
     </section>
 
@@ -212,6 +224,18 @@
         </div>
       </div>
 
+      <!-- Datos del empleador (opcional — si el cliente sabe, sino el OCR de la carta lo llena) -->
+      <div class="row" data-i18n-pensionado-hide>
+        <div class="field flex-2">
+          <label data-i18n="step3.direccion_empleador">Direkshon di kompania (opshonal)</label>
+          <input type="text" name="direccion_empleador" minlength="3" placeholder="ej: Schottegatweg Oost 121">
+        </div>
+        <div class="field flex-1">
+          <label data-i18n="step3.telefono_empleador">Telefòn di kompania (opshonal)</label>
+          <input type="tel" name="telefono_empleador" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX">
+        </div>
+      </div>
+
       <div class="field">
         <label data-i18n="step3.salario" data-i18n-pensionado="step3.salario_pensionado">Salario neto mensual (XCG) *</label>
         <input type="number" name="salario_neto" required min="100" step="0.01">
@@ -236,14 +260,35 @@
         <input type="text" name="cuenta_bancaria_debito" required minlength="5" maxlength="30" pattern="[0-9\s\-]{5,30}" placeholder="ej: 12345678" inputmode="numeric" autocomplete="off" title="Solamente number, espasio of guion. 5-30 karakteres.">
       </div>
 
-      <div class="field">
+      <div class="field" id="emailField">
         <label data-i18n="step3.email">Email *</label>
-        <input type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" placeholder="nombre@email.com" title="Email válido (ej: nombre@email.com)">
+        <div class="email-verify-row">
+          <input type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" placeholder="nombre@email.com" title="Email válido (ej: nombre@email.com)" autocomplete="email">
+          <button type="button" id="emailVerifyBtn" class="btn-verify" data-i18n="step3.email_verify_btn">Verifiká</button>
+        </div>
+        <p class="field-hint email-typo-suggestion" id="emailTypoSuggestion" hidden></p>
+        <div id="emailVerifyPanel" class="email-verify-panel" hidden>
+          <p class="field-hint" data-i18n="step3.email_verify_hint">Nos hemos enviado un código de 6 dígitos a tu email. Ingrésalo abajo:</p>
+          <div class="email-verify-row">
+            <input type="text" id="emailVerifyCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+            <button type="button" id="emailVerifyConfirmBtn" class="btn-verify" data-i18n="step3.email_verify_confirm_btn">Konfirmá</button>
+          </div>
+          <p class="field-hint email-verify-status" id="emailVerifyStatus"></p>
+          <button type="button" id="emailVerifyResendBtn" class="btn-link" hidden data-i18n="step3.email_verify_resend">Manda kodigo atrobe</button>
+        </div>
+        <p class="email-verify-success" id="emailVerifySuccess" hidden>
+          <span data-i18n="step3.email_verify_done">✓ Email verifiká</span>
+        </p>
       </div>
 
       <div class="field">
-        <label data-i18n="step3.direccion">Direkshon kompleto *</label>
-        <input type="text" name="direccion" required minlength="3">
+        <label data-i18n="step3.direccion">Direkshon di kas (kompleto) *</label>
+        <input type="text" name="direccion" required minlength="3" placeholder="ej: Schottegatweg Oost 23">
+      </div>
+
+      <div class="field">
+        <label data-i18n="step3.ciudad">Stad / Sektor *</label>
+        <input type="text" name="ciudad" required minlength="2" placeholder="ej: Willemstad" value="Willemstad">
       </div>
     </section>
 
@@ -372,6 +417,19 @@
           </div>
         </div>
       </fieldset>
+
+      <fieldset class="fieldset">
+        <legend data-i18n="step5.beneficiario">Benefisiario di seguro di bida (opshonal)</legend>
+        <p class="field-hint" data-i18n="step5.beneficiario_hint">Si bo no yena esaki, ta usa Referensia 1 komo benefisiario.</p>
+        <div class="field">
+          <label data-i18n="step5.benef_nombre">Nòmber kompleto di benefisiario</label>
+          <input type="text" name="beneficiario_nombre" minlength="4">
+        </div>
+        <div class="field">
+          <label data-i18n="step5.benef_tel">Telefòn di benefisiario</label>
+          <input type="tel" name="beneficiario_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX">
+        </div>
+      </fieldset>
     </section>
 
     <!-- ============ PASO 6: Datos Préstamo ============ -->
@@ -380,26 +438,39 @@
       <p class="hint" data-i18n="step6.hint">Tasa: 23.5% pa aña (standing order). Tin un plan di spar inkluí ku CFL ta debolbé ora bo paga.</p>
 
       <div class="field">
-        <label data-i18n="step6.monto">Monto ku bo desea presta (1000 – 4000 XCG) *</label>
-        <input type="number" name="monto_solicitado" required min="1000" max="4000" step="50" value="2000">
+        <label data-i18n="step6.monto">Monto ku bo desea presta (múltiplo di 500 — 1000 a 4000 XCG) *</label>
+        <input type="number" name="monto_solicitado" required min="1000" max="4000" step="500" value="2000">
         <div class="slider-wrap">
-          <input type="range" min="1000" max="4000" step="50" value="2000" data-sync="monto_solicitado">
-          <div class="slider-marks"><span>1000</span><span>4000</span></div>
+          <input type="range" min="1000" max="4000" step="500" value="2000" data-sync="monto_solicitado">
+          <div class="slider-marks"><span>1000</span><span>1500</span><span>2000</span><span>2500</span><span>3000</span><span>3500</span><span>4000</span></div>
         </div>
       </div>
 
       <div class="field">
-        <label data-i18n="step6.plazo">Plazo (6 – 36 lunan) *</label>
-        <input type="number" name="plazo_meses" required min="6" max="36" step="1" value="12">
-        <div class="slider-wrap">
-          <input type="range" min="6" max="36" step="1" value="12" data-sync="plazo_meses">
-          <div class="slider-marks"><span>6</span><span>36</span></div>
-        </div>
+        <label data-i18n="step6.plazo">Plazo (lunan) *</label>
+        <select name="plazo_meses" required>
+          <option value="">—</option>
+          <option value="6">6</option>
+          <option value="12" selected>12</option>
+          <option value="18">18</option>
+          <option value="24">24</option>
+          <option value="36">36</option>
+        </select>
       </div>
 
       <div class="field">
         <label data-i18n="step6.proposito">Pa kiko bo ta usa e fiansa? *</label>
-        <textarea name="proposito" required minlength="3" rows="3"></textarea>
+        <select name="proposito_categoria" required>
+          <option value="">—</option>
+          <option value="konsolidashon_di_debe" data-i18n="step6.proposito_konsolidashon">Konsolidashon di debe</option>
+          <option value="gastonan_medico" data-i18n="step6.proposito_medico">Gastonan médiko</option>
+          <option value="reparashon_di_kas" data-i18n="step6.proposito_kas">Reparashon di kas</option>
+          <option value="vehículo" data-i18n="step6.proposito_vehiculo">Vehíkulo (outo, scooter, repuesto)</option>
+          <option value="edukashon" data-i18n="step6.proposito_edukashon">Edukashon (skol, kurso)</option>
+          <option value="vakashon" data-i18n="step6.proposito_vakashon">Vakashon</option>
+          <option value="otro" data-i18n="step6.proposito_otro">Otro motibo (eksplika abou)</option>
+        </select>
+        <textarea name="proposito" rows="2" placeholder="Detayé adishonal (opshonal — obligatorio si bo skohe 'Otro motibo')" class="conditional" data-show-when-select="proposito_categoria=otro"></textarea>
       </div>
 
       <div class="quote-box" id="quoteBox" aria-live="polite">

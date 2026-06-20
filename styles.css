@@ -295,10 +295,129 @@ input[readonly] {
   border-radius: var(--radius-sm);
 }
 
+/* ====== Email verification ====== */
+.email-verify-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.email-verify-row input {
+  flex: 1;
+  min-width: 0;
+}
+.btn-verify {
+  background: var(--cfl-accent, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+.btn-verify:hover { filter: brightness(1.05); }
+.btn-verify:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--cfl-accent, #2563eb);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  padding: 0;
+  margin-top: 0.3rem;
+}
+.btn-link:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.email-verify-panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+}
+.email-verify-status {
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  min-height: 1rem;
+}
+.email-verify-status[data-kind="ok"] { color: #065f46; }
+.email-verify-status[data-kind="warn"] { color: #b91c1c; }
+.email-verify-status[data-kind="loading"] { color: #6b7280; font-style: italic; }
+.email-verify-success {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  margin-top: 0.4rem;
+  border: 1px solid #6ee7b7;
+}
+.email-typo-suggestion {
+  color: #b45309;
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+.email-typo-suggestion a {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 /* ====== Upload blocks ====== */
 .upload-block {
   margin-bottom: 1.25rem;
 }
+
+/* Contador de documentos cargados al tope del Step 2 */
+.upload-counter {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border: 1px solid #fde68a;
+}
+.upload-counter.complete {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+.upload-counter-text {
+  font-size: 0.95rem;
+}
+
+/* Subheader entre secciones de documentos (Payslips / Bank Statements) */
+.section-subheader {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cfl-fg);
+  margin: 1.4rem 0 0.4rem;
+}
+
+/* Container de slots generados dinámicamente */
+.dynamic-slots {
+  margin-bottom: 1rem;
+}
+.dynamic-slots .upload-block {
+  margin-bottom: 0.75rem;
+}
+.dynamic-slots .upload-title {
+  font-size: 0.95rem;
+}
+.dynamic-slots .slot-hint {
+  font-size: 0.78rem;
+  color: var(--cfl-muted);
+  margin: 0.25rem 0 0 0.5rem;
+  font-style: italic;
+}
+
 
 .upload-label {
   display: block;
