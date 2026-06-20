@@ -483,13 +483,15 @@
   }
 
   // Calcula los períodos requeridos según tipo_empleado + frecuencia_salario.
-  // Devuelve { payslips: [{key, label}], bancos: [{key, label}] }.
+  // Devuelve { payslips, bancos } donde cada slot trae { key, label, year, month, q? }.
   function computePeriods(today) {
     const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
     const freq = ($('[name="frecuencia_salario"]') || {}).value || '';
     const bancos = lastCompleteMonths(today, 3).map(p => ({
       key: p.year + '_' + (p.month + 1),
-      label: monthLabel(p.year, p.month)
+      label: monthLabel(p.year, p.month),
+      year: p.year,
+      month: p.month + 1 // 1-12
     }));
     let payslips = [];
     if (tipo === 'pensionado') {
@@ -497,11 +499,16 @@
       payslips = [{ key: 'pension', label: t('step2.pension_doc_label') || 'Karta di penshon' }];
     } else if (tipo === 'fijo' || tipo === 'contrato') {
       if (freq === 'mensual') {
-        payslips = bancos.map(p => ({ key: p.key, label: p.label }));
+        payslips = bancos.map(p => ({
+          key: p.key, label: p.label, year: p.year, month: p.month
+        }));
       } else if (freq === 'quincenal') {
         payslips = lastBiweeklyPeriods(today, 3).map(p => ({
           key: p.year + '_' + (p.month + 1) + '_q' + p.q,
-          label: p.label
+          label: p.label,
+          year: p.year,
+          month: p.month + 1,
+          q: p.q
         }));
       }
     }
@@ -509,8 +516,14 @@
   }
 
   // Genera un upload-block HTML para un slot dinámico.
-  function buildSlotHTML(basename, idx, periodLabel, isRequired) {
+  // periodSpec = {label, year?, month?, q?} — year/month embebidos en data
+  // attributes para validación posterior contra el OCR.
+  function buildSlotHTML(basename, idx, periodSpec, isRequired) {
     const name = basename + '_' + idx;
+    const periodLabel = periodSpec.label || periodSpec; // backward compat
+    const expectedYear = periodSpec.year || '';
+    const expectedMonth = periodSpec.month || '';
+    const expectedQ = periodSpec.q || '';
     const reqStar = isRequired ? ' *' : '';
     const reqAttr = isRequired ? ' required' : '';
     // Cada slot lleva en el título el TIPO + el período, así el cliente sabe
@@ -536,10 +549,15 @@
       pdfOnlyHint = '';
     }
     const fullLabel = typeLabel ? (typeLabel + ' — ' + periodLabel) : periodLabel;
+    const dataAttrs =
+      ' data-period-label="' + periodLabel + '"' +
+      (expectedYear ? ' data-expected-year="' + expectedYear + '"' : '') +
+      (expectedMonth ? ' data-expected-month="' + expectedMonth + '"' : '') +
+      (expectedQ ? ' data-expected-q="' + expectedQ + '"' : '');
     return '<div class="upload-block dynamic-slot">' +
       '<label class="upload-label">' +
         '<span class="upload-title">' + icon + ' ' + fullLabel + reqStar + '</span>' +
-        '<input type="file" name="' + name + '" data-period-label="' + periodLabel + '"' +
+        '<input type="file" name="' + name + '"' + dataAttrs +
           ' accept="' + accept + '"' + reqAttr + '>' +
         '<div class="upload-preview" data-preview-for="' + name + '"></div>' +
       '</label>' +
@@ -581,11 +599,11 @@
         '</p>';
     } else {
       payslipsContainer.innerHTML = payslips
-        .map((p, i) => buildSlotHTML('doc_payslips', i + 1, p.label, tipo !== 'pensionado'))
+        .map((p, i) => buildSlotHTML('doc_payslips', i + 1, p, tipo !== 'pensionado'))
         .join('');
     }
     bancosContainer.innerHTML = bancos
-      .map((p, i) => buildSlotHTML('doc_bancos', i + 1, p.label, true))
+      .map((p, i) => buildSlotHTML('doc_bancos', i + 1, p, true))
       .join('');
 
     updateUploadCounter();
@@ -729,6 +747,9 @@
                 'ok'
               );
             }
+            if (c && c.periodMatch === false) {
+              showPeriodMismatchWarning(preview, input.name, c.periodDetail);
+            }
           })();
           return;
         }
@@ -806,6 +827,10 @@
           } else {
             setOcrStatus(preview,
               '📥 ' + (t('ocr.banco_received') || 'Estado di banko risibí — análisis se hará al procesar'), 'ok');
+          }
+          // Warning de período si NO coincide (informativo).
+          if (c && c.periodMatch === false) {
+            showPeriodMismatchWarning(preview, input.name, c.periodDetail);
           }
           updateUploadCounter();
         })();
@@ -905,17 +930,72 @@
 
   // Clasificación liviana para el estado de banco (no pasa por OCR completo):
   // solo pide el tipo de documento. No bloquea si la clasificación falla.
+  // Para bank statements usamos el modo 'banco_liviano' que ADEMÁS del tipo
+  // extrae el periodo (desde/hasta) sin las transacciones — barato y rápido.
   async function classifyDoc(file, inputName, idx) {
     try {
       const fd = new FormData();
-      fd.append('doc_type', 'clasificar');
+      const base = baseDocName(inputName);
+      const mode = (base === 'doc_bancos') ? 'banco_liviano' : 'clasificar';
+      fd.append('doc_type', mode);
       fd.append('file', file);
       const res = await fetch(OCR_URL, { method: 'POST', body: fd });
       if (!res.ok) return;
       const result = await res.json();
       const data = (result && result.data) || null;
-      if (data) evaluateDoc(inputName, data, idx);
+      if (data) {
+        evaluateDoc(inputName, data, idx);
+        // Para bank statements: validar período expected vs detected.
+        const periodCheck = validatePeriodForInput(inputName, data);
+        if (periodCheck) docCheck[inputName] = Object.assign(docCheck[inputName] || {}, periodCheck);
+      }
     } catch (e) { /* clasificación opcional: no bloquea */ }
+  }
+
+  // Compara el período expected del slot (data-expected-year/month) contra
+  // lo que el OCR devolvió. Devuelve { periodMatch:bool, periodDetail:string }
+  // o null si no se puede validar. NO BLOQUEA: solo informativo.
+  function validatePeriodForInput(inputName, ocrData) {
+    const input = $('[name="' + inputName + '"]');
+    if (!input) return null;
+    const expY = parseInt(input.dataset.expectedYear, 10);
+    const expM = parseInt(input.dataset.expectedMonth, 10);
+    if (!expY || !expM) return null;
+    const base = baseDocName(inputName);
+    let detY = null, detM = null;
+    if (base === 'doc_payslips') {
+      detY = parseInt(ocrData.periodo_anio, 10);
+      detM = parseInt(ocrData.periodo_mes, 10);
+    } else if (base === 'doc_bancos') {
+      const desde = String(ocrData.periodo_desde || '');
+      const m = /^(\d{4})-(\d{2})/.exec(desde);
+      if (m) { detY = parseInt(m[1], 10); detM = parseInt(m[2], 10); }
+    }
+    if (!detY || !detM) return null;
+    const match = (detY === expY && detM === expM);
+    return {
+      periodMatch: match,
+      periodDetail: detY + '-' + String(detM).padStart(2, '0')
+    };
+  }
+
+  // Renderiza el warning amber del período DEBAJO del status existente.
+  function showPeriodMismatchWarning(container, inputName, periodDetail) {
+    const input = $('[name="' + inputName + '"]');
+    if (!input) return;
+    const expY = input.dataset.expectedYear;
+    const expM = input.dataset.expectedMonth;
+    const expectedStr = expY + '-' + String(expM).padStart(2, '0');
+    let warn = container.querySelector('.period-mismatch-warn');
+    if (!warn) {
+      warn = document.createElement('div');
+      warn.className = 'period-mismatch-warn';
+      container.appendChild(warn);
+    }
+    warn.textContent = '⚠️ ' +
+      (t('ocr.period_mismatch', { expected: expectedStr, detected: periodDetail }) ||
+        ('Período detectado: ' + periodDetail + '. Se esperaba ' + expectedStr +
+         '. Verificá que el archivo correcto esté en este slot.'));
   }
 
   async function runOcr(file, docType, container, inputName, idx) {
@@ -949,6 +1029,14 @@
       storeOcrResult(inputName, idx, result.data);
       // Validar tipo de documento (y vigencia) antes de auto-rellenar.
       const chk = evaluateDoc(inputName, result.data, idx);
+      // Validar período (slot dinámico vs OCR). Solo informativo, no bloquea.
+      const periodCheck = validatePeriodForInput(inputName, result.data);
+      if (periodCheck) {
+        docCheck[inputName] = Object.assign(docCheck[inputName] || {}, periodCheck);
+        if (!periodCheck.periodMatch) {
+          showPeriodMismatchWarning(container, inputName, periodCheck.periodDetail);
+        }
+      }
       if (chk.tipoStatus === 'mismatch') {
         // No auto-rellenar desde un documento del tipo equivocado.
         setOcrStatus(

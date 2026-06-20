@@ -205,7 +205,8 @@
     "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend",
     "checking_type": "Verificando tipo de documento…",
     "tipo_mismatch": "Esto parece {detected}, se esperaba {expected}",
-    "expired": "Documento vencido (venció el {date})"
+    "expired": "Documento vencido (venció el {date})",
+    "period_mismatch": "Período detectado: {detected}. El slot es para {expected}. Verificá si subiste el documento correcto en este slot."
   },
   "tipo": {
     "cedula": "una cédula",

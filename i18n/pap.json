@@ -205,7 +205,8 @@
     "banco_received": "Estado di banko risibí ✓ — analisis se hará na backend",
     "checking_type": "Ta verifiká tipo di dokumento…",
     "tipo_mismatch": "Esaki ta parse {detected}, mester ta {expected}",
-    "expired": "Dokumento vensí (a vense {date})"
+    "expired": "Dokumento vensí (a vense {date})",
+    "period_mismatch": "Periodo detektá: {detected}. Slot ta pa {expected}. Verifiká si bo a karga e dokumento korekto akí."
   },
   "tipo": {
     "cedula": "un sédula",
