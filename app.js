@@ -1410,6 +1410,39 @@
       for (const k in overlay) { if (overlay[k]) cedulaOcr[k] = overlay[k]; }
       ocrResults.doc_cedula = cedulaOcr;
 
+      // Sanitizar OCR extractions antes de enviar. Access rechaza numero_id2 > ~10 chars
+      // (bug hallado con Denise Gustina — OCR devolvió 32 chars de basura del rijbewijs
+      // y el import a Tbl_NewApps fallaba silencioso). Si el OCR devuelve algo demasiado
+      // largo o vacío, mejor no mandarlo y que Leonard lo pida después por WhatsApp.
+      const MAX_ID_LEN = 15;
+      if (ocrResults.doc_id_adicional && ocrResults.doc_id_adicional.numero) {
+        const num = String(ocrResults.doc_id_adicional.numero).trim();
+        if (num.length > MAX_ID_LEN || num.length < 5) {
+          console.warn('OCR doc_id_adicional.numero inválido, nullificado:', num.length, 'chars');
+          ocrResults.doc_id_adicional.numero = null;
+        }
+      }
+      if (ocrResults.doc_cedula && ocrResults.doc_cedula.numero) {
+        const num = String(ocrResults.doc_cedula.numero).trim();
+        if (num.length > MAX_ID_LEN) {
+          console.warn('OCR doc_cedula.numero > MAX_ID_LEN, truncando:', num.length);
+          ocrResults.doc_cedula.numero = num.slice(0, MAX_ID_LEN);
+        }
+      }
+
+      // Rechazar submit si el telefono_movil es idéntico a numero_id (típico caso
+      // usuario pega su cédula en el campo teléfono — Access no valida, importa mal).
+      const telVal = fGet('telefono_movil').replace(/[\s\-+]/g, '');
+      const idVal  = fGet('numero_id').replace(/[\s\-]/g, '');
+      if (telVal && idVal && telVal === idVal) {
+        showErrors([
+          (t('error.tel_eq_id') || 'El teléfono móvil no puede ser igual a tu número de cédula. Revisá el campo Number di selular.')
+        ]);
+        $btnSubmit.disabled = false;
+        $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
+        return;
+      }
+
       // Resultados OCR (para que el backend los use igual que pipeline WhatsApp)
       fd.append('_ocr_results', JSON.stringify(ocrResults));
 
