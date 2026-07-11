@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFL — Registrar promesa manual</title>
+<style>
+  :root {
+    --bg: #F8FAFC;
+    --panel: #FFFFFF;
+    --ink: #0F172A;
+    --muted: #64748B;
+    --hair: #E2E8F0;
+    --hair-strong: #CBD5E1;
+    --accent: #7C3AED;
+    --success: #059669;
+    --danger: #DC2626;
+    --sans: ui-sans-serif, -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 14px;
+    margin: 0; padding: 0;
+  }
+  main {
+    max-width: 620px; margin: 24px auto; padding: 0 20px 60px;
+  }
+  h1 {
+    font-size: 20px; font-weight: 600; margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .lede { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 20px; margin-bottom: 16px;
+  }
+  label {
+    display: block; font-size: 12px; color: var(--ink);
+    font-weight: 600; margin-bottom: 4px; margin-top: 12px;
+  }
+  label:first-child { margin-top: 0; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: normal; }
+  input, select, textarea {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--hair-strong); border-radius: 6px;
+    font-family: inherit; font-size: 14px; color: var(--ink);
+    background: white;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  input[type="checkbox"] { width: auto; margin-right: 6px; vertical-align: middle; }
+  textarea { min-height: 60px; font-family: var(--sans); resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button.primary {
+    background: var(--accent); color: white; border: none;
+    padding: 10px 20px; font-weight: 600; font-size: 14px;
+    border-radius: 6px; cursor: pointer;
+  }
+  button.primary:hover:not(:disabled) { background: #6D28D9; }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary {
+    background: white; color: var(--ink); border: 1px solid var(--hair-strong);
+    padding: 6px 12px; font-size: 12px; border-radius: 5px; cursor: pointer;
+  }
+  button.secondary:hover { border-color: var(--muted); }
+  .actions { display: flex; gap: 10px; margin-top: 16px; align-items: center; }
+  .status {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .status.ok { color: var(--success); font-weight: 600; }
+  .status.error { color: var(--danger); font-weight: 600; }
+  .recurrente-block {
+    margin-top: 8px; padding: 12px; background: #F1F5F9;
+    border-radius: 6px; border: 1px solid var(--hair);
+  }
+  .recurrente-block.hidden { display: none; }
+  .toast {
+    position: fixed; top: 20px; right: 20px; padding: 12px 18px;
+    color: white; font-weight: 600; border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 9999;
+    font-size: 13px; max-width: 400px;
+    display: none; white-space: pre-line;
+  }
+  .toast.show { display: block; }
+  .toast.ok { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .details {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: #F1F5F9; padding: 8px; border-radius: 4px;
+    margin-top: 8px; word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Registrar promesa manual</h1>
+  <p class="lede">Llama al webhook <code>cobranza-registrar-promesa</code> del workflow n8n. La lista se refresca automáticamente al cargar.</p>
+
+  <div class="panel">
+    <label>Cliente
+      <div class="hint">Buscá por nombre; la lista se popula desde <code>cobranza-mora-list</code></div>
+      <select id="cliente" required>
+        <option value="">Cargando lista de clientes en cobranza…</option>
+      </select>
+    </label>
+    <button type="button" class="secondary" id="refreshList" style="margin-top:6px">🔄 Refrescar lista</button>
+    <div class="details" id="clienteDetail" style="display:none"></div>
+
+    <div class="row">
+      <div>
+        <label>Monto prometido (XCG)
+          <input type="number" id="monto" step="0.01" min="1" required placeholder="200.00" />
+        </label>
+      </div>
+      <div>
+        <label>Fecha prometida
+          <input type="date" id="fecha" required />
+        </label>
+      </div>
+    </div>
+
+    <label>Canal de origen
+      <select id="canal">
+        <option value="whatsapp">WhatsApp</option>
+        <option value="llamada" selected>Llamada</option>
+        <option value="presencial">Presencial</option>
+        <option value="email">Email</option>
+        <option value="otro">Otro</option>
+      </select>
+    </label>
+
+    <label>Notas (opcional)
+      <textarea id="notas" placeholder="ej. Cliente prometió 200/mes por 6 meses. Compromiso via WhatsApp 08-jul."></textarea>
+    </label>
+
+    <label style="margin-top:16px; font-weight: normal">
+      <input type="checkbox" id="recurrente" />
+      <strong>Acuerdo recurrente</strong> <span class="hint" style="display:inline">(varias promesas mensuales)</span>
+    </label>
+
+    <div class="recurrente-block hidden" id="recurrenteBlock">
+      <label style="margin-top:0">Cantidad de meses
+        <input type="number" id="meses" min="2" max="36" value="6" />
+        <div class="hint">Crea N promesas con la fecha incrementada mes a mes. Máx 36.</div>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="submit">Registrar promesa</button>
+      <span class="status" id="status">Listo</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label style="margin:0">Historial de esta sesión</label>
+    <div id="history" style="font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px;">
+      (sin registros aún)
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const BASE = "https://curacaofastloans.app.n8n.cloud/webhook";
+  const LIST_URL = BASE + "/cobranza-mora-list";
+  const POST_URL = BASE + "/cobranza-registrar-promesa";
+
+  const $ = (id) => document.getElementById(id);
+  const clienteSel = $("cliente");
+  const clienteDetail = $("clienteDetail");
+  const statusEl = $("status");
+  const toast = $("toast");
+  const history = $("history");
+  let clientes = [];
+  const historyItems = [];
+
+  function showToast(msg, kind) {
+    toast.className = "toast show " + (kind || "ok");
+    toast.textContent = msg;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.className = "toast"; }, 5000);
+  }
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = "status " + (kind || "");
+  }
+
+  async function loadClientes() {
+    setStatus("Cargando lista…", "");
+    try {
+      const res = await fetch(LIST_URL);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      clientes = (data.clientes || []).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+      clienteSel.innerHTML = '<option value="">— elegir cliente —</option>';
+      for (const c of clientes) {
+        const name = ((c.nombre || "") + " " + (c.apellido || "")).trim();
+        const opt = document.createElement("option");
+        opt.value = c.caso_id;
+        opt.textContent = name + "  ·  " + (c.dias_mora || 0) + "d mora  ·  XCG " + Number(c.monto_mora || 0).toFixed(2) + "  (" + (c.estado || "") + ")";
+        opt.dataset.raw = JSON.stringify(c);
+        clienteSel.appendChild(opt);
+      }
+      setStatus(clientes.length + " clientes en cobranza cargados", "ok");
+    } catch (e) {
+      setStatus("Error al cargar lista: " + e.message, "error");
+      showToast("❌ No pude cargar la lista de clientes\n" + e.message, "error");
+    }
+  }
+
+  clienteSel.addEventListener("change", (e) => {
+    const opt = e.target.selectedOptions[0];
+    if (!opt || !opt.dataset.raw) { clienteDetail.style.display = "none"; return; }
+    const c = JSON.parse(opt.dataset.raw);
+    clienteDetail.style.display = "block";
+    clienteDetail.textContent = "caso_id=" + c.caso_id + "\nprestamo_id=" + c.prestamo_id + "\ncliente_id=" + c.cliente_id + "\nnumero_id=" + (c.numero_id || "?");
+  });
+
+  $("refreshList").addEventListener("click", loadClientes);
+
+  $("recurrente").addEventListener("change", (e) => {
+    $("recurrenteBlock").classList.toggle("hidden", !e.target.checked);
+  });
+
+  $("submit").addEventListener("click", async () => {
+    const opt = clienteSel.selectedOptions[0];
+    if (!opt || !opt.value) { showToast("⚠ Elegí un cliente primero", "error"); return; }
+    const cliente = JSON.parse(opt.dataset.raw);
+    const monto = parseFloat($("monto").value);
+    const fecha = $("fecha").value;
+    if (!monto || monto <= 0) { showToast("⚠ Monto inválido", "error"); return; }
+    if (!fecha) { showToast("⚠ Falta fecha", "error"); return; }
+
+    const body = {
+      caso_id: cliente.caso_id,
+      prestamo_id: cliente.prestamo_id,
+      cliente_id: cliente.cliente_id,
+      monto_prometido: monto,
+      fecha_prometida: fecha,
+      canal: $("canal").value,
+      notas: $("notas").value.trim() || undefined,
+    };
+    if ($("recurrente").checked) {
+      body.recurrente = true;
+      body.meses = parseInt($("meses").value, 10);
+      if (!body.meses || body.meses < 1) body.meses = 1;
+    }
+
+    $("submit").disabled = true;
+    setStatus("Enviando…", "");
+    try {
+      const res = await fetch(POST_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const out = await res.json();
+      if (!out.ok) throw new Error(out.error || "server returned ok=false");
+
+      const clientName = ((cliente.nombre || "") + " " + (cliente.apellido || "")).trim();
+      const created = out.promesas_creadas || 1;
+      const msg = "✅ " + created + " promesa" + (created > 1 ? "s" : "") + " registrada" + (created > 1 ? "s" : "") + " para " + clientName;
+      showToast(msg + "\nXCG " + monto.toFixed(2) + " · " + fecha, "ok");
+      setStatus(msg, "ok");
+
+      const stamp = new Date().toISOString().slice(11, 19);
+      historyItems.unshift(stamp + "  ·  " + clientName + "  ·  XCG " + monto.toFixed(2) + "  ·  " + fecha + (created > 1 ? "  ·  " + created + " mensuales" : "") + "  ·  " + body.canal);
+      history.innerHTML = historyItems.map(x => "<div>" + x.replace(/</g, "&lt;") + "</div>").join("");
+
+      // Clear form (keep cliente for next entry)
+      $("monto").value = "";
+      $("notas").value = "";
+      $("recurrente").checked = false;
+      $("recurrenteBlock").classList.add("hidden");
+    } catch (e) {
+      setStatus("Error: " + e.message, "error");
+      showToast("❌ Error al registrar promesa\n" + e.message, "error");
+    } finally {
+      $("submit").disabled = false;
+    }
+  });
+
+  // Default fecha = 1 semana
+  {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    $("fecha").value = d.toISOString().slice(0, 10);
+  }
+
+  loadClientes();
+</script>
+
+</body>
+</html>
