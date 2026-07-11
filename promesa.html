@@ -107,6 +107,13 @@
       <div id="clientePresetMora" style="font-size:12px; color:var(--muted); margin-top:6px">—</div>
     </div>
 
+    <div id="presetErrorBlock" style="display:none; text-align:center; padding:20px 10px">
+      <div style="font-size:32px; margin-bottom:8px">⚠️</div>
+      <div style="font-size:16px; font-weight:600; margin-bottom:6px">Cliente no encontrado</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:16px">Este enlace no está asociado a un préstamo activo con CFL. Por favor contactanos directamente.</div>
+      <a href="https://wa.me/59995172077" style="display:inline-block; background:var(--accent); color:white; text-decoration:none; padding:10px 20px; font-weight:600; font-size:14px; border-radius:6px">Escribir a CFL</a>
+    </div>
+
     <div id="clientePickerBlock">
       <label>Cliente
         <div class="hint">Buscá por nombre; la lista se popula desde <code>cobranza-mora-list</code></div>
@@ -118,48 +125,50 @@
       <div class="details" id="clienteDetail" style="display:none"></div>
     </div>
 
-    <div class="row">
-      <div>
-        <label>Monto prometido (XCG)
-          <input type="number" id="monto" step="0.01" min="1" required placeholder="200.00" />
-        </label>
+    <div id="formFields">
+      <div class="row">
+        <div>
+          <label>Monto prometido (XCG)
+            <input type="number" id="monto" step="0.01" min="1" required placeholder="200.00" />
+          </label>
+        </div>
+        <div>
+          <label>Fecha prometida
+            <input type="date" id="fecha" required />
+          </label>
+        </div>
       </div>
-      <div>
-        <label>Fecha prometida
-          <input type="date" id="fecha" required />
-        </label>
-      </div>
-    </div>
 
-    <label>Canal de origen
-      <select id="canal">
-        <option value="whatsapp">WhatsApp</option>
-        <option value="llamada" selected>Llamada</option>
-        <option value="presencial">Presencial</option>
-        <option value="email">Email</option>
-        <option value="otro">Otro</option>
-      </select>
-    </label>
-
-    <label>Notas (opcional)
-      <textarea id="notas" placeholder="ej. Cliente prometió 200/mes por 6 meses. Compromiso via WhatsApp 08-jul."></textarea>
-    </label>
-
-    <label style="margin-top:16px; font-weight: normal">
-      <input type="checkbox" id="recurrente" />
-      <strong>Acuerdo recurrente</strong> <span class="hint" style="display:inline">(varias promesas mensuales)</span>
-    </label>
-
-    <div class="recurrente-block hidden" id="recurrenteBlock">
-      <label style="margin-top:0">Cantidad de meses
-        <input type="number" id="meses" min="2" max="36" value="6" />
-        <div class="hint">Crea N promesas con la fecha incrementada mes a mes. Máx 36.</div>
+      <label>Canal de origen
+        <select id="canal">
+          <option value="whatsapp">WhatsApp</option>
+          <option value="llamada" selected>Llamada</option>
+          <option value="presencial">Presencial</option>
+          <option value="email">Email</option>
+          <option value="otro">Otro</option>
+        </select>
       </label>
-    </div>
 
-    <div class="actions">
-      <button type="button" class="primary" id="submit">Registrar promesa</button>
-      <span class="status" id="status">Listo</span>
+      <label>Notas (opcional)
+        <textarea id="notas" placeholder="ej. Cliente prometió 200/mes por 6 meses. Compromiso via WhatsApp 08-jul."></textarea>
+      </label>
+
+      <label style="margin-top:16px; font-weight: normal">
+        <input type="checkbox" id="recurrente" />
+        <strong>Acuerdo recurrente</strong> <span class="hint" style="display:inline">(varias promesas mensuales)</span>
+      </label>
+
+      <div class="recurrente-block hidden" id="recurrenteBlock">
+        <label style="margin-top:0">Cantidad de meses
+          <input type="number" id="meses" min="2" max="36" value="6" />
+          <div class="hint">Crea N promesas con la fecha incrementada mes a mes. Máx 36.</div>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="primary" id="submit">Registrar promesa</button>
+        <span class="status" id="status">Listo</span>
+      </div>
     </div>
   </div>
 
@@ -246,8 +255,15 @@
           setStatus("Cliente preseleccionado: " + name, "ok");
           return;
         }
-        // fallback si no matchea: mostrar picker
-        setStatus("No se encontró cliente con tel=" + presetTel + ", mostrando lista", "error");
+        // NUNCA caemos al picker en modo preset — mostramos error y bloqueamos submit.
+        // El cliente jamás debe poder seleccionar otro nombre.
+        $("presetErrorBlock").style.display = "block";
+        $("clientePickerBlock").style.display = "none";
+        $("clientePresetBlock").style.display = "none";
+        $("formFields").style.display = "none";
+        $("historyBlock").style.display = "none";
+        setStatus("Cliente no encontrado", "error");
+        return;
       }
 
       clienteSel.innerHTML = '<option value="">— elegir cliente —</option>';
