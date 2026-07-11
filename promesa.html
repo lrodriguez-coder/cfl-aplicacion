@@ -101,14 +101,22 @@
   <p class="lede">Llama al webhook <code>cobranza-registrar-promesa</code> del workflow n8n. La lista se refresca automáticamente al cargar.</p>
 
   <div class="panel">
-    <label>Cliente
-      <div class="hint">Buscá por nombre; la lista se popula desde <code>cobranza-mora-list</code></div>
-      <select id="cliente" required>
-        <option value="">Cargando lista de clientes en cobranza…</option>
-      </select>
-    </label>
-    <button type="button" class="secondary" id="refreshList" style="margin-top:6px">🔄 Refrescar lista</button>
-    <div class="details" id="clienteDetail" style="display:none"></div>
+    <div id="clientePresetBlock" style="display:none">
+      <div style="font-size:12px; color:var(--muted); font-weight:600; margin-bottom:4px">Cliente</div>
+      <div id="clientePresetName" style="font-size:16px; font-weight:600; padding:10px 12px; background:#F1F5F9; border-radius:6px; border:1px solid var(--hair);">—</div>
+      <div id="clientePresetMora" style="font-size:12px; color:var(--muted); margin-top:6px">—</div>
+    </div>
+
+    <div id="clientePickerBlock">
+      <label>Cliente
+        <div class="hint">Buscá por nombre; la lista se popula desde <code>cobranza-mora-list</code></div>
+        <select id="cliente" required>
+          <option value="">Cargando lista de clientes en cobranza…</option>
+        </select>
+      </label>
+      <button type="button" class="secondary" id="refreshList" style="margin-top:6px">🔄 Refrescar lista</button>
+      <div class="details" id="clienteDetail" style="display:none"></div>
+    </div>
 
     <div class="row">
       <div>
@@ -155,7 +163,29 @@
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="successBlock" style="display:none; background:#F0FDF4; border-color:#86EFAC">
+    <div style="font-size:18px; font-weight:600; color:var(--success); margin-bottom:12px">✅ Promesa registrada</div>
+    <div style="font-size:14px; margin-bottom:16px">Gracias. Registramos tu compromiso de pago. Por favor transferí a esta cuenta:</div>
+
+    <div style="background:white; border:1px solid var(--hair); border-radius:8px; padding:14px; margin-bottom:12px">
+      <div style="display:grid; grid-template-columns: 90px 1fr; gap:6px 12px; font-size:14px">
+        <div style="color:var(--muted); font-weight:600">Banco</div>
+        <div>Orcobank</div>
+        <div style="color:var(--muted); font-weight:600">Cuenta</div>
+        <div style="font-family:var(--mono); font-weight:600">1155320195</div>
+        <div style="color:var(--muted); font-weight:600">Titular</div>
+        <div>Curaçao Fast Loans N.V.</div>
+        <div style="color:var(--muted); font-weight:600">Referencia</div>
+        <div id="successRef" style="font-family:var(--mono); font-weight:600; color:var(--accent)">—</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); background:#FEF3C7; padding:10px; border-radius:6px; border:1px solid #FDE68A">
+      <strong>Importante:</strong> usá exactamente esa referencia para que identifiquemos tu pago automáticamente.
+    </div>
+  </div>
+
+  <div class="panel" id="historyBlock">
     <label style="margin:0">Historial de esta sesión</label>
     <div id="history" style="font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: 8px;">
       (sin registros aún)
@@ -179,6 +209,11 @@
   let clientes = [];
   const historyItems = [];
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const presetTel = (urlParams.get("tel") || "").replace(/[^0-9]/g, "");
+  const isPresetMode = presetTel.length > 0;
+  let presetCliente = null;
+
   function showToast(msg, kind) {
     toast.className = "toast show " + (kind || "ok");
     toast.textContent = msg;
@@ -198,6 +233,23 @@
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       clientes = (data.clientes || []).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+      if (isPresetMode) {
+        const match = clientes.find(c => (String(c.numero_id || "").replace(/[^0-9]/g, "") === presetTel));
+        if (match) {
+          presetCliente = match;
+          const name = ((match.nombre || "") + " " + (match.apellido || "")).trim();
+          $("clientePresetName").textContent = name;
+          $("clientePresetMora").textContent = "Atraso: " + (match.dias_mora || 0) + " días · XCG " + Number(match.monto_mora || 0).toFixed(2) + " pendiente";
+          $("clientePresetBlock").style.display = "block";
+          $("clientePickerBlock").style.display = "none";
+          setStatus("Cliente preseleccionado: " + name, "ok");
+          return;
+        }
+        // fallback si no matchea: mostrar picker
+        setStatus("No se encontró cliente con tel=" + presetTel + ", mostrando lista", "error");
+      }
+
       clienteSel.innerHTML = '<option value="">— elegir cliente —</option>';
       for (const c of clientes) {
         const name = ((c.nombre || "") + " " + (c.apellido || "")).trim();
@@ -229,9 +281,15 @@
   });
 
   $("submit").addEventListener("click", async () => {
-    const opt = clienteSel.selectedOptions[0];
-    if (!opt || !opt.value) { showToast("⚠ Elegí un cliente primero", "error"); return; }
-    const cliente = JSON.parse(opt.dataset.raw);
+    let cliente;
+    if (isPresetMode) {
+      if (!presetCliente) { showToast("⚠ Cliente no encontrado en cobranza actual", "error"); return; }
+      cliente = presetCliente;
+    } else {
+      const opt = clienteSel.selectedOptions[0];
+      if (!opt || !opt.value) { showToast("⚠ Elegí un cliente primero", "error"); return; }
+      cliente = JSON.parse(opt.dataset.raw);
+    }
     const monto = parseFloat($("monto").value);
     const fecha = $("fecha").value;
     if (!monto || monto <= 0) { showToast("⚠ Monto inválido", "error"); return; }
@@ -274,7 +332,20 @@
       historyItems.unshift(stamp + "  ·  " + clientName + "  ·  XCG " + monto.toFixed(2) + "  ·  " + fecha + (created > 1 ? "  ·  " + created + " mensuales" : "") + "  ·  " + body.canal);
       history.innerHTML = historyItems.map(x => "<div>" + x.replace(/</g, "&lt;") + "</div>").join("");
 
-      // Clear form (keep cliente for next entry)
+      if (isPresetMode) {
+        const cliLeg = cliente.cliente_legacy || cliente.cliente_id || "";
+        const ptmoLeg = cliente.prestamo_legacy || cliente.prestamo_id || "";
+        const pad = (v) => String(v).replace(/[^0-9]/g, "").padStart(4, "0").slice(-4);
+        const referencia = "CFL" + pad(cliLeg) + "-" + pad(ptmoLeg);
+        $("successRef").textContent = referencia;
+        $("successBlock").style.display = "block";
+        $("historyBlock").style.display = "none";
+        document.querySelector(".panel").style.display = "none";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      // Clear form (keep cliente for next entry) — solo modo operador
       $("monto").value = "";
       $("notas").value = "";
       $("recurrente").checked = false;
