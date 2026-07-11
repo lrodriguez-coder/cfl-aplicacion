@@ -233,6 +233,27 @@
         errMsgs.push((t('error.doc_required') || 'Falta subir un documento obligatorio') + ': ' + docLabelFor(f));
       }
     });
+    // Guard explícito para payslips (Step 2): si el cliente no es pensionado
+    // debe haber al menos 1 payslip subido. Sin este check el bug era: si
+    // el cliente no seleccionó frecuencia_salario, los slots de payslip no
+    // se generaban y el submit pasaba sin payslips (caso Odalys Erica
+    // Faneyte 2026-07-10 — empleada de gobierno tipo=fijo, 0 payslips en
+    // S3, aplicación entró incompleta a Access).
+    if (n === 2) {
+      const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
+      const requiresPayslips = tipo && tipo !== 'pensionado';
+      if (requiresPayslips) {
+        const payslipInputs = $$('input[type="file"][name^="doc_payslips"]', step);
+        const anyUploaded = payslipInputs.some(f => f.files && f.files.length > 0);
+        if (payslipInputs.length === 0 || !anyUploaded) {
+          errs.push('doc_payslips');
+          errMsgs.push(
+            t('error.payslips_required')
+            || 'Faltan payslips. Si sos empleado, tenés que subir al menos 1 payslip. Volvé al Paso 1 y elegí frecuencia de salario para que aparezcan los slots.'
+          );
+        }
+      }
+    }
     // Tipo de documento incorrecto / documento vencido (aplica a TODOS los file inputs con archivo)
     $$('input[type="file"]', step).forEach(f => {
       if (!f.files || f.files.length === 0) return;
@@ -416,14 +437,22 @@
     }
 
     // Ocultar/mostrar el selector de frecuencia salarial.
+    // Cuando es visible es OBLIGATORIO — sin frecuencia los slots de payslip
+    // no se generan y el cliente puede submitear sin subirlos (bug hallado
+    // 2026-07-11 con Odalys Erica Faneyte: tipo=fijo pero frecuencia vacía →
+    // 0 payslips uploaded, aplicación entró incompleta).
     const freqField = $('#frecuenciaSalarioField');
     if (freqField) {
       const showFreq = tipoSel.value === 'fijo' || tipoSel.value === 'contrato';
       freqField.style.display = showFreq ? '' : 'none';
-      // Si lo ocultamos, limpiamos su valor para que no contamine el submit.
-      if (!showFreq) {
-        const freqSel = freqField.querySelector('[name="frecuencia_salario"]');
-        if (freqSel) freqSel.value = '';
+      const freqSel = freqField.querySelector('[name="frecuencia_salario"]');
+      if (freqSel) {
+        if (showFreq) {
+          freqSel.setAttribute('required', '');
+        } else {
+          freqSel.removeAttribute('required');
+          freqSel.value = ''; // no contaminar submit
+        }
       }
     }
 
