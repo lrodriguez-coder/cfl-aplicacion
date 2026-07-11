@@ -252,6 +252,28 @@
             || 'Faltan payslips. Si sos empleado, tenés que subir al menos 1 payslip. Volvé al Paso 1 y elegí frecuencia de salario para que aparezcan los slots.'
           );
         }
+        // Además del "tenés que subir al menos 1", el período del payslip
+        // debe matchear el slot (últimos meses completos). Antes era solo
+        // warning informativo; ahora bloquea el submit. Regla Leonard
+        // 2026-07-11: "que cumpla los períodos de los últimos 3 meses".
+        payslipInputs.forEach(f => {
+          if (!f.files || f.files.length === 0) return;
+          const c = docCheck[f.name];
+          if (c && c.periodMatch === false) {
+            const lbl = f.closest('.upload-label');
+            f.classList.add('invalid');
+            if (lbl) lbl.classList.add('invalid');
+            errs.push(f.name);
+            const detected = c.periodDetail || '?';
+            const expY = f.dataset.expectedYear || '?';
+            const expM = f.dataset.expectedMonth || '?';
+            const expectedStr = expY + '-' + String(expM).padStart(2, '0');
+            errMsgs.push(
+              t('error.payslip_period_mismatch', { doc: docLabelFor(f), detected: detected, expected: expectedStr })
+              || (docLabelFor(f) + ': período incorrecto (detectado ' + detected + ', se esperaba ' + expectedStr + '). Subí el payslip del período correcto.')
+            );
+          }
+        });
       }
     }
     // Tipo de documento incorrecto / documento vencido (aplica a TODOS los file inputs con archivo)
