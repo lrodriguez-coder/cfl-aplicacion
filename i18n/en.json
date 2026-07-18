@@ -206,7 +206,8 @@
     "checking_type": "Checking document type…",
     "tipo_mismatch": "This looks like {detected}, expected {expected}",
     "expired": "Expired document (expired on {date})",
-    "period_mismatch": "Detected period: {detected}. This slot is for {expected}. Check that you uploaded the right file here."
+    "period_mismatch": "Detected period: {detected}. This slot is for {expected}. Check that you uploaded the right file here.",
+    "name_mismatch": "The account holder on this document (\"{doc}\") does not match the ID card name (\"{cedula}\"). Please verify the document belongs to the same applicant."
   },
   "tipo": {
     "cedula": "an ID card",

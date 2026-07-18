@@ -206,7 +206,8 @@
     "checking_type": "Verificando tipo de documento…",
     "tipo_mismatch": "Esto parece {detected}, se esperaba {expected}",
     "expired": "Documento vencido (venció el {date})",
-    "period_mismatch": "Período detectado: {detected}. El slot es para {expected}. Verificá si subiste el documento correcto en este slot."
+    "period_mismatch": "Período detectado: {detected}. El slot es para {expected}. Verificá si subiste el documento correcto en este slot.",
+    "name_mismatch": "El titular de este documento (\"{doc}\") no coincide con el nombre de la cédula (\"{cedula}\"). Verificá que el documento sea del mismo solicitante."
   },
   "tipo": {
     "cedula": "una cédula",

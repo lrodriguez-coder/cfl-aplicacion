@@ -781,7 +781,7 @@
           setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
           (async () => {
             for (let i = 0; i < files.length; i++) {
-              await classifyDoc(files[i], input.name, i);
+              await classifyDoc(files[i], input.name, i, preview);
             }
             const c = docCheck[input.name];
             if (c && c.tipo === 'mismatch') {
@@ -868,7 +868,7 @@
         setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
         (async () => {
           for (let i = 0; i < files.length; i++) {
-            await classifyDoc(files[i], input.name, i);
+            await classifyDoc(files[i], input.name, i, preview);
           }
           const c = docCheck[input.name];
           if (c && c.tipo === 'mismatch') {
@@ -983,7 +983,7 @@
   // solo pide el tipo de documento. No bloquea si la clasificación falla.
   // Para bank statements usamos el modo 'banco_liviano' que ADEMÁS del tipo
   // extrae el periodo (desde/hasta) sin las transacciones — barato y rápido.
-  async function classifyDoc(file, inputName, idx) {
+  async function classifyDoc(file, inputName, idx, container) {
     try {
       const fd = new FormData();
       const base = baseDocName(inputName);
@@ -999,6 +999,8 @@
         // Para bank statements: validar período expected vs detected.
         const periodCheck = validatePeriodForInput(inputName, data);
         if (periodCheck) docCheck[inputName] = Object.assign(docCheck[inputName] || {}, periodCheck);
+        // banco_liviano devuelve `titular` → validar contra la cédula.
+        if (container) checkNameMatch(container, inputName, data);
       }
     } catch (e) { /* clasificación opcional: no bloquea */ }
   }
@@ -1049,6 +1051,78 @@
          '. Verificá que el archivo correcto esté en este slot.'));
   }
 
+  // ===== VALIDACIÓN DE NOMBRE (doc vs cédula) =====
+  // Solo ADVIERTE (no bloquea). Compara el titular del payslip / bank
+  // statement / carta de trabajo contra el nombre de la cédula, por
+  // apellido + nombre con tolerancia (los OCR devuelven el orden y la
+  // puntuación distinta: "Mendez Contreras, Douglas J" vs
+  // "Douglas Jose Mendez Contreras").
+
+  // Normaliza a tokens comparables: minúsculas, sin acentos, sin
+  // puntuación, descarta iniciales sueltas y palabras muy cortas.
+  function nameTokens(str) {
+    if (!str) return [];
+    return String(str)
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')  // saca acentos
+      .replace(/[^a-z\s]/g, ' ')                          // saca dígitos/puntuación
+      .split(/\s+/)
+      .filter(function (w) { return w.length >= 3; });     // descarta "j", "e/v", "de", etc.
+  }
+
+  // De qué campo del OCR sale el nombre del titular según el tipo.
+  function holderNameFromDoc(base, data) {
+    if (!data) return null;
+    if (base === 'doc_payslips') return data.nombre_empleado || null;
+    if (base === 'doc_bancos') return data.titular || null;
+    if (base === 'doc_carta_trabajo') return data.nombre_empleado || null;
+    if (base === 'doc_aqualectra') return data.titular || null;
+    return null;
+  }
+
+  // ¿Coinciden? Requiere al menos 2 tokens compartidos (típicamente un
+  // nombre + un apellido). Con nombres largos de Curaçao esto tolera
+  // reordenamientos y nombres/apellidos faltantes sin ser laxo.
+  function namesMatch(cedulaName, docName) {
+    var a = nameTokens(cedulaName);
+    var b = nameTokens(docName);
+    if (a.length === 0 || b.length === 0) return { ok: true, shared: 0 };  // sin datos → no molestar
+    var setB = {};
+    b.forEach(function (w) { setB[w] = true; });
+    var shared = a.filter(function (w) { return setB[w]; });
+    // Normalmente pedimos 2 tokens compartidos (nombre + apellido). Pero
+    // cuando el documento sólo trae iniciales + apellido ("A.R. Bakker" →
+    // 1 token usable), alcanza con que ese apellido coincida — si no,
+    // marcaríamos como sospechoso a un titular legítimo.
+    var ok = shared.length >= 2 || (b.length === 1 && shared.length >= 1);
+    return { ok: ok, shared: shared.length, sharedTokens: shared };
+  }
+
+  // Corre el check para un doc recién OCR-eado y muestra/oculta el warning.
+  function checkNameMatch(container, inputName, data) {
+    var base = baseDocName(inputName);
+    var cedula = ocrResults.doc_cedula;
+    var cedulaName = cedula && cedula.nombre_completo;
+    if (!cedulaName) return;                        // todavía no hay cédula → nada que comparar
+    var docName = holderNameFromDoc(base, data);
+    if (!docName) return;                           // el doc no trae titular → nada que comparar
+    var res = namesMatch(cedulaName, docName);
+    docCheck[inputName] = Object.assign(docCheck[inputName] || {}, {
+      nameMatch: res.ok, docHolderName: docName,
+    });
+    var warn = container.querySelector('.name-mismatch-warn');
+    if (res.ok) { if (warn) warn.remove(); return; }
+    if (!warn) {
+      warn = document.createElement('div');
+      warn.className = 'name-mismatch-warn period-mismatch-warn';  // reusa el estilo amber
+      container.appendChild(warn);
+    }
+    warn.textContent = '⚠️ ' +
+      (t('ocr.name_mismatch', { doc: docName, cedula: cedulaName }) ||
+        ('El titular de este documento ("' + docName + '") no coincide con el nombre de la cédula ("' +
+         cedulaName + '"). Verificá que el documento sea del mismo solicitante.'));
+  }
+
   async function runOcr(file, docType, container, inputName, idx) {
     const suffix = (Array.isArray(ocrResults[inputName])) ? ' (' + (idx + 1) + ')' : '';
     setOcrStatus(container, '🔎 ' + (t('ocr.analyzing') || 'Analizando documento…') + suffix, 'loading');
@@ -1088,6 +1162,9 @@
           showPeriodMismatchWarning(container, inputName, periodCheck.periodDetail);
         }
       }
+      // Validar que el titular del doc coincida con el nombre de la cédula.
+      // Solo advierte, no bloquea.
+      checkNameMatch(container, inputName, result.data);
       if (chk.tipoStatus === 'mismatch') {
         // No auto-rellenar desde un documento del tipo equivocado.
         setOcrStatus(

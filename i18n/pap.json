@@ -206,7 +206,8 @@
     "checking_type": "Ta verifiká tipo di dokumento…",
     "tipo_mismatch": "Esaki ta parse {detected}, mester ta {expected}",
     "expired": "Dokumento vensí (a vense {date})",
-    "period_mismatch": "Periodo detektá: {detected}. Slot ta pa {expected}. Verifiká si bo a karga e dokumento korekto akí."
+    "period_mismatch": "Periodo detektá: {detected}. Slot ta pa {expected}. Verifiká si bo a karga e dokumento korekto akí.",
+    "name_mismatch": "E titular di e dokumento akí (\"{doc}\") no ta koresponde ku e nòmber di sédula (\"{cedula}\"). Verifiká ku e dokumento ta di e mesun solisitante."
   },
   "tipo": {
     "cedula": "un sédula",
