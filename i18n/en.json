@@ -22,7 +22,9 @@
     "doc_required": "A required document is missing",
     "cuota_cero": "The reference installment cannot be 0. Check the amount and term.",
     "doc_tipo_incorrecto": "{doc}: the uploaded file looks like {detected}. Please upload the correct document.",
-    "doc_vencido": "{doc}: the document is expired (expired on {date}). Please upload a valid document."
+    "doc_vencido": "{doc}: the document is expired (expired on {date}). Please upload a valid document.",
+    "doc_duplicado": "You uploaded the same file in \"{a}\" and \"{b}\". Each document must be different — if you don't have 3 bank statements, upload another proof (Aqualectra, flow or uittreksel), but don't repeat the same file.",
+    "carta_vieja": "{doc}: the employment letter is {dias} days old (issued {date}). It must be from the last 30 days — please request an up-to-date letter confirming your current employment."
   },
   "intro": {
     "title": "📋 Before you start",

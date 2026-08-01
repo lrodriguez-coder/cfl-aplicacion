@@ -22,7 +22,9 @@
     "doc_required": "Ta falta un dokumento obligatorio",
     "cuota_cero": "E kuota di referensia no por ta 0. Chèk e monto i e plazo.",
     "doc_tipo_incorrecto": "{doc}: e dokumento ku bo a manda ta parse {detected}. Manda e dokumento korekto.",
-    "doc_vencido": "{doc}: e dokumento a vense ({date}). Manda un dokumento bálido."
+    "doc_vencido": "{doc}: e dokumento a vense ({date}). Manda un dokumento bálido.",
+    "doc_duplicado": "Bo a manda e mesun dokumento na \"{a}\" i \"{b}\". Kada dokumento mester ta diferente — si bo no tin 3 estado di banko, manda otro komprobante (Aqualectra, flow òf uittreksel), pero no ripití e mesun dokumento.",
+    "carta_vieja": "{doc}: e karta di trabou tin {dias} dia (emití {date}). Mester ta di último 30 dia — pidi un karta aktualisá ku ta konfirmá bo empleo aktual."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",

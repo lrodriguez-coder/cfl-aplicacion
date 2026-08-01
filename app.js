@@ -82,6 +82,10 @@
   };
   // Slots cuya vigencia se verifica (el OCR devuelve fecha_vencimiento).
   const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional'];
+  // La carta de trabajo confirma empleo ACTUAL: debe ser reciente. Si la fecha
+  // de emisión tiene más de estos días, se rechaza (Leonard 2026-08-01, caso
+  // Raylian: carta de feb-2026 usada en ago-2026 = ~6 meses).
+  const MAX_WORK_LETTER_AGE_DAYS = 30;
 
   // ===== STATE =====
   let currentStep = 1;
@@ -102,6 +106,14 @@
   // Resultado de validación por slot: { tipo:'ok'|'mismatch'|'unknown',
   // expired:bool, detected:string, vence:string }. Se rehace en cada subida.
   const docCheck = {};
+
+  // SHA-256 (hex) por archivo subido, indexado por input.name → [hash, ...].
+  // Detecta el MISMO archivo subido en dos slots (contenido idéntico, aunque
+  // el nombre difiera). Caso Raylian 2026-08-01: subió el bill de Aqualectra
+  // también en el slot de bank_statement_3 → el OCR procesó una factura de luz
+  // como estado de banco. Se aceptan documentos DISTINTOS (aqualectra, flow,
+  // uittreksel), pero no repetir el mismo archivo.
+  const fileHashes = {};
 
   // ===== DOM REFS =====
   const $form = document.getElementById('appForm');
@@ -296,8 +308,41 @@
         errs.push(f.name);
         errMsgs.push(t('error.doc_vencido', { doc: docLabelFor(f), date: c.vence })
           || (docLabelFor(f) + ': documento vencido'));
+      } else if (c.stale) {
+        f.classList.add('invalid');
+        if (lbl) lbl.classList.add('invalid');
+        errs.push(f.name);
+        errMsgs.push(t('error.carta_vieja', { doc: docLabelFor(f), date: c.issueDate, dias: c.ageDays })
+          || (docLabelFor(f) + ': la carta de trabajo tiene ' + c.ageDays + ' días (emitida ' + c.issueDate +
+              '). Debe ser de los últimos ' + MAX_WORK_LETTER_AGE_DAYS + ' días — pedí una carta actualizada.'));
       }
     });
+    // Documento repetido: el MISMO archivo subido en dos slots (contenido
+    // idéntico). Se aceptan documentos DISTINTOS como comprobante de domicilio
+    // extra (Aqualectra, flow, uittreksel), pero no repetir el mismo archivo
+    // — p.ej. subir el bill de Aqualectra también como bank_statement_3.
+    // Solo corre en pasos que tienen inputs de archivo.
+    if ($$('input[type="file"]', step).length > 0) {
+      findDuplicateDocs().forEach(d => {
+        const inpA = $('input[type="file"][name="' + d.first + '"]');
+        const inpB = $('input[type="file"][name="' + d.second + '"]');
+        [inpA, inpB].forEach(inp => {
+          if (!inp) return;
+          inp.classList.add('invalid');
+          const lbl = inp.closest('.upload-label');
+          if (lbl) lbl.classList.add('invalid');
+        });
+        errs.push(d.second);
+        const a = inpA ? docLabelFor(inpA) : d.first;
+        const b = inpB ? docLabelFor(inpB) : d.second;
+        errMsgs.push(
+          t('error.doc_duplicado', { a: a, b: b })
+          || ('Subiste el mismo archivo en dos lugares: "' + a + '" y "' + b +
+              '". Cada documento debe ser distinto — si no tenés 3 estados de banco, ' +
+              'subí otro comprobante (Aqualectra, flow o uittreksel), pero no repitas el mismo archivo.')
+        );
+      });
+    }
     // Conditional required fields (e.g., dolencia_detalle solo si dolencia_salud=true)
     $$('.conditional.visible', step).forEach(c => {
       if (c.value === '' || c.value === null) {
@@ -745,6 +790,48 @@
     if ($qTotal) $qTotal.textContent = 'XCG ' + fmt(total);
   }
 
+  // ===== DEDUP DE DOCUMENTOS (mismo archivo en dos slots) =====
+  // Hash del contenido, no del nombre: dos slots con el mismo archivo tienen
+  // el mismo SHA-256 aunque se llamen distinto.
+  async function sha256Hex(file) {
+    try {
+      const buf = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (_) {
+      // Fallback (contexto no seguro / sin SubtleCrypto): firma conservadora
+      // por tamaño+nombre para no dar falsos positivos.
+      return 'sz:' + file.size + ':' + (file.name || '');
+    }
+  }
+
+  async function registerFileHashes(input) {
+    const files = Array.from(input.files || []);
+    if (files.length === 0) { delete fileHashes[input.name]; return; }
+    try {
+      fileHashes[input.name] = await Promise.all(files.map(sha256Hex));
+    } catch (_) { /* si falla, validateStep simplemente no bloquea por dup */ }
+  }
+
+  // Pares de slots con contenido idéntico entre TODOS los file inputs del form.
+  function findDuplicateDocs() {
+    const byHash = {};
+    const dups = [];
+    $$('input[type="file"]').forEach(inp => {
+      const hashes = fileHashes[inp.name];
+      if (!hashes) return;
+      hashes.forEach(h => {
+        if (!h) return;
+        if (byHash[h] && byHash[h] !== inp.name) {
+          dups.push({ first: byHash[h], second: inp.name });
+        } else if (!byHash[h]) {
+          byHash[h] = inp.name;
+        }
+      });
+    });
+    return dups;
+  }
+
   // ===== FILE UPLOADS (preview + OCR auto-fill) =====
   function setupUploads() {
     $$('input[type="file"]').forEach(input => {
@@ -754,6 +841,7 @@
         preview.innerHTML = '';
         const files = Array.from(input.files || []);
         docCheck[input.name] = undefined; // re-validar tipo/vigencia en cada nueva selección
+        void registerFileHashes(input);   // recomputar hash para detectar doc repetido
         if (files.length === 0) return;
         const label = input.closest('.upload-label');
         if (label) label.classList.add('has-file');
@@ -844,6 +932,7 @@
       preview.innerHTML = '';
       const files = Array.from(input.files || []);
       docCheck[input.name] = undefined;
+      void registerFileHashes(input);   // recomputar hash para detectar doc repetido
       if (files.length === 0) {
         updateUploadCounter();
         return;
@@ -938,6 +1027,20 @@
     return d < today;
   }
 
+  // Días transcurridos desde una fecha (YYYY-MM-DD o dd/mm/yyyy). null si no parsea.
+  function daysSinceDate(dateStr) {
+    const s = String(dateStr || '').trim();
+    let d = null;
+    const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+    const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(s);
+    if (iso) d = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    else if (dmy) d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
+    if (!d || isNaN(d.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.floor((today - d) / 86400000);
+  }
+
   function tipoLabel(tipo) {
     return (tipo && t('tipo.' + tipo)) || t('tipo.unknown') || 'un documento';
   }
@@ -974,6 +1077,17 @@
       vence = data && data.fecha_vencimiento;
       expired = isExpired(vence);
       if (expired) { cur.expired = true; cur.vence = vence; }
+    }
+    // Frescura de la carta de trabajo: debe confirmar empleo ACTUAL → reciente.
+    if (baseDocName(inputName) === 'doc_carta_trabajo') {
+      const issued = data && (data.fecha_emision_karta || data.fecha_emision ||
+        data.fecha_carta || data.issue_date || data.fecha);
+      const ageDays = daysSinceDate(issued);
+      if (ageDays !== null && ageDays > MAX_WORK_LETTER_AGE_DAYS) {
+        cur.stale = true; cur.issueDate = String(issued); cur.ageDays = ageDays;
+      } else {
+        cur.stale = false;
+      }
     }
     docCheck[inputName] = cur;
     return { tipoStatus: tipoStatus, expired: expired, detected: detected, vence: vence };

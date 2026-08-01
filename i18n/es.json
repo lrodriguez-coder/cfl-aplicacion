@@ -22,7 +22,9 @@
     "doc_required": "Falta subir un documento obligatorio",
     "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo.",
     "doc_tipo_incorrecto": "{doc}: el archivo subido parece {detected}. Suba el documento correcto.",
-    "doc_vencido": "{doc}: el documento está vencido (venció el {date}). Suba un documento vigente."
+    "doc_vencido": "{doc}: el documento está vencido (venció el {date}). Suba un documento vigente.",
+    "doc_duplicado": "Subiste el mismo archivo en \"{a}\" y \"{b}\". Cada documento debe ser distinto — si no tienes 3 estados de banco, sube otro comprobante (Aqualectra, flow o uittreksel), pero no repitas el mismo archivo.",
+    "carta_vieja": "{doc}: la carta de trabajo tiene {dias} días (emitida el {date}). Debe ser de los últimos 30 días — pide una carta actualizada que confirme tu empleo actual."
   },
   "intro": {
     "title": "📋 Antes de empezar",
