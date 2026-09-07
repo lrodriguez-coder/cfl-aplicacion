@@ -23,9 +23,10 @@
   // skips the n8n submit/upload/vincular path. OCR still runs via n8n on attach
   // (fills ocrResults). Flip to true only once the v2 endpoint is enabled
   // (INTAKE_ENABLED=true) and V2_INTAKE_SECRET matches App Runner's INTAKE_SECRET.
-  const USE_V2_INTAKE = false;
+  const USE_V2_INTAKE = true;
   const V2_INTAKE_URL = 'https://api.curloans.com/v1/public/intake';
-  const V2_INTAKE_SECRET = 'CHANGE_ME_match_App_Runner_INTAKE_SECRET';
+  // No shared secret needed — reCAPTCHA is the anti-bot gate server-side.
+  const V2_INTAKE_SECRET = '';
   // Maps the form's file-input base names to the v2 document_type enum.
   function mapDocTypeToV2(inputName) {
     const base = String(inputName || '').replace(/_\d+$/, '');
@@ -78,14 +79,18 @@
       }
     }
 
-    // Cloudflare Turnstile token, if the widget is present on the page.
-    const tsEl = $('[name="cf-turnstile-response"]');
-    const turnstileToken = tsEl && tsEl.value ? tsEl.value : undefined;
+    // Google reCAPTCHA v2 token. When the widget is on the page the client must
+    // solve it before we submit (server enforces it when RECAPTCHA_SECRET is set).
+    const rcEl = $('[name="g-recaptcha-response"]');
+    const captchaToken = rcEl && rcEl.value ? rcEl.value : undefined;
+    if ($('.g-recaptcha') && !captchaToken) {
+      throw new Error(t('error.captcha') || 'Por favor konfirmá ku bo no ta un robot.');
+    }
 
     const res = await fetch(V2_INTAKE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-intake-secret': V2_INTAKE_SECRET },
-      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, turnstileToken: turnstileToken })
+      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, captchaToken: captchaToken })
     });
     const result = await res.json().catch(function () { return {}; });
     if (!res.ok || !result.ok) {
