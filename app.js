@@ -17,6 +17,83 @@
   const EMAIL_VERIFY_SEND_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-send';
   const EMAIL_VERIFY_CONFIRM_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-confirm';
 
+  // ===== v2 DIRECT INTAKE (feed the v2 API instead of n8n) =====
+  // When USE_V2_INTAKE is true, the form posts the whole application straight to
+  // the v2 API (client + application + documents-as-base64 + OCR results) and
+  // skips the n8n submit/upload/vincular path. OCR still runs via n8n on attach
+  // (fills ocrResults). Flip to true only once the v2 endpoint is enabled
+  // (INTAKE_ENABLED=true) and V2_INTAKE_SECRET matches App Runner's INTAKE_SECRET.
+  const USE_V2_INTAKE = false;
+  const V2_INTAKE_URL = 'https://api.curloans.com/v1/public/intake';
+  const V2_INTAKE_SECRET = 'CHANGE_ME_match_App_Runner_INTAKE_SECRET';
+  // Maps the form's file-input base names to the v2 document_type enum.
+  function mapDocTypeToV2(inputName) {
+    const base = String(inputName || '').replace(/_\d+$/, '');
+    switch (base) {
+      case 'doc_cedula': return 'cedula_front';
+      case 'doc_payslips': return 'payslip';
+      case 'doc_bancos': return 'bank_statement';
+      case 'doc_carta_trabajo': return 'work_letter';
+      case 'doc_aqualectra': return 'aqualectra';
+      case 'doc_id_adicional': return 'other';
+      default: return 'other';
+    }
+  }
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      const r = new FileReader();
+      r.onload = function () {
+        // strip the "data:<mime>;base64," prefix — v2 expects raw base64
+        const s = String(r.result || '');
+        const i = s.indexOf(',');
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      r.onerror = function () { reject(r.error || new Error('read failed')); };
+      r.readAsDataURL(file);
+    });
+  }
+  // Gather + POST the full application to the v2 intake endpoint.
+  async function submitToV2() {
+    const form = {};
+    new FormData($form).forEach(function (val, key) {
+      if (!(val instanceof File)) form[key] = val;
+    });
+    form._lang = currentLang;
+    form._submitted_at = new Date().toISOString();
+
+    const documents = [];
+    const fileInputs = $$('input[type="file"]');
+    for (const input of fileInputs) {
+      const files = input.files ? Array.from(input.files) : [];
+      for (const file of files) {
+        try {
+          const b64 = await fileToBase64(file);
+          documents.push({
+            documentType: mapDocTypeToV2(input.name),
+            fileBase64: b64,
+            filename: file.name,
+            mimeType: file.type || 'application/octet-stream'
+          });
+        } catch (err) { console.warn('base64 fallo:', input.name, err); }
+      }
+    }
+
+    // Cloudflare Turnstile token, if the widget is present on the page.
+    const tsEl = $('[name="cf-turnstile-response"]');
+    const turnstileToken = tsEl && tsEl.value ? tsEl.value : undefined;
+
+    const res = await fetch(V2_INTAKE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-intake-secret': V2_INTAKE_SECRET },
+      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, turnstileToken: turnstileToken })
+    });
+    const result = await res.json().catch(function () { return {}; });
+    if (!res.ok || !result.ok) {
+      throw new Error((result.error && result.error.message) || ('v2 intake HTTP ' + res.status));
+    }
+    return result; // { applicationId, clientId, ... }
+  }
+
   // Master switch: si está en false la verificación de email se vuelve
   // opcional (el cliente puede enviar sin verificar). Útil para apagar
   // rápido si el workflow n8n tiene un problema.
@@ -1609,6 +1686,26 @@
     $btnSubmit.textContent = t('nav.submitting') || 'Mandando...';
     clearErrors();
 
+    // ---- v2 direct path: post everything (fields + OCR + docs base64) to the
+    // v2 API and skip the n8n submit/upload/vincular flow entirely. ----
+    if (USE_V2_INTAKE) {
+      try {
+        const result = await submitToV2();
+        track(7, 'enviado');
+        clearDraft();
+        if (result.applicationId) {
+          $('#aplicacionIdMsg').textContent = '#' + result.applicationId;
+        }
+        showStep('done');
+      } catch (err) {
+        console.error('v2 intake error:', err);
+        showErrors([(t('error.submit') || 'Hubo un problema al enviar.') + ' (' + err.message + ')']);
+        $btnSubmit.disabled = false;
+        $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
+      }
+      return;
+    }
+
     // Antes de entregar, esperar a que TODAS las subidas de documentos terminen.
     // Si alguna falló (tras reintentos), abortar y pedir al cliente que reintente.
     $btnSubmit.textContent = t('nav.waiting_uploads') || 'Esperando documentos...';
@@ -1959,6 +2056,9 @@
   const uploadTracker = {};
 
   function uploadDoc(file, docType, idx) {
+    // In v2-direct mode the documents travel as base64 in the intake POST, so we
+    // skip the n8n S3 upload entirely (OCR still runs separately on attach).
+    if (USE_V2_INTAKE) return Promise.resolve();
     const safeIdx = idx || 0;
     const key = docType + '_' + safeIdx;
     const entry = { file: file, docType: docType, idx: safeIdx, state: 'pending', attempts: 0 };
