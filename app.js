@@ -1204,6 +1204,19 @@
   // Compara el período expected del slot (data-expected-year/month) contra
   // lo que el OCR devolvió. Devuelve { periodMatch:bool, periodDetail:string }
   // o null si no se puede validar. NO BLOQUEA: solo informativo.
+  //
+  // Un extracto de banco cubre un RANGO, y los bancos de acá lo cortan donde
+  // les queda cómodo: el de agosto suele arrancar el 31-jul. Mirando solo
+  // `periodo_desde` ese extracto se leía como julio y el cliente veía que su
+  // documento correcto estaba mal (caso reportado por teléfono 2026-09-08).
+  // Un extracto matchea el slot si el mes esperado CAE DENTRO del rango.
+  function ym(str) {
+    const m = /^(\d{4})-(\d{2})/.exec(String(str || ''));
+    return m ? { y: parseInt(m[1], 10), m: parseInt(m[2], 10) } : null;
+  }
+  function ymIndex(y, m) { return y * 12 + (m - 1); }
+  function ymLabel(p) { return p.y + '-' + String(p.m).padStart(2, '0'); }
+
   function validatePeriodForInput(inputName, ocrData) {
     const input = $('[name="' + inputName + '"]');
     if (!input) return null;
@@ -1211,21 +1224,34 @@
     const expM = parseInt(input.dataset.expectedMonth, 10);
     if (!expY || !expM) return null;
     const base = baseDocName(inputName);
-    let detY = null, detM = null;
+    const want = ymIndex(expY, expM);
+
     if (base === 'doc_payslips') {
-      detY = parseInt(ocrData.periodo_anio, 10);
-      detM = parseInt(ocrData.periodo_mes, 10);
-    } else if (base === 'doc_bancos') {
-      const desde = String(ocrData.periodo_desde || '');
-      const m = /^(\d{4})-(\d{2})/.exec(desde);
-      if (m) { detY = parseInt(m[1], 10); detM = parseInt(m[2], 10); }
+      const detY = parseInt(ocrData.periodo_anio, 10);
+      const detM = parseInt(ocrData.periodo_mes, 10);
+      if (!detY || !detM) return null;
+      return {
+        periodMatch: ymIndex(detY, detM) === want,
+        periodDetail: detY + '-' + String(detM).padStart(2, '0')
+      };
     }
-    if (!detY || !detM) return null;
-    const match = (detY === expY && detM === expM);
-    return {
-      periodMatch: match,
-      periodDetail: detY + '-' + String(detM).padStart(2, '0')
-    };
+
+    if (base === 'doc_bancos') {
+      const desde = ym(ocrData.periodo_desde);
+      const hasta = ym(ocrData.periodo_hasta);
+      if (!desde && !hasta) return null;
+      const from = desde || hasta;
+      const to = hasta || desde;
+      const lo = Math.min(ymIndex(from.y, from.m), ymIndex(to.y, to.m));
+      const hi = Math.max(ymIndex(from.y, from.m), ymIndex(to.y, to.m));
+      return {
+        periodMatch: want >= lo && want <= hi,
+        periodDetail: ymLabel(from) === ymLabel(to)
+          ? ymLabel(from)
+          : ymLabel(from) + ' → ' + ymLabel(to)
+      };
+    }
+    return null;
   }
 
   // Renderiza el warning amber del período DEBAJO del status existente.
