@@ -1816,10 +1816,17 @@
       // Resultados OCR (para que el backend los use igual que pipeline WhatsApp)
       fd.append('_ocr_results', JSON.stringify(ocrResults));
 
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        body: fd
-      });
+      // The last request of the whole flow, and it used to be the only one
+      // without a retry: every document upload gets three attempts and a 45s
+      // timeout, while the submit that actually files the application got one
+      // shot. A customer on LTE hit "Load failed" here today with everything
+      // already filled in and uploaded — one dropped packet away from losing
+      // the lot.
+      //
+      // Retried three times with a growing pause. Only network failures and 5xx
+      // are retried: a 4xx means the server understood and refused, and sending
+      // it again would just file the same application twice.
+      const response = await postWithRetry(WEBHOOK_URL, fd);
 
       if (!response.ok) throw new Error('Server returned ' + response.status);
       const result = await response.json();
@@ -1844,6 +1851,38 @@
       $btnSubmit.disabled = false;
       $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
     }
+  }
+
+  // POST with a timeout and three attempts, for the requests we cannot afford
+  // to lose. Retries a network failure or a 5xx; never a 4xx, which the server
+  // understood and refused on purpose.
+  async function postWithRetry(url, body, attempts) {
+    const max = attempts || 3;
+    let lastErr = null;
+    for (let i = 0; i < max; i++) {
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timeoutId = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, 45000) : null;
+      try {
+        const opts = { method: 'POST', body: body };
+        if (ctrl) opts.signal = ctrl.signal;
+        const res = await fetch(url, opts);
+        if (timeoutId) clearTimeout(timeoutId);
+        if (res.status >= 500 && i < max - 1) {
+          lastErr = new Error('Server returned ' + res.status);
+          await new Promise(function (r) { setTimeout(r, 1500 * (i + 1)); });
+          continue;
+        }
+        return res;
+      } catch (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+        lastErr = err;
+        if (i < max - 1) {
+          await new Promise(function (r) { setTimeout(r, 1500 * (i + 1)); });
+          continue;
+        }
+      }
+    }
+    throw lastErr || new Error('Network error');
   }
 
   // ===== EMAIL VERIFICATION =====
