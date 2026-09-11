@@ -36,7 +36,11 @@
       case 'doc_bancos': return 'bank_statement';
       case 'doc_carta_trabajo': return 'work_letter';
       case 'doc_aqualectra': return 'aqualectra';
-      case 'doc_id_adicional': return 'other';
+      // The passport or driving licence. It was filed as 'other' until
+      // 2026-09-11, which is why the Aska packet never carried one: the
+      // insurer takes it as the second photo ID and nothing could tell it
+      // apart from any other stray upload.
+      case 'doc_id_adicional': return 'id_secondary';
       default: return 'other';
     }
   }
