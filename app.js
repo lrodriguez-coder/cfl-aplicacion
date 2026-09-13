@@ -1607,6 +1607,18 @@
             : (t('step3.salario') || 'Salario neto')),
           'XCG ' + (get('salario_neto') || '0')) +
         rowAlways(t('step3.banco') || 'Banko', get('banco_debito')) +
+        // Lo que declaró sobre el inhouden va en el resumen: es lo que más
+        // pesa en la decisión y lo único que el cliente afirma sobre un
+        // tercero, así que tiene que verlo antes de mandar.
+        (get('inhouden_posible')
+          ? rowAlways(
+              t('step3.inhouden') || 'Inhouden',
+              get('inhouden_posible') === 'si'
+                ? (t('step3.inhouden_si') || 'Sí')
+                : get('inhouden_posible') === 'no'
+                  ? (t('step3.inhouden_no') || 'No')
+                  : (t('step3.inhouden_no_se') || 'No preguntó'))
+          : '') +
         rowAlways(t('step3.cuenta_bancaria') || 'Number di kuenta', get('cuenta_bancaria_debito')) +
         rowAlways(t('step3.email') || 'Email', get('email')) +
         rowAlways(t('step3.direccion') || 'Direkshon', get('direccion')) +
@@ -2262,6 +2274,32 @@
     // Los campos de texto sí se preservan via localStorage.
     showStep(1);
     track(1, 'inicio');
+    wireInhouden();
+  }
+
+  // ── Inhouden ─────────────────────────────────────────────────────────────
+  //
+  // Es el escalón más alto de los métodos de repago y el único que no se puede
+  // deducir del banco, porque depende del empleador. Por eso se pregunta, y por
+  // eso quien contesta que sí tiene que confirmar que YA PREGUNTÓ antes de
+  // contestar: declararlo sin haberlo verificado puede costar la solicitud.
+  //
+  // La casilla sólo aparece cuando dice que sí, porque pedirle que confirme
+  // algo que acaba de negar no tiene sentido y entrena a la gente a tildar sin
+  // leer.
+  function wireInhouden() {
+    const sel = document.querySelector('#inhoudenSelect');
+    const box = document.querySelector('#inhoudenAttest');
+    const chk = document.querySelector('#inhoudenAttestBox');
+    if (!sel || !box || !chk) return;
+    const sync = function () {
+      const si = sel.value === 'si';
+      box.hidden = !si;
+      chk.required = si;
+      if (!si) chk.checked = false;
+    };
+    sel.addEventListener('change', sync);
+    sync();
   }
 
   if (document.readyState === 'loading') {
