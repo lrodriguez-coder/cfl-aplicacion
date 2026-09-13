@@ -256,6 +256,32 @@
         </select>
       </div>
 
+      <!--
+        Inhouden: e manera di paga ku ta yuda mas.
+
+        E ta e skalon mas haltu di e katalogo i e uniko ku no por wordu deribá
+        for di e banko, pasobra e ta dependé di e dunadó di trabou. Pa esei
+        nos ta puntra — i pa esei e kliente mester konfirmá ku EL A PUNTRA
+        kaba, promé ku e kontestá. Deklarabo sin a verifiká por kosta e
+        solisitut.
+      -->
+      <div class="field">
+        <label data-i18n="step3.inhouden">Bo dunadó di trabou ta aseptá deduccion di salario (inhouden)?</label>
+        <select name="inhouden_posible" id="inhoudenSelect">
+          <option value="">—</option>
+          <option value="si" data-i18n="step3.inhouden_si">Sí, mi a puntra i nan ta aseptá</option>
+          <option value="no" data-i18n="step3.inhouden_no">No, nan no ta aseptá</option>
+          <option value="no_se" data-i18n="step3.inhouden_no_se">Mi no a puntra ainda</option>
+        </select>
+        <p class="field-hint" data-i18n="step3.inhouden_hint">Ku inhouden bo tin mas chèns di wordu aprobá, pasobra e pago ta sali direktamente for di bo salario.</p>
+        <div class="field-hint" id="inhoudenAttest" hidden>
+          <label style="display:flex;gap:.5rem;align-items:flex-start">
+            <input type="checkbox" name="inhouden_atestado" id="inhoudenAttestBox" style="margin-top:.25rem">
+            <span data-i18n="step3.inhouden_atestado">Mi ta konfirmá ku mi a puntra mi dunadó di trabou i ku nan ta aseptá. Mi sa ku deklará esaki sin a verifiká por kosta mi solisitut.</span>
+          </label>
+        </div>
+      </div>
+
       <div class="field">
         <label data-i18n="step3.cuenta_bancaria">Number di kuenta di banko *</label>
         <input type="text" name="cuenta_bancaria_debito" required minlength="5" maxlength="30" pattern="[0-9\s\-]{5,30}" placeholder="ej: 12345678" inputmode="numeric" autocomplete="off" title="Solamente number, espasio of guion. 5-30 karakteres.">
