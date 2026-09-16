@@ -1320,7 +1320,32 @@
     // cuando el documento sólo trae iniciales + apellido ("A.R. Bakker" →
     // 1 token usable), alcanza con que ese apellido coincida — si no,
     // marcaríamos como sospechoso a un titular legítimo.
+    // Un documento puede traer las iniciales pegadas en lugar de los nombres,
+    // y delante el apellido del conyuge: "MBM Vanderheyden - Visser" es
+    // Marinus Benjamin Martin Visser. Comparten un solo token (el apellido),
+    // asi que la regla de 2 lo marcaba como sospechoso siendo el titular.
+    // Si el apellido coincide y alguno de los tokens restantes son sus
+    // iniciales EN ORDEN, es la misma persona.
+    function inicialesDe(blob, nombres) {
+      var ini = nombres.map(function (n) { return n[0]; });
+      var i = 0;
+      for (var k = 0; k < blob.length; k++) {
+        var hit = false;
+        while (i < ini.length) { if (ini[i] === blob[k]) { hit = true; i++; break; } i++; }
+        if (!hit) return false;
+      }
+      return true;
+    }
     var ok = shared.length >= 2 || (b.length === 1 && shared.length >= 1);
+    if (!ok && shared.length >= 1) {
+      var enComun = {};
+      shared.forEach(function (w) { enComun[w] = true; });
+      var restoDoc = b.filter(function (w) { return !enComun[w]; });
+      var restoCed = a.filter(function (w) { return !enComun[w]; });
+      ok = restoDoc.some(function (blob) {
+        return blob.length >= 2 && blob.length <= 4 && inicialesDe(blob, restoCed);
+      });
+    }
     return { ok: ok, shared: shared.length, sharedTokens: shared };
   }
 
