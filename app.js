@@ -203,6 +203,12 @@
   // expired:bool, detected:string, vence:string }. Se rehace en cada subida.
   const docCheck = {};
 
+  // Rango de cada extracto bancario subido, por slot: [{account,from,to}].
+  // Vive SOLO en el navegador: no se manda al backend. ocrResults.doc_bancos
+  // se deja como esta a proposito, porque el analisis lo lee como si fuera
+  // la extraccion completa y aqui solo tenemos la clasificacion liviana.
+  const bancoRangos = {};
+
   // SHA-256 (hex) por archivo subido, indexado por input.name → [hash, ...].
   // Detecta el MISMO archivo subido en dos slots (contenido idéntico, aunque
   // el nombre difiera). Caso Raylian 2026-08-01: subió el bill de Aqualectra
@@ -382,6 +388,31 @@
             );
           }
         });
+      }
+
+      // Cobertura de los extractos: que entre todos cubran ~3 meses seguidos
+      // en alguna cuenta. AVISA, no bloquea — para bloquear, empujar el
+      // motivo a errs/errMsgs como hacen los payslips justo arriba.
+      const rangosBanco = [];
+      Object.keys(bancoRangos).forEach(function (k) {
+        (bancoRangos[k] || []).forEach(function (r) {
+          if (r && r.from && r.to) rangosBanco.push(r);
+        });
+      });
+      const inputBanco = $('[name="doc_bancos"]');
+      const montaje = inputBanco && inputBanco.closest('.upload-label');
+      if (montaje) {
+        const viejo = montaje.querySelector('.coverage-warn');
+        if (viejo) viejo.remove();
+        if (rangosBanco.length > 0) {
+          const cob = evaluarCobertura(rangosBanco, 85, 3);
+          if (!cob.completa && cob.motivo) {
+            const aviso = document.createElement('div');
+            aviso.className = 'coverage-warn period-mismatch-warn';
+            aviso.textContent = '⚠️ ' + cob.motivo;
+            montaje.appendChild(aviso);
+          }
+        }
       }
     }
     // Tipo de documento incorrecto / documento vencido (aplica a TODOS los file inputs con archivo)
@@ -1193,6 +1224,82 @@
   // solo pide el tipo de documento. No bloquea si la clasificación falla.
   // Para bank statements usamos el modo 'banco_liviano' que ADEMÁS del tipo
   // extrae el periodo (desde/hasta) sin las transacciones — barato y rápido.
+  // ===== COBERTURA DE EXTRACTOS =====
+  // Mide los dias como UNION de los rangos, no como suma: asi el mismo mes
+  // subido tres veces cuenta 30 dias y no 90, y el duplicado sale de la
+  // aritmetica sin necesitar una regla aparte.
+  //
+  // Pasa si ALGUNA cuenta cubre el tramo pedido. Exigirselo a todas fallaria
+  // a quien tiene una cuenta de ahorro que solo llega a dos meses.
+  function evaluarCobertura(rangos, requiredDays, toleranceDays) {
+    const DIA = 86400000;
+    const porCuenta = {};
+    rangos.forEach(function (r) {
+      const desde = Date.parse(r.from);
+      const hasta = Date.parse(r.to);
+      if (isNaN(desde) || isNaN(hasta) || hasta < desde) return;
+      const k = (r.account || '').toString().trim() || 'sin-cuenta';
+      if (!porCuenta[k]) porCuenta[k] = [];
+      porCuenta[k].push([desde, hasta]);
+    });
+
+    const cuentas = [];
+    Object.keys(porCuenta).forEach(function (k) {
+      const ord = porCuenta[k].slice().sort(function (a, b) { return a[0] - b[0]; });
+      const unidos = [];
+      let repetidos = 0;
+      ord.forEach(function (par) {
+        const ultimo = unidos[unidos.length - 1];
+        if (!ultimo) { unidos.push([par[0], par[1]]); return; }
+        if ((par[0] - ultimo[1]) / DIA <= toleranceDays) {
+          if (par[0] < ultimo[1]) repetidos += Math.min(ultimo[1], par[1]) - par[0];
+          ultimo[1] = Math.max(ultimo[1], par[1]);
+        } else {
+          unidos.push([par[0], par[1]]);
+        }
+      });
+      const huecos = [];
+      for (let i = 1; i < unidos.length; i++) {
+        huecos.push({
+          desde: new Date(unidos[i - 1][1]).toISOString().slice(0, 10),
+          hasta: new Date(unidos[i][0]).toISOString().slice(0, 10),
+          dias: Math.round((unidos[i][0] - unidos[i - 1][1]) / DIA)
+        });
+      }
+      let mayor = 0;
+      unidos.forEach(function (u) { mayor = Math.max(mayor, Math.round((u[1] - u[0]) / DIA)); });
+      cuentas.push({
+        cuenta: k, dias: mayor, repetidos: Math.round(repetidos / DIA),
+        huecos: huecos, completa: mayor >= requiredDays
+      });
+    });
+
+    cuentas.sort(function (a, b) { return b.dias - a.dias; });
+    let mejor = null;
+    for (let i = 0; i < cuentas.length; i++) { if (cuentas[i].completa) { mejor = cuentas[i]; break; } }
+    if (!mejor) mejor = cuentas[0] || null;
+    const completa = !!(mejor && mejor.completa);
+
+    let motivo = null;
+    if (!completa) {
+      if (!mejor) {
+        motivo = t('error.extractos_sin_periodo') || 'No pudimos leer el período de los extractos.';
+      } else if (mejor.huecos.length > 0) {
+        const h = mejor.huecos[0];
+        motivo = t('error.extractos_hueco', { desde: h.desde, hasta: h.hasta, dias: h.dias })
+          || ('Falta el período del ' + h.desde + ' al ' + h.hasta + ' (' + h.dias + ' días sin cubrir).');
+      } else {
+        motivo = t('error.extractos_cortos', { dias: mejor.dias, faltan: requiredDays - mejor.dias })
+          || ('Los extractos cubren ' + mejor.dias + ' días seguidos y hacen falta ' + requiredDays + '.');
+        if (mejor.repetidos > 0) {
+          motivo += ' ' + (t('error.extractos_repetidos', { dias: mejor.repetidos })
+            || ('Hay ' + mejor.repetidos + ' días repetidos: revisá si subiste el mismo mes más de una vez.'));
+        }
+      }
+    }
+    return { completa: completa, motivo: motivo, cuentas: cuentas };
+  }
+
   async function classifyDoc(file, inputName, idx, container) {
     try {
       const fd = new FormData();
@@ -1211,6 +1318,17 @@
         if (periodCheck) docCheck[inputName] = Object.assign(docCheck[inputName] || {}, periodCheck);
         // banco_liviano devuelve `titular` → validar contra la cédula.
         if (container) checkNameMatch(container, inputName, data);
+        // Y guardamos el rango para medir la cobertura al enviar. idx === 0
+        // limpia: cada tanda de subida empieza de cero, asi una
+        // re-seleccion con menos ficheros no deja rangos viejos.
+        if (base === 'doc_bancos') {
+          if (idx === 0 || !bancoRangos[inputName]) bancoRangos[inputName] = [];
+          bancoRangos[inputName][idx] = {
+            account: data.numero_cuenta || null,
+            from: data.periodo_desde || null,
+            to: data.periodo_hasta || null
+          };
+        }
       }
     } catch (e) { /* clasificación opcional: no bloquea */ }
   }
