@@ -141,12 +141,22 @@
       empleador: 'empleador',
       cargo: 'cargo',
       salario_neto_total: 'salario_neto',
+      // La cuenta donde le cae el sueldo es la cuenta de debito del
+      // cliente. El OCR la trae y hasta hoy habia que teclearla a mano.
+      numero_cuenta_destino: 'cuenta_bancaria_debito',
     },
     carta: {
       empleador: 'empleador',
       cargo: 'cargo',
+      // OJO: la carta NO devuelve salario_neto (devuelve salario_bruto),
+      // asi que esta linea no dispara nunca. Se deja porque mapear el
+      // bruto al campo de neto falsearia el ingreso en el scoring; el
+      // neto correcto sale del payslip (salario_neto_total).
       salario_neto: 'salario_neto',
       tipo_empleo: 'tipo_empleado',
+      // La carta trae los dos y el formulario tiene ambos campos.
+      telefono_empleador: 'telefono_empleador',
+      direccion_empleador: 'direccion_empleador',
     },
     banco: {
       direccion_titular: 'direccion',
