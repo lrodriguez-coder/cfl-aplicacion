@@ -22,6 +22,7 @@
     "peso_altura": "Revise peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los puso al revés?",
     "terms": "Debe aceptar los términos y condiciones.",
     "submit": "Hubo un error al enviar su solicitud. Por favor intente de nuevo.",
+    "captcha_retry": "Marque de nuevo la casilla de verificación antes de volver a enviar.",
     "doc_required": "Falta subir un documento obligatorio",
     "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo.",
     "doc_tipo_incorrecto": "{doc}: el archivo subido parece {detected}. Quítelo o suba el documento correcto.",

@@ -22,6 +22,7 @@
     "peso_altura": "Chèk peso i altura: e altura (cm) mester ta mas haltu ku e peso (kg). Bo a invertí nan?",
     "terms": "Bo mester aseptá e términos i kondishon.",
     "submit": "A pasa un eror mandando bo aplikashon. Por fabor purba bèk.",
+    "captcha_retry": "Por fabor marká e kashi di verifikashon atrobe promé ku bo manda bèk.",
     "doc_required": "Ta falta un dokumento obligatorio",
     "cuota_cero": "E kuota di referensia no por ta 0. Chèk e monto i e plazo.",
     "doc_tipo_incorrecto": "{doc}: e dokumento ku bo a manda ta parse {detected}. Kita e of manda e dokumento korekto.",

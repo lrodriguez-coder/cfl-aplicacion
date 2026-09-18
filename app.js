@@ -1273,6 +1273,21 @@
     return Math.floor((today - d) / 86400000);
   }
 
+  // Un token de reCAPTCHA v2 sirve UNA vez y vive unos dos minutos. Sin esto,
+  // despues de un envio fallido el casillero sigue tildado con el token ya
+  // gastado y CADA reintento manda el mismo token muerto: la persona ve el
+  // mismo error para siempre y la unica salida es recargar, que le borra la
+  // verificacion de email. Leonard, 18-sep, con un cliente delante.
+  function resetCaptcha() {
+    try {
+      if (typeof grecaptcha !== 'undefined' && grecaptcha && typeof grecaptcha.reset === 'function') {
+        grecaptcha.reset();
+        return true;
+      }
+    } catch (e) { /* el script de Google no cargo: no hay nada que resetear */ }
+    return false;
+  }
+
   function tipoLabel(tipo) {
     return (tipo && t('tipo.' + tipo)) || t('tipo.unknown') || 'un documento';
   }
@@ -2024,7 +2039,16 @@
         showStep('done');
       } catch (err) {
         console.error('v2 intake error:', err);
-        showErrors([(t('error.submit') || 'Hubo un problema al enviar.') + ' (' + err.message + ')']);
+        // El token del captcha ya se consumio en el intento fallido. Se pide
+        // uno nuevo ANTES de devolverle el boton, para que el reintento no
+        // vuelva a fallar por la misma razon.
+        const seReseteo = resetCaptcha();
+        const avisos = [(t('error.submit') || 'Hubo un problema al enviar.') + ' (' + err.message + ')'];
+        if (seReseteo) {
+          avisos.push(t('error.captcha_retry') ||
+            'Marcá de nuevo la casilla "No soy un robot" antes de volver a enviar.');
+        }
+        showErrors(avisos);
         $btnSubmit.disabled = false;
         $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
       }
