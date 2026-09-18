@@ -10,7 +10,13 @@
   const TOTAL_STEPS = 7;
   const STORAGE_KEY = 'cfl_aplicacion_v1';
   const WEBHOOK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-submit';
-  const OCR_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-ocr';
+  // OCR en v2. Antes era el webhook de n8n `web-aplicacion-ocr`, que empezó a
+  // responder HTTP 500: el formulario dejó de prellenar y nadie lo veía,
+  // porque runOcr se traga el fallo en un avisito y el cliente sólo encontraba
+  // los campos vacíos y tecleaba todo a mano. El extractor de v2 sí funciona
+  // (es el que usan los oficiales; 0 errores de n8n en 90 días y 43 de 49
+  // documentos leídos), así que el formulario ahora habla con ése.
+  const OCR_URL = 'https://api.curloans.com/v1/public/ocr';
   const TRACK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/aplicacion-web-track';
   const UPLOAD_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-upload';
   const LINK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-vincular';
@@ -1349,14 +1355,33 @@
     return { completa: completa, motivo: motivo, cuentas: cuentas };
   }
 
+  // El OCR de v2 recibe el archivo como base64 dentro de un JSON. El webhook
+  // de n8n recibía multipart, pero v2 no tiene @fastify/multipart instalado y
+  // agregarlo sería un plugin nuevo en el arranque del servidor para no ganar
+  // nada: `fileToBase64` ya está acá arriba y el intake v2 la usa desde
+  // septiembre. La respuesta es la MISMA forma de siempre ({ok, data} con
+  // data.tipo_detectado), así que de acá para abajo nada cambia.
+  async function ocrRequest(file, docType) {
+    const fileBase64 = await fileToBase64(file);
+    return fetch(OCR_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        docType: docType,
+        fileBase64: fileBase64,
+        // undefined se cae del JSON; el endpoint los valida como opcionales
+        // y recupera el tipo real por extensión o magic bytes si no van.
+        mimeType: file.type || undefined,
+        filename: file.name || undefined
+      })
+    });
+  }
+
   async function classifyDoc(file, inputName, idx, container) {
     try {
-      const fd = new FormData();
       const base = baseDocName(inputName);
       const mode = (base === 'doc_bancos') ? 'banco_liviano' : 'clasificar';
-      fd.append('doc_type', mode);
-      fd.append('file', file);
-      const res = await fetch(OCR_URL, { method: 'POST', body: fd });
+      const res = await ocrRequest(file, mode);
       if (!res.ok) return;
       const result = await res.json();
       const data = (result && result.data) || null;
@@ -1555,13 +1580,12 @@
     const suffix = (Array.isArray(ocrResults[inputName])) ? ' (' + (idx + 1) + ')' : '';
     setOcrStatus(container, '🔎 ' + (t('ocr.analyzing') || 'Analizando documento…') + suffix, 'loading');
     try {
-      const fd = new FormData();
-      fd.append('doc_type', docType);
-      fd.append('file', file);
-      const res = await fetch(OCR_URL, { method: 'POST', body: fd });
+      const res = await ocrRequest(file, docType);
       if (!res.ok) {
-        // 524 / 504 = Cloudflare/server timeout. Para bank statements grandes (>100s),
-        // el análisis completo lo hace el backend al procesar la aplicación.
+        // 504 / 408 = timeout del servidor. Para documentos grandes el análisis
+        // completo lo hace el backend al procesar la aplicación. (El 524 era de
+        // Cloudflare cuando el OCR pasaba por n8n; se deja porque no cuesta nada
+        // y el formulario viejo puede seguir cacheado en algún teléfono.)
         if (res.status === 524 || res.status === 504 || res.status === 408) {
           storeOcrResult(inputName, idx, { _timeout: true });
           setOcrStatus(
