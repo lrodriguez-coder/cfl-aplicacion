@@ -424,6 +424,13 @@
       const c = docCheck[f.name];
       if (!c) return;
       if (c.tipo === 'mismatch') {
+        // Un casillero OPCIONAL no puede trancar la solicitud por traer el
+        // documento equivocado: el documento no hacia falta. Se avisa (el
+        // aviso ambar ya esta en el preview) y se deja pasar, con el boton
+        // Quitar a la vista. Los obligatorios —cedula, payslips, bancos,
+        // carta— siguen bloqueando: ahi el control existe por el caso
+        // Raylian, que fue real (Leonard, 2026-09-18).
+        if (!f.required) return;
         f.classList.add('invalid');
         if (lbl) lbl.classList.add('invalid');
         errs.push(f.name);
@@ -960,6 +967,45 @@
   }
 
   // ===== FILE UPLOADS (preview + OCR auto-fill) =====
+
+  // Vaciar un casillero. Sin esto un documento equivocado no tiene salida:
+  // el input ya tiene fichero y el navegador no ofrece "quitar", asi que la
+  // unica via era elegir otro archivo — y en un casillero OPCIONAL eso
+  // dejaba la solicitud trancada por algo que no hacia falta (Leonard,
+  // 2026-09-18). Limpia tambien lo que quedo colgando del archivo viejo:
+  // la validacion, el hash antiduplicados y el resultado de OCR.
+  function quitarArchivo(input) {
+    input.value = '';
+    docCheck[input.name] = undefined;
+    delete fileHashes[input.name];
+    if (Array.isArray(ocrResults[input.name])) ocrResults[input.name] = [];
+    else if (input.name in ocrResults) ocrResults[input.name] = null;
+    const preview = $('[data-preview-for="' + input.name + '"]');
+    if (preview) preview.innerHTML = '';
+    const label = input.closest('.upload-label');
+    if (label) { label.classList.remove('has-file'); label.classList.remove('invalid'); }
+    input.classList.remove('invalid');
+    // El mensaje rojo tiene que irse con el archivo: si se queda, la
+    // pantalla sigue diciendo que falta algo que ya no esta.
+    clearErrors();
+    saveDraft();
+  }
+
+  // El boton vive DENTRO del <label>, que abre el dialogo de archivos al
+  // hacer click. Sin frenar el evento, "Quitar" volveria a pedir un fichero.
+  function botonQuitar(input) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'file-remove';
+    btn.textContent = '✕ ' + (t('upload.remove') || 'Quitar');
+    btn.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      quitarArchivo(input);
+    });
+    return btn;
+  }
+
   function setupUploads() {
     $$('input[type="file"]').forEach(input => {
       input.addEventListener('change', e => {
@@ -988,6 +1034,9 @@
             preview.appendChild(div);
           }
         });
+
+        // Siempre una salida: cualquier casillero con archivo se puede vaciar.
+        preview.appendChild(botonQuitar(input));
 
         // doc_bancos: NO se hace OCR completo en el form (consume mucho API),
         // pero SÍ se hace una clasificación liviana para validar que el archivo
