@@ -37,7 +37,7 @@
     "doc_payslips": "Último payslips (1 te 3) — of karta di penshon si bo ta pensionado",
     "doc_bancos": "Estado di kuenta di banko (1 te 3)",
     "doc_carta": "Karta di trabou",
-    "doc_opcionales": "Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn òf uittreksel di Kranshi)"
+    "doc_opcionales": "Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)"
   },
   "step1": {
     "title": "Bo Identifikashon",
@@ -66,8 +66,8 @@
     "banco_pdf_only": "Solamente PDF — descargá di e internet banking di bo banko.",
     "carta": "📄 Karta di Trabou *",
     "aqualectra": "📄 Resibo Aqualectra (opshonal)",
-    "comprobante_domicilio": "📄 Resibo di Aqualectra, telefòn òf uittreksel di Kranshi (opshonal)",
-    "comprobante_hint": "Komprobante di adres. Bo por usa kualke un di esakinan.",
+    "comprobante_domicilio": "📄 Resibo di Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia (opshonal)",
+    "comprobante_hint": "Komprobante di adres. Bo por usa kualke un di esakinan — loke nos mester ta e adres.",
     "counter_label": "dokumento kargá",
     "choose_tipo_first": "Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 1.",
     "slot_payslip": "Payslip",
@@ -229,6 +229,8 @@
     "bank_statement": "un estado di banko",
     "employment_letter": "un karta di trabou",
     "aqualectra": "un resibo di Aqualectra",
+    "verblijfsvergunning": "un pèrmit di estadia",
+    "comprobante_domicilio": "un komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)",
     "otro": "otro tipo di dokumento",
     "unknown": "un dokumento no rekonosí"
   }
