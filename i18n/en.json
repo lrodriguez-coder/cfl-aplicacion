@@ -22,6 +22,7 @@
     "peso_altura": "Check weight and height: height (cm) must be greater than weight (kg). Did you swap them?",
     "terms": "You must accept the terms and conditions.",
     "submit": "There was an error submitting your application. Please try again.",
+    "captcha_retry": "Please tick the verification box again before submitting.",
     "doc_required": "A required document is missing",
     "cuota_cero": "The reference installment cannot be 0. Check the amount and term.",
     "doc_tipo_incorrecto": "{doc}: the uploaded file looks like {detected}. Remove it or upload the correct document.",
