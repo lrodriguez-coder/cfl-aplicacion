@@ -492,6 +492,26 @@ input[readonly] {
   border: 1px solid var(--cfl-border);
 }
 
+/* Quitar el archivo de un casillero. Misma forma que .file-name para que se
+   lea como parte del adjunto y no como un botón suelto del navegador — en
+   rojo, porque descarta. Sin esto un documento equivocado no tenía salida y
+   trancaba la solicitud entera (Leonard, 2026-09-18). */
+.upload-preview .file-remove {
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--cfl-error);
+  padding: 0.5rem 0.8rem;
+  background: white;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--cfl-error);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.upload-preview .file-remove:hover {
+  background: #FDF3F2;
+}
+
 /* ====== Sliders ====== */
 .slider-wrap {
   margin-top: 0.5rem;
