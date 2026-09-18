@@ -143,6 +143,15 @@
       pais_nacimiento: 'pais_nacimiento',
       fecha_vencimiento: 'fecha_venc_id1',
     },
+    // El pasaporte ahora devuelve tambien el PAIS de nacimiento (deducido de la
+    // ciudad cuando el documento solo trae la ciudad — Leonard, 18-sep). Solo
+    // llena si el campo esta vacio, asi que la cedula sigue mandando cuando ya
+    // lo lleno; el pasaporte cubre el caso de que la cedula no lo traiga.
+    // OJO: pais_emisor NO se mapea aca a proposito — es el pais que emitio el
+    // documento, no donde nacio la persona.
+    id_adicional: {
+      pais_nacimiento: 'pais_nacimiento',
+    },
     payslip: {
       empleador: 'empleador',
       cargo: 'cargo',
