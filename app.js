@@ -189,7 +189,12 @@
     doc_payslips: ['payslip'],
     doc_bancos: ['bank_statement'],
     doc_carta_trabajo: ['employment_letter'],
-    doc_aqualectra: ['aqualectra'],
+    // El casillero de comprobante de domicilio acepta cualquier documento que
+    // traiga la direccion: Aqualectra, factura de telefono, uittreksel de
+    // Kranshi o permiso de residencia (Leonard, 2026-09-18). Si esta lista no
+    // incluye el permiso, el formulario le bloquea el avance a quien sube
+    // justo lo que la etiqueta le invito a subir.
+    doc_aqualectra: ['aqualectra', 'verblijfsvergunning'],
   };
   // Slots cuya vigencia se verifica (el OCR devuelve fecha_vencimiento).
   const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional'];
@@ -289,7 +294,11 @@
     doc_payslips: 'step2.payslips',
     doc_bancos: 'step2.bancos',
     doc_carta_trabajo: 'step2.carta',
-    doc_aqualectra: 'step2.aqualectra'
+    // Apunta al rotulo NUEVO del casillero. 'step2.aqualectra' es el viejo
+    // ("Resibo Aqualectra") y quedo sin uso: nombraba solo uno de los cuatro
+    // documentos que el casillero acepta, asi que los avisos contradecian a
+    // la etiqueta que la persona acababa de leer.
+    doc_aqualectra: 'step2.comprobante_domicilio'
   };
   // Nombre base de un slot dinámico (doc_payslips_1 → doc_payslips). Permite
   // que toda la lógica de OCR / EXPECTED_TIPO / DOC_LABEL_I18N siga
@@ -1274,7 +1283,9 @@
       doc_payslips: 'payslip',
       doc_bancos: 'bank_statement',
       doc_carta_trabajo: 'employment_letter',
-      doc_aqualectra: 'aqualectra',
+      // Nombra los CUATRO documentos que el casillero acepta, no solo uno.
+      // Mismo patron que doc_id_adicional ("un paspoort of rijbewijs").
+      doc_aqualectra: 'comprobante_domicilio',
     };
     return tipoLabel(KEY[inputName]);
   }

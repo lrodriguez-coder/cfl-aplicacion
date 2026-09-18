@@ -37,7 +37,7 @@
     "doc_payslips": "Recibos de salario más recientes (1 a 3) — o carta de pensión si es pensionado",
     "doc_bancos": "Estados de cuenta bancarios (1 a 3)",
     "doc_carta": "Carta de trabajo",
-    "doc_opcionales": "Opcionales: pasaporte o licencia, comprobante de domicilio (Aqualectra, teléfono o uittreksel de Kranshi)"
+    "doc_opcionales": "Opcionales: pasaporte o licencia, comprobante de domicilio (Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia)"
   },
   "step1": {
     "title": "Identificación",
@@ -66,8 +66,8 @@
     "banco_pdf_only": "Solo PDF — descárguelo del internet banking de su banco.",
     "carta": "📄 Carta de trabajo *",
     "aqualectra": "📄 Recibo Aqualectra (opcional)",
-    "comprobante_domicilio": "📄 Recibo de Aqualectra, teléfono o uittreksel de Kranshi (opcional)",
-    "comprobante_hint": "Comprobante de domicilio. Puede usar cualquiera de estos.",
+    "comprobante_domicilio": "📄 Recibo de Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia (opcional)",
+    "comprobante_hint": "Comprobante de domicilio. Puede usar cualquiera de estos — lo que necesitamos es la dirección.",
     "counter_label": "documentos cargados",
     "choose_tipo_first": "Primero elija tipo de empleo y (si aplica) frecuencia de salario en el Paso 1.",
     "slot_payslip": "Recibo de salario",
@@ -229,6 +229,8 @@
     "bank_statement": "un estado de cuenta bancario",
     "employment_letter": "una carta de trabajo",
     "aqualectra": "un recibo de Aqualectra",
+    "verblijfsvergunning": "un permiso de residencia",
+    "comprobante_domicilio": "un comprobante de domicilio (Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia)",
     "otro": "otro tipo de documento",
     "unknown": "un documento no reconocido"
   }

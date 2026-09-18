@@ -37,7 +37,7 @@
     "doc_payslips": "Recent payslips (1 to 3) — or pension letter if you are a pensioner",
     "doc_bancos": "Bank statements (1 to 3)",
     "doc_carta": "Employment letter",
-    "doc_opcionales": "Optional: passport or driver's license, proof of address (Aqualectra, phone bill or Kranshi extract)"
+    "doc_opcionales": "Optional: passport or driver's license, proof of address (Aqualectra, phone bill, Kranshi extract or residence permit)"
   },
   "step1": {
     "title": "Identification",
@@ -66,8 +66,8 @@
     "banco_pdf_only": "PDF only — download from your bank's internet banking.",
     "carta": "📄 Employment letter *",
     "aqualectra": "📄 Aqualectra bill (optional)",
-    "comprobante_domicilio": "📄 Aqualectra, phone bill or Kranshi extract (optional)",
-    "comprobante_hint": "Proof of address. Any of these works.",
+    "comprobante_domicilio": "📄 Aqualectra, phone bill, Kranshi extract or residence permit (optional)",
+    "comprobante_hint": "Proof of address. Any of these works — what we need is the address.",
     "counter_label": "documents uploaded",
     "choose_tipo_first": "First choose employment type and (if applicable) salary frequency in Step 1.",
     "slot_payslip": "Payslip",
@@ -229,6 +229,8 @@
     "bank_statement": "a bank statement",
     "employment_letter": "an employment letter",
     "aqualectra": "an Aqualectra bill",
+    "verblijfsvergunning": "a residence permit",
+    "comprobante_domicilio": "a proof of address (Aqualectra, phone bill, Kranshi extract or residence permit)",
     "otro": "another type of document",
     "unknown": "an unrecognized document"
   }
