@@ -980,12 +980,32 @@
   // dejaba la solicitud trancada por algo que no hacia falta (Leonard,
   // 2026-09-18). Limpia tambien lo que quedo colgando del archivo viejo:
   // la validacion, el hash antiduplicados y el resultado de OCR.
+  // Un casillero dinamico (doc_payslips_2) guarda su OCR bajo el nombre BASE
+  // con indice, no bajo su propio nombre. quitarArchivo y storeOcrResult
+  // tienen que derivar ese indice de la MISMA forma: si se separan, quitar un
+  // archivo lo saca de la pantalla y le deja los datos adentro.
+  function indiceDeSlot(inputName, fallback) {
+    const m = /_(\d+)$/.exec(inputName);
+    return m ? Number(m[1]) - 1 : fallback;
+  }
+
   function quitarArchivo(input) {
     input.value = '';
     docCheck[input.name] = undefined;
     delete fileHashes[input.name];
-    if (Array.isArray(ocrResults[input.name])) ocrResults[input.name] = [];
-    else if (input.name in ocrResults) ocrResults[input.name] = null;
+    // El rango del extracto se guarda por nombre de casillero y alimenta la
+    // cobertura de meses. Sin borrarlo, la solicitud sigue creyendo que un mes
+    // esta cubierto por un documento que el cliente ya quito.
+    delete bancoRangos[input.name];
+    const base = baseDocName(input.name);
+    if (Array.isArray(ocrResults[base])) {
+      // Dinamico: se vacia SOLO su indice, los hermanos siguen cargados.
+      // Fijo con varios archivos en un mismo input: se vacia todo.
+      if (/_\d+$/.test(input.name)) ocrResults[base][indiceDeSlot(input.name, 0)] = null;
+      else ocrResults[base] = [];
+    } else if (base in ocrResults) {
+      ocrResults[base] = null;
+    }
     const preview = $('[data-preview-for="' + input.name + '"]');
     if (preview) preview.innerHTML = '';
     const label = input.closest('.upload-label');
@@ -994,6 +1014,10 @@
     // El mensaje rojo tiene que irse con el archivo: si se queda, la
     // pantalla sigue diciendo que falta algo que ya no esta.
     clearErrors();
+    // El contador de "documentos cargados" lo actualiza el manejador de
+    // cambios, que aqui no se dispara: sin esto quedaria contando el que
+    // acabamos de quitar.
+    updateUploadCounter();
     saveDraft();
   }
 
@@ -1135,6 +1159,14 @@
           preview.appendChild(div);
         }
       });
+
+      // Siempre una salida, igual que en los casilleros fijos. Estos son los
+      // de "Payslip 2" / "Extracto 3": los crea el JS despues de cargar la
+      // pagina, pasan por este manejador delegado y por eso #16 los dejo sin
+      // boton — un documento equivocado ahi no se podia quitar, solo
+      // reemplazar (Leonard, 2026-09-18).
+      preview.appendChild(botonQuitar(input));
+
       if (base === 'doc_bancos') {
         setOcrStatus(preview, '🔎 ' + (t('ocr.checking_type') || 'Verificando tipo de documento…'), 'loading');
         (async () => {
@@ -1188,8 +1220,8 @@
     const base = baseDocName(inputName);
     // Para slots dinámicos (doc_payslips_2 → base doc_payslips), el índice
     // viene del sufijo del nombre, no del idx pasado por la iteración.
-    const m = /_(\d+)$/.exec(inputName);
-    const realIdx = m ? Number(m[1]) - 1 : idx;
+    // Misma derivación que usa quitarArchivo, a propósito.
+    const realIdx = indiceDeSlot(inputName, idx);
     if (Array.isArray(ocrResults[base])) {
       ocrResults[base][realIdx] = data;
     } else {
