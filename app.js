@@ -1912,6 +1912,15 @@
                   ? (t('step3.inhouden_no') || 'No')
                   : (t('step3.inhouden_no_se') || 'No preguntó'))
           : '') +
+        // E kasá ta bai den e resúmen: ta un persona ku mester bin na e sita i
+        // firma, pues e kliente mester mira e promé ku e manda.
+        (get('estado_civil') === 'kasá' && (get('conyuge_nombre') || get('conyuge_apellido'))
+          ? rowAlways(
+              t('step3.conyuge') || 'Kasá',
+              [get('conyuge_nombre'), get('conyuge_apellido')].filter(Boolean).join(' ') +
+              (get('conyuge_telefono') ? ' — ' + get('conyuge_telefono') : '') +
+              (get('conyuge_numero_id') ? ' — ' + get('conyuge_numero_id') : ''))
+          : '') +
         rowAlways(t('step3.cuenta_bancaria') || 'Number di kuenta', get('cuenta_bancaria_debito')) +
         rowAlways(t('step3.email') || 'Email', get('email')) +
         rowAlways(t('step3.direccion') || 'Direkshon', get('direccion')) +
@@ -2577,6 +2586,7 @@
     showStep(1);
     track(1, 'inicio');
     wireInhouden();
+    wireConyuge();
   }
 
   // ── Inhouden ─────────────────────────────────────────────────────────────
@@ -2601,6 +2611,92 @@
       if (!si) chk.checked = false;
     };
     sel.addEventListener('change', sync);
+    sync();
+  }
+
+  // ── Kònyuge ──────────────────────────────────────────────────────────────
+  //
+  // Ley di Kòrsou ta eksigí konsentimentu di e kònyuge pa un fiansa, pues e
+  // kònyuge mester firma na e sita ku identifikashon bálido. Si nos no sa ken e
+  // ta, nos no por bisa e kliente ku e mester bin kuné, i e sita ta pèrdè:
+  // CFL-10092 a yega te na oferta aseptá sin ningun kònyuge registrá.
+  //
+  // Tres desishon:
+  //
+  //  * E kampo nan NO tin `required` den e HTML; nos ta pone i kita e for di
+  //    akinan. Un kampo obligatorio ku no ta wòrdu mustrá ta blokea e envio sin
+  //    bisa pakiko, i e kliente no por hasi nada ku esei.
+  //
+  //  * E sédula ta keda opshonal. Hopi hende no tin e number di su kasá na man
+  //    — Leonard tampoko tabatin e pa CFL-10092 — i un kampo obligatorio ku
+  //    nos no por yena ta kita un solisitut kompleto. Nos ta kompletá e na
+  //    oficina.
+  //
+  //  * Nos ta kopia pa Referensia 1 SOLAMENTE miéntras e kliente no a toka e
+  //    kampo nan ku su man. Ken ku skirbi otro kos ayanan ta manda, no nos.
+  function wireConyuge() {
+    const sel = document.querySelector('[name="estado_civil"]');
+    const box = document.querySelector('#conyugeBlock');
+    if (!sel || !box) return;
+
+    const f = (n) => document.querySelector('[name="' + n + '"]');
+    const nombre = f('conyuge_nombre');
+    const apellido = f('conyuge_apellido');
+    const telefono = f('conyuge_telefono');
+    const sedula = f('conyuge_numero_id');
+    // E sédula no ta drenta akinan: e ta keda opshonal.
+    const obligatorio = [nombre, apellido, telefono].filter(Boolean);
+
+    const refNombre = f('ref1_nombre');
+    const refTelefono = f('ref1_telefono');
+    const refRelacion = f('ref1_relacion');
+
+    // Si e kliente ya a skirbi su Referensia 1 su mes, nos no ta pisa e.
+    let refTocadaAMano = Boolean(
+      (refNombre && refNombre.value.trim()) ||
+      (refTelefono && refTelefono.value.trim())
+    );
+    [refNombre, refTelefono, refRelacion].forEach((el) => {
+      if (el) el.addEventListener('input', () => { refTocadaAMano = true; });
+    });
+
+    const casado = () => sel.value === 'kasá';
+
+    function copiarAReferencia() {
+      if (!casado() || refTocadaAMano) return;
+      const completo = [
+        nombre ? nombre.value.trim() : '',
+        apellido ? apellido.value.trim() : '',
+      ].filter(Boolean).join(' ');
+      if (refNombre) refNombre.value = completo;
+      if (refTelefono && telefono) refTelefono.value = telefono.value.trim();
+      if (refRelacion && completo) refRelacion.value = 'kasá';
+    }
+
+    function sync() {
+      const si = casado();
+      box.hidden = !si;
+      obligatorio.forEach((el) => { el.required = si; });
+      if (!si) {
+        // Ken ku kambia di "Kasá" pa otro kos no mester manda datos di un
+        // kasá ku e no tin.
+        [nombre, apellido, telefono, sedula].forEach((el) => {
+          if (el) el.value = '';
+        });
+        if (refRelacion && refRelacion.value === 'kasá' && !refTocadaAMano) {
+          refRelacion.value = '';
+          if (refNombre) refNombre.value = '';
+          if (refTelefono) refTelefono.value = '';
+        }
+        return;
+      }
+      copiarAReferencia();
+    }
+
+    sel.addEventListener('change', sync);
+    [nombre, apellido, telefono].forEach((el) => {
+      if (el) el.addEventListener('input', copiarAReferencia);
+    });
     sync();
   }
 

@@ -198,6 +198,48 @@
         <input type="text" name="pais_nacimiento" required minlength="2">
       </div>
 
+      <!--
+        Kònyuge: e ta sali SOLAMENTE ora e kliente skohe "Kasá".
+
+        Ley di Kòrsou ta eksigí konsentimentu di e kònyuge pa un fiansa, pues e
+        kònyuge mester firma na e sita ku su identifikashon bálido. Si nos no
+        sa ken e ta, nos no por bisa e kliente ku e mester bin kuné — i e sita
+        ta pèrdè. (CFL-10092 a yega te na oferta aseptá sin esaki.)
+
+        E ta biba akinan i no na Paso 5 pasobra e pregunta ta nase akinan: si
+        nos skonde e konsekuensia dos paso mas aleu, e kliente no ta komprondé
+        pakiko nos ta puntr'é. E mesun datos ta yena Referensia 1 su so.
+
+        E sédula ta OPSHONAL na propósito: hopi hende no tin e number di su
+        kasá na man, i un kampo obligatorio ku nos no por yena ta kita
+        solisitut kompleto. Nos ta kompletá e na oficina.
+      -->
+      <fieldset class="fieldset" id="conyugeBlock" hidden>
+        <legend data-i18n="step3.conyuge">Datos di bo kasá</legend>
+        <p class="field-hint" data-i18n="step3.conyuge_hint">Bo kasá mester firma huntu ku bo na e sita, ku su identifikashon bálido. Nos ta usa e mesun datos akí komo Referensia 1.</p>
+        <div class="row">
+          <div class="field flex-1">
+            <label data-i18n="step3.conyuge_nombre">Nòmber di bo kasá *</label>
+            <input type="text" name="conyuge_nombre" minlength="2" maxlength="120" autocomplete="off">
+          </div>
+          <div class="field flex-1">
+            <label data-i18n="step3.conyuge_apellido">Fam di bo kasá *</label>
+            <input type="text" name="conyuge_apellido" minlength="2" maxlength="120" autocomplete="off">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field flex-1">
+            <label data-i18n="step3.conyuge_telefono">Telefòn di bo kasá *</label>
+            <input type="tel" name="conyuge_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+          </div>
+          <div class="field flex-1">
+            <label data-i18n="step3.conyuge_sedula">Number di sédula di bo kasá</label>
+            <input type="text" name="conyuge_numero_id" maxlength="30" pattern="[0-9A-Za-z\s\-]{5,30}" autocomplete="off" title="Opshonal — si bo no tin e na man, nos ta kompletá e na oficina.">
+            <p class="field-hint" data-i18n="step3.conyuge_sedula_hint">Opshonal. Si bo no tin e na man, nos ta kompletá e na oficina.</p>
+          </div>
+        </div>
+      </fieldset>
+
       <div class="row">
         <div class="field flex-1">
           <label data-i18n="step3.telefono_movil">Number di selular *</label>
@@ -415,6 +457,7 @@
             <label data-i18n="step5.ref_rel">Relashon *</label>
             <select name="ref1_relacion" required>
               <option value="">—</option>
+              <option value="kasá" data-i18n="step5.rel_conyuge">Kasá</option>
               <option value="famia">Famia</option>
               <option value="amigu">Amigu</option>
               <option value="otro">Otro</option>
@@ -438,6 +481,7 @@
             <label data-i18n="step5.ref_rel">Relashon</label>
             <select name="ref2_relacion">
               <option value="">—</option>
+              <option value="kasá" data-i18n="step5.rel_conyuge">Kasá</option>
               <option value="famia">Famia</option>
               <option value="amigu">Amigu</option>
               <option value="otro">Otro</option>
