@@ -174,7 +174,7 @@
   "step6": {
     "title": "Su Préstamo",
     "hint": "Tasa: 23.5% anual (standing order). Incluye plan de ahorro que CFL devuelve al pagar.",
-    "monto": "Monto que desea pedir prestado (múltiplo de 500 — 1000 a 4000 XCG)",
+    "monto": "Monto que desea pedir prestado (múltiplo de 500 — 1000 a 5000 XCG)",
     "plazo": "Plazo (meses)",
     "proposito": "¿Para qué usará el préstamo?",
     "proposito_konsolidashon": "Consolidación de deudas",
