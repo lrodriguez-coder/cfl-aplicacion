@@ -2540,6 +2540,11 @@
       saveDraft();
       if (e.target.type === 'radio') updateConditionals();
       if (e.target.tagName === 'SELECT') updateConditionals();
+      // El plazo es un <select> (dispara 'change', no 'input'), así que
+      // syncSliders no lo cubre: sin esto la cuota estimada quedaba estática al
+      // cambiar el plazo. El monto ya recalcula por su slider, se incluye por
+      // las dudas si alguna vez deja de ser slider.
+      if (e.target.name === 'plazo_meses' || e.target.name === 'monto_solicitado') updateQuote();
       if (e.target.name === 'tipo_empleado') updatePensionadoMode();
       if (e.target.name === 'frecuencia_salario') renderDynamicSlots();
       // Cualquier upload en Step 2 actualiza el contador.
