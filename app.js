@@ -20,8 +20,10 @@
   const TRACK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/aplicacion-web-track';
   const UPLOAD_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-upload';
   const LINK_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/web-aplicacion-vincular';
-  const EMAIL_VERIFY_SEND_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-send';
-  const EMAIL_VERIFY_CONFIRM_URL = 'https://curacaofastloans.app.n8n.cloud/webhook/email-verify-confirm';
+  // 7-oct-2026: migrado de n8n a v2 (el workflow de n8n se cayó el 3-oct). Ahora
+  // v2 genera/verifica el código y lo manda por SES. Mismo contrato de respuesta.
+  const EMAIL_VERIFY_SEND_URL = 'https://api.curloans.com/v1/public/email-verify/send';
+  const EMAIL_VERIFY_CONFIRM_URL = 'https://api.curloans.com/v1/public/email-verify/confirm';
 
   // ===== v2 DIRECT INTAKE (feed the v2 API instead of n8n) =====
   // When USE_V2_INTAKE is true, the form posts the whole application straight to
