@@ -24,6 +24,9 @@
   // v2 genera/verifica el código y lo manda por SES. Mismo contrato de respuesta.
   const EMAIL_VERIFY_SEND_URL = 'https://api.curloans.com/v1/public/email-verify/send';
   const EMAIL_VERIFY_CONFIRM_URL = 'https://api.curloans.com/v1/public/email-verify/confirm';
+  // 7-oct: verificación del móvil por WhatsApp (v2). Mismo contrato que el email.
+  const PHONE_VERIFY_SEND_URL = 'https://api.curloans.com/v1/public/phone-verify/send';
+  const PHONE_VERIFY_CONFIRM_URL = 'https://api.curloans.com/v1/public/phone-verify/confirm';
 
   // ===== v2 DIRECT INTAKE (feed the v2 API instead of n8n) =====
   // When USE_V2_INTAKE is true, the form posts the whole application straight to
@@ -115,6 +118,9 @@
   // opcional (el cliente puede enviar sin verificar). Útil para apagar
   // rápido si el workflow n8n tiene un problema.
   const EMAIL_VERIFY_REQUIRED = true;
+  // Igual para el móvil (WhatsApp). Si la plantilla Meta aún no está aprobada,
+  // poné esto en false para no bloquear el envío del formulario.
+  const PHONE_VERIFY_REQUIRED = true;
 
   // Bypass total de validación entre pasos (solo para revisar UI sin que
   // bloquee). En producción siempre false.
@@ -520,6 +526,16 @@
         errs.push('email');
         errMsgs.push(t('step3.email_verify_required') ||
           'Verificá tu email antes de continuar (clic en "Verificar").');
+      }
+    }
+    // Móvil verificado por WhatsApp. Bypass si PHONE_VERIFY_REQUIRED=false.
+    if (n === 3 && PHONE_VERIFY_REQUIRED) {
+      const phoneInput = step.querySelector('[name="telefono_movil"]');
+      if (phoneInput && phoneInput.value && !isPhoneVerified()) {
+        phoneInput.classList.add('invalid');
+        errs.push('telefono_movil');
+        errMsgs.push(t('step3.phone_verify_required') ||
+          'Verificá tu móvil antes de continuar (clic en "Verificar").');
       }
     }
     // Sanity peso/altura: la altura en cm de una persona siempre supera el peso en kg.
@@ -2424,6 +2440,169 @@
     }
   }
 
+  // ===== PHONE (WhatsApp) VERIFICATION ===== (espejo del email)
+  let phoneVerifiedFor = null;
+  let phoneResendTimer = null;
+
+  function isPhoneVerified() {
+    if (!PHONE_VERIFY_REQUIRED) return true;
+    const phoneInput = $('[name="telefono_movil"]');
+    if (!phoneInput) return true;
+    return phoneVerifiedFor && phoneInput.value.trim() === phoneVerifiedFor;
+  }
+
+  function setPhoneStatus(msg, kind) {
+    const el = $('#phoneVerifyStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.dataset.kind = kind || '';
+  }
+
+  function startPhoneCooldown(seconds) {
+    const resendBtn = $('#phoneVerifyResendBtn');
+    if (!resendBtn) return;
+    if (phoneResendTimer) clearInterval(phoneResendTimer);
+    let remaining = seconds;
+    resendBtn.hidden = false;
+    resendBtn.disabled = true;
+    const baseText = t('step3.phone_verify_resend') || 'Manda kodigo atrobe';
+    function tick() {
+      if (remaining <= 0) {
+        clearInterval(phoneResendTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = baseText;
+        return;
+      }
+      resendBtn.textContent = baseText + ' (' + remaining + 's)';
+      remaining -= 1;
+    }
+    tick();
+    phoneResendTimer = setInterval(tick, 1000);
+  }
+
+  async function sendPhoneCode() {
+    const phoneInput = $('[name="telefono_movil"]');
+    if (!phoneInput) return;
+    const phone = phoneInput.value.trim();
+    if (!phone || !phoneInput.checkValidity()) {
+      setPhoneStatus(t('step3.phone_verify_invalid') || 'Número inválido', 'warn');
+      return;
+    }
+    const verifyBtn = $('#phoneVerifyBtn');
+    const panel = $('#phoneVerifyPanel');
+    if (verifyBtn) verifyBtn.disabled = true;
+    setPhoneStatus(t('step3.phone_verify_sending') || 'Enviando código...', 'loading');
+    try {
+      const res = await fetch(PHONE_VERIFY_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone, tracking_id: getTrackingId(), lang: currentLang })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) {
+        if (panel) panel.hidden = false;
+        setPhoneStatus(t('step3.phone_verify_sent') || 'Código enviado por WhatsApp.', 'ok');
+        startPhoneCooldown(data.cooldown_seconds || 60);
+        const codeInput = $('#phoneVerifyCode');
+        if (codeInput) codeInput.focus();
+      } else if (data.reason === 'cooldown') {
+        if (panel) panel.hidden = false;
+        setPhoneStatus(t('step3.phone_verify_cooldown') || 'Esperá unos segundos antes de pedir otro código.', 'warn');
+        startPhoneCooldown(data.cooldown_seconds || 60);
+      } else {
+        setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+      }
+    } catch (e) {
+      console.warn('phone verify send failed', e);
+      setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+    } finally {
+      if (verifyBtn) verifyBtn.disabled = false;
+    }
+  }
+
+  async function confirmPhoneCode() {
+    const phoneInput = $('[name="telefono_movil"]');
+    const codeInput = $('#phoneVerifyCode');
+    if (!phoneInput || !codeInput) return;
+    const phone = phoneInput.value.trim();
+    const code = codeInput.value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      setPhoneStatus(t('step3.phone_verify_code_format') || 'El código son 6 dígitos.', 'warn');
+      return;
+    }
+    const confirmBtn = $('#phoneVerifyConfirmBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
+    setPhoneStatus(t('step3.phone_verify_checking') || 'Verificando...', 'loading');
+    try {
+      const res = await fetch(PHONE_VERIFY_CONFIRM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone, code: code, tracking_id: getTrackingId() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok && data.verified) {
+        phoneVerifiedFor = phone;
+        const panel = $('#phoneVerifyPanel');
+        const success = $('#phoneVerifySuccess');
+        const verifyBtn = $('#phoneVerifyBtn');
+        if (panel) panel.hidden = true;
+        if (success) success.hidden = false;
+        if (verifyBtn) verifyBtn.hidden = true;
+        phoneInput.readOnly = true;
+        setPhoneStatus('', '');
+        clearInterval(phoneResendTimer);
+      } else if (data.reason === 'wrong_code') {
+        setPhoneStatus(
+          (t('step3.phone_verify_wrong', { left: data.attempts_left }) ||
+            'Código incorrecto. Te quedan ' + data.attempts_left + ' intentos.'),
+          'warn'
+        );
+      } else if (data.reason === 'exhausted') {
+        setPhoneStatus(t('step3.phone_verify_exhausted') || 'Demasiados intentos. Pedí un código nuevo.', 'warn');
+      } else if (data.reason === 'no_active_code') {
+        setPhoneStatus(t('step3.phone_verify_no_active') || 'No hay código activo. Pedí uno nuevo.', 'warn');
+      } else {
+        setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos verificar el código.', 'warn');
+      }
+    } catch (e) {
+      console.warn('phone verify confirm failed', e);
+      setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos verificar el código.', 'warn');
+    } finally {
+      if (confirmBtn) confirmBtn.disabled = false;
+    }
+  }
+
+  function resetPhoneVerification() {
+    phoneVerifiedFor = null;
+    const panel = $('#phoneVerifyPanel');
+    const success = $('#phoneVerifySuccess');
+    const verifyBtn = $('#phoneVerifyBtn');
+    const phoneInput = $('[name="telefono_movil"]');
+    if (panel) panel.hidden = true;
+    if (success) success.hidden = true;
+    if (verifyBtn) verifyBtn.hidden = false;
+    if (phoneInput) phoneInput.readOnly = false;
+    setPhoneStatus('', '');
+    clearInterval(phoneResendTimer);
+  }
+
+  function wirePhoneVerification() {
+    const phoneInput = $('[name="telefono_movil"]');
+    const verifyBtn = $('#phoneVerifyBtn');
+    const confirmBtn = $('#phoneVerifyConfirmBtn');
+    const resendBtn = $('#phoneVerifyResendBtn');
+    if (verifyBtn) verifyBtn.addEventListener('click', sendPhoneCode);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmPhoneCode);
+    if (resendBtn) resendBtn.addEventListener('click', sendPhoneCode);
+    if (phoneInput) {
+      phoneInput.addEventListener('input', () => {
+        if (phoneVerifiedFor && phoneInput.value.trim() !== phoneVerifiedFor) {
+          resetPhoneVerification();
+        }
+      });
+    }
+  }
+
   // ===== EVENT WIRING =====
   // ===== TRACKING (progreso del formulario, para el dashboard de aplicaciones) =====
   let _trackingIdMemo = '';
@@ -2571,6 +2750,7 @@
     syncSliders();
     wireEvents();
     wireEmailVerification();
+    wirePhoneVerification();
 
     // Detect preferred language: localStorage > browser > pap
     const draft = loadDraft();
