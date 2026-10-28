@@ -202,7 +202,9 @@
     // Kranshi o permiso de residencia (Leonard, 2026-09-18). Si esta lista no
     // incluye el permiso, el formulario le bloquea el avance a quien sube
     // justo lo que la etiqueta le invito a subir.
-    doc_aqualectra: ['aqualectra', 'verblijfsvergunning'],
+    // Y una póliza de seguro vigente (BSURE, Ennia...): trae nombre y
+    // dirección del asegurado (Leonard, 2026-10-28).
+    doc_aqualectra: ['aqualectra', 'verblijfsvergunning', 'poliza_seguro'],
   };
   // Slots cuya vigencia se verifica (el OCR devuelve fecha_vencimiento).
   const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional'];
