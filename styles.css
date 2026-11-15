@@ -877,3 +877,77 @@ select.ocr-filled {
   border-color: var(--cfl-error);
   background: #FDF3F2;
 }
+
+/* ====== Cuota en el Paso 1 (cotizador real de v2) ====== */
+.quote-box { margin: 1.25rem 0 1.5rem; }
+.quote-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+.quote-main-label { font-size: 1rem; }
+.quote-main-value { font-size: 1.9rem; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
+.quote-box .quote-row strong { font-variant-numeric: tabular-nums; text-align: right; }
+.quote-box .quote-row:last-of-type { border-bottom: 1px solid rgba(255, 255, 255, 0.15); font-size: 1rem; }
+.quote-box[data-state="loading"] .quote-main-value,
+.quote-box[data-state="loading"] #qTotal,
+.quote-box[data-state="loading"] #qTae { opacity: 0.55; }
+.quote-note, .quote-error, .quote-disclaimer {
+  margin: 0.6rem 0 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.quote-note { color: #E9E4F5; }
+.quote-error {
+  background: rgba(255, 255, 255, 0.14);
+  border-left: 3px solid var(--cfl-warning);
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+.quote-disclaimer { color: var(--cfl-accent-soft); font-style: italic; }
+.intro-note-after { margin-top: 0.5rem; }
+
+/* ====== Error junto al campo ====== */
+.field-error {
+  color: var(--cfl-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.35rem 0 0 0;
+  line-height: 1.35;
+}
+.radio-group input.invalid { outline: 2px solid var(--cfl-error); outline-offset: 2px; }
+
+/* ====== Pantalla final: número y "qué sigue" ====== */
+.done-id-box {
+  background: var(--cfl-surface);
+  border: 2px solid var(--cfl-primary);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin: 1.25rem auto;
+  max-width: 420px;
+}
+.done-id-label { margin: 0; font-weight: 600; color: var(--cfl-text-soft); }
+.done-id-box .aplicacion-id {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: transparent;
+  margin: 0.25rem 0;
+  word-break: break-all;
+}
+.done-next {
+  text-align: left;
+  background: var(--cfl-bg);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin: 1.25rem auto;
+  max-width: 520px;
+}
+.done-next h3 { margin: 0 0 0.5rem 0; color: var(--cfl-primary); font-size: 1.05rem; }
+.done-next ol { margin: 0; padding-left: 1.2rem; }
+.done-next li { margin: 0.35rem 0; }

@@ -1,6 +1,10 @@
 {
-  "header": { "tagline": "Solicitud de préstamo personal" },
-  "progress": { "label": "Paso {current} de {total}" },
+  "header": {
+    "tagline": "Solicitud de préstamo personal"
+  },
+  "progress": {
+    "label": "Paso {current} de {total}"
+  },
   "nav": {
     "prev": "← Anterior",
     "next": "Siguiente →",
@@ -8,7 +12,10 @@
     "submitting": "Enviando...",
     "waiting_uploads": "Esperando documentos..."
   },
-  "common": { "yes": "Sí", "no": "No" },
+  "common": {
+    "yes": "Sí",
+    "no": "No"
+  },
   "upload": {
     "remove": "Quitar"
   },
@@ -27,8 +34,22 @@
     "cuota_cero": "La cuota de referencia no puede ser 0. Revise el monto y el plazo.",
     "doc_tipo_incorrecto": "{doc}: el archivo subido parece {detected}. Quítelo o suba el documento correcto.",
     "doc_vencido": "{doc}: el documento está vencido (venció el {date}). Suba un documento vigente.",
-    "doc_duplicado": "Subiste el mismo archivo en \"{a}\" y \"{b}\". Cada documento debe ser distinto — si no tienes 3 estados de banco, sube otro comprobante (Aqualectra, flow o uittreksel), pero no repitas el mismo archivo.",
-    "carta_vieja": "{doc}: la carta de trabajo tiene {dias} días (emitida el {date}). Debe ser de los últimos 30 días — pide una carta actualizada que confirme tu empleo actual."
+    "doc_duplicado": "Subió el mismo archivo en «{a}» y «{b}». Cada documento debe ser distinto — si no tiene 3 estados de cuenta, suba otro comprobante (Aqualectra, flow o uittreksel), pero no repita el mismo archivo.",
+    "carta_vieja": "{doc}: la carta de trabajo tiene {dias} días (emitida el {date}). Debe ser de los últimos 30 días — pida una carta actualizada que confirme su empleo actual.",
+    "captcha": "Por favor confirme que no es un robot.",
+    "payslips_required": "Faltan recibos de salario. Suba al menos uno. Si no ve los casilleros, vuelva al Paso 2 y elija la frecuencia de salario.",
+    "payslip_period_mismatch": "{doc}: período incorrecto (detectado {detected}, se esperaba {expected}). Suba el recibo del período correcto.",
+    "extractos_sin_periodo": "No pudimos leer el período de los estados de cuenta.",
+    "extractos_hueco": "Falta el período del {desde} al {hasta} ({dias} días sin cubrir).",
+    "extractos_cortos": "Los estados de cuenta cubren {dias} días seguidos; faltan {faltan} días.",
+    "extractos_repetidos": "Hay {dias} días repetidos: revise si subió el mismo mes más de una vez.",
+    "uploads_failed": "No se pudieron subir estos documentos al servidor:",
+    "uploads_retry": "Por favor adjúntelos de nuevo y vuelva a enviar.",
+    "tel_eq_id": "El número celular no puede ser igual a su número de cédula. Revise el campo del número celular.",
+    "range_vars": "debe estar entre {min} y {max}",
+    "step": "debe ser múltiplo de {step}",
+    "too_short": "debe tener al menos {n} caracteres",
+    "detail_required": "explique brevemente (requerido)"
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -42,7 +63,7 @@
   },
   "step1": {
     "title": "Identificación",
-    "hint": "Suba una foto clara de su cédula. Extraeremos sus datos automáticamente.",
+    "hint": "Suba una foto clara de su cédula. Leeremos sus datos automáticamente.",
     "tipo_empleado_hint": "Si es pensionado, los recibos de salario son opcionales — puede usar carta de pensión en su lugar.",
     "cedula": "📷 Cédula de identidad *",
     "id_adicional": "📷 Pasaporte / Licencia (opcional)",
@@ -63,14 +84,14 @@
     "pension_doc_label": "Carta de pensión",
     "bancos": "📄 Estados de cuenta bancarios (mínimo 1, máximo 3) *",
     "bancos_header": "Estados de cuenta bancarios",
-    "bancos_explain": "Suba un estado por cada mes — solo PDF descargado del banca por internet.",
-    "banco_pdf_only": "Solo PDF — descárguelo del internet banking de su banco.",
+    "bancos_explain": "Suba un estado de cuenta por cada mes — solo en PDF, descargado de la banca por internet de su banco.",
+    "banco_pdf_only": "Solo PDF — descárguelo de la banca por internet de su banco.",
     "carta": "📄 Carta de trabajo *",
     "aqualectra": "📄 Recibo Aqualectra (opcional)",
     "comprobante_domicilio": "📄 Recibo de Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia (opcional)",
     "comprobante_hint": "Comprobante de domicilio. Puede usar cualquiera de estos — lo que necesitamos es la dirección.",
     "counter_label": "documentos cargados",
-    "choose_tipo_first": "Primero elija tipo de empleo y (si aplica) frecuencia de salario en el Paso 1.",
+    "choose_tipo_first": "Primero elija el tipo de empleo y (si aplica) la frecuencia de salario en el Paso 2.",
     "slot_payslip": "Recibo de salario",
     "slot_banco": "Estado de cuenta"
   },
@@ -112,38 +133,38 @@
     "email": "Email",
     "email_verify_btn": "Verificar",
     "email_verify_confirm_btn": "Confirmar",
-    "email_verify_hint": "Te enviamos un código de 6 dígitos a tu email. Ingrésalo abajo:",
-    "email_verify_check_spam": "⚠️ Si no lo ves en la bandeja de entrada, revisá también Junk / Spam / Promociones.",
+    "email_verify_hint": "Le enviamos un código de 6 dígitos a su email. Ingréselo abajo:",
+    "email_verify_check_spam": "⚠️ Si no lo ve en la bandeja de entrada, revise también Junk / Spam / Promociones.",
     "email_verify_sending": "Enviando código...",
-    "email_verify_sent": "Código enviado. Revisá tu email.",
-    "email_verify_cooldown": "Esperá unos segundos antes de pedir otro código.",
-    "email_verify_error": "No pudimos completar la acción. Probá de nuevo.",
+    "email_verify_sent": "Código enviado. Revise su email.",
+    "email_verify_cooldown": "Espere unos segundos antes de pedir otro código.",
+    "email_verify_error": "No pudimos completar la acción. Intente de nuevo.",
     "email_verify_invalid": "Email inválido.",
     "email_verify_code_format": "El código son 6 dígitos.",
     "email_verify_checking": "Verificando...",
-    "email_verify_wrong": "Código incorrecto. Te quedan {{left}} intentos.",
-    "email_verify_exhausted": "Demasiados intentos. Pedí un código nuevo.",
-    "email_verify_no_active": "No hay código activo. Pedí uno nuevo.",
+    "email_verify_wrong": "Código incorrecto. Le quedan {left} intentos.",
+    "email_verify_exhausted": "Demasiados intentos. Pida un código nuevo.",
+    "email_verify_no_active": "No hay un código activo. Pida uno nuevo.",
     "email_verify_resend": "Reenviar código",
     "email_verify_done": "✓ Email verificado",
-    "email_verify_required": "Verificá tu email antes de continuar (clic en \"Verificar\").",
+    "email_verify_required": "Verifique su email antes de continuar (haga clic en «Verificar»).",
     "phone_verify_btn": "Verificar",
     "phone_verify_confirm_btn": "Confirmar",
-    "phone_verify_hint": "Te enviamos un código de 6 dígitos por WhatsApp. Ingrésalo abajo:",
+    "phone_verify_hint": "Le enviamos un código de 6 dígitos por WhatsApp. Ingréselo abajo:",
     "phone_verify_sending": "Enviando código...",
     "phone_verify_sent": "Código enviado por WhatsApp.",
-    "phone_verify_cooldown": "Esperá unos segundos antes de pedir otro código.",
-    "phone_verify_error": "No pudimos completar la acción. Probá de nuevo.",
+    "phone_verify_cooldown": "Espere unos segundos antes de pedir otro código.",
+    "phone_verify_error": "No pudimos completar la acción. Intente de nuevo.",
     "phone_verify_invalid": "Número inválido.",
     "phone_verify_code_format": "El código son 6 dígitos.",
     "phone_verify_checking": "Verificando...",
-    "phone_verify_wrong": "Código incorrecto. Te quedan {{left}} intentos.",
-    "phone_verify_exhausted": "Demasiados intentos. Pedí un código nuevo.",
-    "phone_verify_no_active": "No hay código activo. Pedí uno nuevo.",
+    "phone_verify_wrong": "Código incorrecto. Le quedan {left} intentos.",
+    "phone_verify_exhausted": "Demasiados intentos. Pida un código nuevo.",
+    "phone_verify_no_active": "No hay un código activo. Pida uno nuevo.",
     "phone_verify_resend": "Reenviar código",
-    "phone_verify_done": "✓ Móvil verificado",
-    "phone_verify_required": "Verificá tu móvil antes de continuar (clic en \"Verificar\").",
-    "email_typo_q": "¿Querías decir",
+    "phone_verify_done": "✓ Celular verificado",
+    "phone_verify_required": "Verifique su celular antes de continuar (haga clic en «Verificar»).",
+    "email_typo_q": "¿Quiso decir",
     "direccion": "Dirección de casa (completa) *",
     "ciudad": "Ciudad / Sector *",
     "direccion_empleador": "Dirección de la empresa (opcional)",
@@ -158,7 +179,8 @@
     "civil_divorciado": "Divorciado",
     "civil_viudo": "Viudo",
     "nacionalidad": "Nacionalidad *",
-    "pais_nacimiento": "País de nacimiento *"
+    "pais_nacimiento": "País de nacimiento *",
+    "tipo_id_sedula": "Cédula"
   },
   "step4": {
     "title": "Declaración de Salud",
@@ -170,7 +192,7 @@
     "q2": "2/6. ¿Ha tenido una operación en los últimos 5 años?",
     "q3": "3/6. ¿Tiene actualmente una enfermedad, dolencia o discapacidad?",
     "q4": "4/6. ¿Toma medicamentos con receta actualmente?",
-    "q5": "5/6. ¿Tiene AIDS o es HIV-positivo?",
+    "q5": "5/6. ¿Tiene SIDA o es VIH positivo?",
     "q7": "6/6. ¿Hay algo más sobre su salud que pueda afectar el seguro?"
   },
   "step5": {
@@ -185,14 +207,17 @@
     "beneficiario": "Beneficiario del seguro de vida (opcional)",
     "beneficiario_hint": "Si no completa esto, se usa Referencia 1 como beneficiario.",
     "benef_nombre": "Nombre completo del beneficiario",
-    "benef_tel": "Teléfono del beneficiario"
+    "benef_tel": "Teléfono del beneficiario",
+    "rel_famia": "Familiar",
+    "rel_amigu": "Amigo/a",
+    "rel_otro": "Otro"
   },
   "step6": {
     "title": "Su Préstamo",
-    "hint": "Tasa: 23.5% anual (standing order). Incluye plan de ahorro que CFL devuelve al pagar.",
-    "monto": "Monto que desea pedir prestado (múltiplo de 500 — 1000 a 4000 XCG)",
-    "plazo": "Plazo (meses)",
-    "proposito": "¿Para qué usará el préstamo?",
+    "hint": "La cuota incluye capital, interés, seguro de vida y plan de ahorro. El plan de ahorro se le devuelve al terminar de pagar.",
+    "monto": "Monto que desea pedir prestado (XCG) *",
+    "plazo": "Plazo (meses) *",
+    "proposito": "¿Para qué usará el préstamo? *",
     "proposito_konsolidashon": "Consolidación de deudas",
     "proposito_medico": "Gastos médicos",
     "proposito_kas": "Reparación de casa",
@@ -207,29 +232,47 @@
     "q_plazo": "Plazo:",
     "q_cuota": "Cuota mensual:",
     "q_total": "Total a pagar:",
-    "q_meses": "meses"
+    "q_meses": "meses",
+    "monto_hint": "Entre {min} y {max} XCG, en múltiplos de 500.",
+    "proposito_detalle_ph": "Detalle adicional (opcional; obligatorio si elige «Otro motivo»)",
+    "q_tae": "TAE:",
+    "q_ahorro": "Incluye {monto} de plan de ahorro, que se le devuelve al terminar de pagar.",
+    "q_fuera_politica": "Este monto y plazo requieren una revisión adicional; la cuota puede cambiar.",
+    "q_error": "No pudimos calcular la cuota ahora. Puede seguir con su solicitud.",
+    "q_disclaimer": "Estimado, sujeto a aprobación."
   },
   "step7": {
     "title": "Confirme su Solicitud",
-    "hint": "Revise toda la información abajo. Al hacer click en \"Enviar\", su solicitud queda registrada.",
+    "hint": "Revise toda la información abajo. Al hacer clic en «Enviar solicitud», su solicitud queda registrada.",
     "legal_notes_title": "Declaraciones",
     "legal_health": "Al enviar esta solicitud declaro haber respondido las preguntas anteriores de manera completa y veraz, y reconozco que cualquier declaración de salud incorrecta o incompleta puede llevar al rechazo o modificación de los derechos bajo el contrato de seguro.",
     "legal_aska": "Al enviar la solicitud, declaro además que no tengo objeción a que el asesor médico de Aska Insurance solicite información médica a mi doctor o especialista.",
     "legal_credit_check": "Al enviar esta solicitud, autorizo a verificar mi historial crediticio con proveedores externos, así como a verificar mi información con mi empleador.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. participa en un sistema de registro de créditos y puede realizar verificaciones crediticias como parte del procedimiento de aceptación y monitoreo de créditos.",
-    "terms": "Confirmo que toda la información es correcta y acepto los <a href='#' target='_blank'>Términos y Condiciones</a> y la <a href='#' target='_blank'>Política de Privacidad</a> de CFL."
+    "terms": "Confirmo que toda la información es correcta y acepto los <a href='terminos.html?lang=es' target='_blank' rel='noopener'>Términos y Condiciones</a> y la <a href='privacidad.html?lang=es' target='_blank' rel='noopener'>Política de Privacidad</a> de CFL."
   },
   "summary": {
     "personal": "Datos Personales",
     "prestamo": "Préstamo",
     "contacto": "Contacto",
     "salud": "Salud",
-    "docs": "Documentos"
+    "docs": "Documentos",
+    "medico": "Médico de cabecera",
+    "aqua_titular": "Titular Aqualectra",
+    "aqua_cliente": "N.º de cliente Aqualectra",
+    "comprobante": "Comprobante de domicilio"
   },
   "done": {
     "title": "¡Solicitud enviada!",
-    "body": "Su solicitud ha sido recibida. Un agente de CFL le contactará en 3–5 días.",
-    "thanks": "Gracias por su confianza en Curaçao Fast Loans."
+    "body": "Hemos recibido su solicitud.",
+    "thanks": "Gracias por su confianza en Curaçao Fast Loans.",
+    "id_label": "Su número de solicitud",
+    "id_hint": "Guarde este número y menciónelo cuando nos contacte.",
+    "next_title": "¿Qué sigue?",
+    "next_1": "Un oficial de CFL revisa su solicitud y sus documentos.",
+    "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días.",
+    "next_3": "Si su solicitud se aprueba, le enviaremos la oferta con la cuota definitiva y le daremos una cita para firmar.",
+    "next_contact": "¿Preguntas? Llámenos al +5999 526 8480."
   },
   "ocr": {
     "analyzing": "Analizando documento…",
@@ -238,12 +281,23 @@
     "no_data": "No pudimos extraer datos. Complete los datos manualmente en el siguiente paso.",
     "error": "No pudimos leer el documento automáticamente. Complete los datos a mano en el siguiente paso.",
     "received_async": "Documento recibido — se analizará al enviar la solicitud",
-    "banco_received": "Estado de cuenta recibido ✓ — análisis completo se realiza en el backend",
+    "banco_received": "Estado de cuenta recibido ✓ — el análisis completo se hace al procesar su solicitud",
     "checking_type": "Verificando tipo de documento…",
     "tipo_mismatch": "Esto parece {detected}, se esperaba {expected}",
     "expired": "Documento vencido (venció el {date})",
-    "period_mismatch": "Período detectado: {detected}. El slot es para {expected}. Verificá si subiste el documento correcto en este slot.",
-    "name_mismatch": "El titular de este documento (\"{doc}\") no coincide con el nombre de la cédula (\"{cedula}\"). Verificá que el documento sea del mismo solicitante."
+    "period_mismatch": "Período detectado: {detected}. Este casillero es para {expected}. Verifique que subió el documento correcto en este casillero.",
+    "name_mismatch": "El titular de este documento («{doc}») no coincide con el nombre de la cédula («{cedula}»). Verifique que el documento sea del mismo solicitante.",
+    "lbl_nombre": "Nombre",
+    "lbl_numero": "Número",
+    "lbl_nacimiento": "Nacimiento",
+    "lbl_vence": "Vence",
+    "lbl_nacionalidad": "Nacionalidad",
+    "lbl_pais_nac": "País de nacimiento",
+    "lbl_sexo": "Sexo",
+    "lbl_estado_civil": "Estado civil",
+    "lbl_pais_emisor": "País emisor",
+    "cedula_header": "Datos de la cédula (detectados automáticamente; esto es lo que se guarda)",
+    "auto_detected": "detectado automáticamente"
   },
   "tipo": {
     "cedula": "una cédula",
@@ -259,5 +313,35 @@
     "comprobante_domicilio": "un comprobante de domicilio (Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia)",
     "otro": "otro tipo de documento",
     "unknown": "un documento no reconocido"
+  },
+  "hint": {
+    "phone_format": "solo dígitos, espacios, guiones y + (mínimo 7 dígitos)",
+    "id_format": "5 a 15 caracteres: solo letras, dígitos y guiones",
+    "cuenta_format": "solo números, espacios o guiones (5 a 30 caracteres)",
+    "email_format": "escriba un email válido (ej.: nombre@email.com)"
+  },
+  "ph": {
+    "phone": "9 XXX XXXX o +5999 XXX XXXX",
+    "phone_home": "X XXX XXXX o +5999 XXX XXXX",
+    "phone_short": "9 XXX XXXX",
+    "profesion": "ej.: ingeniero, maestro, contador",
+    "direccion_empleador": "ej.: Schottegatweg Oost 121",
+    "email": "nombre@email.com",
+    "direccion": "ej.: Schottegatweg Oost 23",
+    "ciudad": "ej.: Willemstad",
+    "peso": "ej.: 75",
+    "altura": "ej.: 170",
+    "medico": "Nombre, o «no tengo»",
+    "dolencia": "Explique brevemente qué tipo de dolencia…",
+    "operacion": "Explique qué operación y en qué año…",
+    "enfermedad": "Explique qué enfermedad, dolencia o discapacidad…",
+    "medicamentos": "Condición, medicamento y dosis…",
+    "hiv": "Desde qué año…",
+    "circunstancias": "Explique brevemente…"
+  },
+  "tipo_doc": {
+    "paspoort": "Pasaporte",
+    "rijbewijs": "Licencia de conducir",
+    "otro": "Documento"
   }
 }

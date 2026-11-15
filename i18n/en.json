@@ -1,6 +1,10 @@
 {
-  "header": { "tagline": "Personal loan application" },
-  "progress": { "label": "Step {current} of {total}" },
+  "header": {
+    "tagline": "Personal loan application"
+  },
+  "progress": {
+    "label": "Step {current} of {total}"
+  },
   "nav": {
     "prev": "← Previous",
     "next": "Next →",
@@ -8,7 +12,10 @@
     "submitting": "Submitting...",
     "waiting_uploads": "Waiting for documents..."
   },
-  "common": { "yes": "Yes", "no": "No" },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  },
   "upload": {
     "remove": "Remove"
   },
@@ -28,7 +35,21 @@
     "doc_tipo_incorrecto": "{doc}: the uploaded file looks like {detected}. Remove it or upload the correct document.",
     "doc_vencido": "{doc}: the document is expired (expired on {date}). Please upload a valid document.",
     "doc_duplicado": "You uploaded the same file in \"{a}\" and \"{b}\". Each document must be different — if you don't have 3 bank statements, upload another proof (Aqualectra, flow or uittreksel), but don't repeat the same file.",
-    "carta_vieja": "{doc}: the employment letter is {dias} days old (issued {date}). It must be from the last 30 days — please request an up-to-date letter confirming your current employment."
+    "carta_vieja": "{doc}: the employment letter is {dias} days old (issued {date}). It must be from the last 30 days — please request an up-to-date letter confirming your current employment.",
+    "captcha": "Please confirm that you are not a robot.",
+    "payslips_required": "Payslips are missing. Upload at least one. If you do not see the upload boxes, go back to Step 2 and choose your salary frequency.",
+    "payslip_period_mismatch": "{doc}: wrong period (detected {detected}, expected {expected}). Upload the payslip for the correct period.",
+    "extractos_sin_periodo": "We could not read the period of the bank statements.",
+    "extractos_hueco": "The period from {desde} to {hasta} is missing ({dias} days not covered).",
+    "extractos_cortos": "The bank statements cover {dias} consecutive days; {faltan} days are missing.",
+    "extractos_repetidos": "There are {dias} repeated days: check whether you uploaded the same month more than once.",
+    "uploads_failed": "These documents could not be uploaded to the server:",
+    "uploads_retry": "Please attach them again and submit again.",
+    "tel_eq_id": "Your mobile number cannot be the same as your ID number. Please check the mobile number field.",
+    "range_vars": "must be between {min} and {max}",
+    "step": "must be a multiple of {step}",
+    "too_short": "must be at least {n} characters",
+    "detail_required": "please explain briefly (required)"
   },
   "intro": {
     "title": "📋 Before you start",
@@ -70,7 +91,7 @@
     "comprobante_domicilio": "📄 Aqualectra, phone bill, Kranshi extract or residence permit (optional)",
     "comprobante_hint": "Proof of address. Any of these works — what we need is the address.",
     "counter_label": "documents uploaded",
-    "choose_tipo_first": "First choose employment type and (if applicable) salary frequency in Step 1.",
+    "choose_tipo_first": "First choose employment type and (if applicable) salary frequency in Step 2.",
     "slot_payslip": "Payslip",
     "slot_banco": "Bank statement"
   },
@@ -121,7 +142,7 @@
     "email_verify_invalid": "Invalid email.",
     "email_verify_code_format": "The code is 6 digits.",
     "email_verify_checking": "Checking...",
-    "email_verify_wrong": "Wrong code. {{left}} attempts left.",
+    "email_verify_wrong": "Wrong code. {left} attempts left.",
     "email_verify_exhausted": "Too many attempts. Request a new code.",
     "email_verify_no_active": "No active code. Request a new one.",
     "email_verify_resend": "Resend code",
@@ -137,7 +158,7 @@
     "phone_verify_invalid": "Invalid number.",
     "phone_verify_code_format": "The code is 6 digits.",
     "phone_verify_checking": "Verifying...",
-    "phone_verify_wrong": "Wrong code. You have {{left}} attempts left.",
+    "phone_verify_wrong": "Wrong code. You have {left} attempts left.",
     "phone_verify_exhausted": "Too many attempts. Request a new code.",
     "phone_verify_no_active": "No active code. Request a new one.",
     "phone_verify_resend": "Resend code",
@@ -158,7 +179,8 @@
     "civil_divorciado": "Divorced",
     "civil_viudo": "Widowed",
     "nacionalidad": "Nationality *",
-    "pais_nacimiento": "Country of birth *"
+    "pais_nacimiento": "Country of birth *",
+    "tipo_id_sedula": "ID card (sédula)"
   },
   "step4": {
     "title": "Health Declaration",
@@ -185,14 +207,17 @@
     "beneficiario": "Life insurance beneficiary (optional)",
     "beneficiario_hint": "If you leave this empty, Reference 1 is used as beneficiary.",
     "benef_nombre": "Beneficiary full name",
-    "benef_tel": "Beneficiary phone"
+    "benef_tel": "Beneficiary phone",
+    "rel_famia": "Family",
+    "rel_amigu": "Friend",
+    "rel_otro": "Other"
   },
   "step6": {
     "title": "Your Loan",
-    "hint": "Rate: 23.5% annual (standing order). Includes savings plan that CFL returns when you finish paying.",
-    "monto": "Amount you wish to borrow (multiples of 500 — 1000 to 4000 XCG)",
-    "plazo": "Term (months)",
-    "proposito": "What will you use the loan for?",
+    "hint": "The instalment includes principal, interest, life insurance and a savings plan. The savings plan is paid back to you when you finish repaying.",
+    "monto": "Amount you wish to borrow (XCG) *",
+    "plazo": "Term (months) *",
+    "proposito": "What will you use the loan for? *",
     "proposito_konsolidashon": "Debt consolidation",
     "proposito_medico": "Medical expenses",
     "proposito_kas": "Home repairs",
@@ -207,29 +232,47 @@
     "q_plazo": "Term:",
     "q_cuota": "Monthly installment:",
     "q_total": "Total payable:",
-    "q_meses": "months"
+    "q_meses": "months",
+    "monto_hint": "Between {min} and {max} XCG, in multiples of 500.",
+    "proposito_detalle_ph": "Additional detail (optional; required if you choose \"Other reason\")",
+    "q_tae": "APR:",
+    "q_ahorro": "Includes {monto} of savings plan, which is paid back to you when you finish repaying.",
+    "q_fuera_politica": "This amount and term need an additional review; the instalment may change.",
+    "q_error": "We could not calculate the instalment right now. You can continue with your application.",
+    "q_disclaimer": "Estimate, subject to approval."
   },
   "step7": {
     "title": "Confirm Your Application",
-    "hint": "Review all information below. When you click \"Submit\", your application is registered.",
+    "hint": "Review all the information below. When you click \"Submit application\", your application is registered.",
     "legal_notes_title": "Declarations",
-    "legal_health": "Submitting this application declares have fully and truthfully answered the previous questions and is aware that afterward any incorrect or incomplete health declaration may lead to decline or modification of the rights under the insurance contract.",
-    "legal_aska": "Submitting the application, also declares that he/she has no objection to the medical advisor of Aska Insurance seeks medical information from his/her doctor or specialist.",
-    "legal_credit_check": "Submitting this application, we have been authorized to check your credit background with third party provider and this also allow to check your information with your employer.",
-    "legal_credit_registration": "Curacao Fast Loans N.V. participates in a system of credit registration and may perform credit checks as part of the acceptance and monitoring procedure relating to credits.",
-    "terms": "I confirm all information is correct and I accept CFL's <a href='#' target='_blank'>Terms and Conditions</a> and <a href='#' target='_blank'>Privacy Policy</a>."
+    "legal_health": "By submitting this application I declare that I have answered the previous questions fully and truthfully, and I acknowledge that any incorrect or incomplete health declaration may lead to refusal or modification of the rights under the insurance contract.",
+    "legal_aska": "By submitting this application I also declare that I have no objection to the medical adviser of Aska Insurance requesting medical information from my doctor or specialist.",
+    "legal_credit_check": "By submitting this application I authorise CFL to check my credit history with third-party providers and to verify my information with my employer.",
+    "legal_credit_registration": "Curaçao Fast Loans N.V. participates in a credit registration system and may carry out credit checks as part of its acceptance and monitoring procedures for loans.",
+    "terms": "I confirm all information is correct and I accept CFL's <a href='terminos.html?lang=en' target='_blank' rel='noopener'>Terms and Conditions</a> and <a href='privacidad.html?lang=en' target='_blank' rel='noopener'>Privacy Policy</a>."
   },
   "summary": {
     "personal": "Personal Information",
     "prestamo": "Loan",
     "contacto": "Contact",
     "salud": "Health",
-    "docs": "Documents"
+    "docs": "Documents",
+    "medico": "Family doctor",
+    "aqua_titular": "Aqualectra account holder",
+    "aqua_cliente": "Aqualectra customer no.",
+    "comprobante": "Proof of address"
   },
   "done": {
     "title": "Application submitted!",
-    "body": "Your application has been received. A CFL agent will contact you within 3–5 days.",
-    "thanks": "Thank you for your trust in Curaçao Fast Loans."
+    "body": "We have received your application.",
+    "thanks": "Thank you for your trust in Curaçao Fast Loans.",
+    "id_label": "Your application number",
+    "id_hint": "Keep this number and mention it when you contact us.",
+    "next_title": "What happens next?",
+    "next_1": "A CFL officer reviews your application and your documents.",
+    "next_2": "We will contact you by WhatsApp or phone within 3 to 5 days.",
+    "next_3": "If your application is approved, we will send you the offer with the final instalment and give you an appointment to sign.",
+    "next_contact": "Questions? Call us on +5999 526 8480."
   },
   "ocr": {
     "analyzing": "Analyzing document…",
@@ -243,7 +286,18 @@
     "tipo_mismatch": "This looks like {detected}, expected {expected}",
     "expired": "Expired document (expired on {date})",
     "period_mismatch": "Detected period: {detected}. This slot is for {expected}. Check that you uploaded the right file here.",
-    "name_mismatch": "The account holder on this document (\"{doc}\") does not match the ID card name (\"{cedula}\"). Please verify the document belongs to the same applicant."
+    "name_mismatch": "The account holder on this document (\"{doc}\") does not match the ID card name (\"{cedula}\"). Please verify the document belongs to the same applicant.",
+    "lbl_nombre": "Name",
+    "lbl_numero": "Number",
+    "lbl_nacimiento": "Date of birth",
+    "lbl_vence": "Expires",
+    "lbl_nacionalidad": "Nationality",
+    "lbl_pais_nac": "Country of birth",
+    "lbl_sexo": "Sex",
+    "lbl_estado_civil": "Marital status",
+    "lbl_pais_emisor": "Issuing country",
+    "cedula_header": "ID card details (detected automatically; this is what will be saved)",
+    "auto_detected": "detected automatically"
   },
   "tipo": {
     "cedula": "an ID card",
@@ -259,5 +313,35 @@
     "comprobante_domicilio": "a proof of address (Aqualectra, phone bill, Kranshi extract or residence permit)",
     "otro": "another type of document",
     "unknown": "an unrecognized document"
+  },
+  "hint": {
+    "phone_format": "digits, spaces, hyphens and + only (at least 7 digits)",
+    "id_format": "5 to 15 characters: letters, digits and hyphens only",
+    "cuenta_format": "numbers, spaces or hyphens only (5 to 30 characters)",
+    "email_format": "enter a valid email (e.g. name@email.com)"
+  },
+  "ph": {
+    "phone": "9 XXX XXXX or +5999 XXX XXXX",
+    "phone_home": "X XXX XXXX or +5999 XXX XXXX",
+    "phone_short": "9 XXX XXXX",
+    "profesion": "e.g. engineer, teacher, accountant",
+    "direccion_empleador": "e.g. Schottegatweg Oost 121",
+    "email": "name@email.com",
+    "direccion": "e.g. Schottegatweg Oost 23",
+    "ciudad": "e.g. Willemstad",
+    "peso": "e.g. 75",
+    "altura": "e.g. 170",
+    "medico": "Name, or \"none\"",
+    "dolencia": "Briefly explain what kind of complaint…",
+    "operacion": "Explain which operation and in what year…",
+    "enfermedad": "Explain which illness, ailment or disability…",
+    "medicamentos": "Condition, medication and dose…",
+    "hiv": "Since what year…",
+    "circunstancias": "Explain briefly…"
+  },
+  "tipo_doc": {
+    "paspoort": "Passport",
+    "rijbewijs": "Driver's license",
+    "otro": "Document"
   }
 }

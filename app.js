@@ -215,6 +215,8 @@
   let currentStep = 1;
   let i18nTexts = {};
   let currentLang = 'pap';
+  let i18nReady = false;
+  const LANGS = ['pap', 'es', 'en', 'nl'];
 
   // OCR results per doc_type, indexed por input.name (e.g., doc_cedula → {nombre_completo, ...})
   // Para payslips/bancos guardamos array (1 por archivo subido)
@@ -326,6 +328,61 @@
     return periodLbl ? main + ' — ' + periodLbl : main;
   }
 
+  // Etiqueta visible (ya traducida) de un campo, para los mensajes de error.
+  // Antes los avisos decían "telefono_casa: formato inválido": el nombre
+  // interno del campo, que el cliente nunca vio (revisión 15-nov-2026).
+  function fieldLabel(f) {
+    if (f.type === 'file') return docLabelFor(f);
+    let lbl = null;
+    if (f.id) lbl = document.querySelector('label[for="' + f.id + '"]');
+    if (!lbl && f.type === 'radio') {
+      const g = f.closest('[role="radiogroup"]');
+      const id = g && g.getAttribute('aria-labelledby');
+      lbl = id ? document.getElementById(id) : null;
+    }
+    if (!lbl) {
+      const fld = f.closest('.field');
+      lbl = fld ? fld.querySelector('label') : null;
+    }
+    let txt = lbl ? lbl.textContent : '';
+    txt = txt.replace(/\*/g, '').replace(/^\s*\d+\/\d+\.\s*/, '').replace(/\s+/g, ' ').trim();
+    if (txt.length > 80) txt = txt.slice(0, 77) + '…';
+    return txt || f.name;
+  }
+
+  // Marca el campo y deja el mensaje JUNTO a él (no sólo en la lista de abajo).
+  function markFieldError(f, msg) {
+    if (!f) return;
+    f.classList.add('invalid');
+    f.setAttribute('aria-invalid', 'true');
+    const box = f.closest('.upload-block') || f.closest('.field') || f.parentElement;
+    if (!box) return;
+    let p = box.querySelector(':scope > .field-error');
+    if (!p) {
+      p = document.createElement('p');
+      p.className = 'field-error';
+      p.id = 'err_' + (f.name || f.id || Math.random().toString(36).slice(2));
+      box.appendChild(p);
+    }
+    p.textContent = msg;
+    const desc = (f.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+    if (desc.indexOf(p.id) === -1) { desc.push(p.id); f.setAttribute('aria-describedby', desc.join(' ')); }
+  }
+
+  function clearFieldError(f) {
+    if (!f) return;
+    f.classList.remove('invalid');
+    f.removeAttribute('aria-invalid');
+    const box = f.closest('.upload-block') || f.closest('.field');
+    const p = box && box.querySelector(':scope > .field-error');
+    if (p) p.remove();
+  }
+
+  function clearFieldErrors(scope) {
+    $$('.field-error', scope).forEach(p => p.remove());
+    $$('[aria-invalid="true"]', scope).forEach(f => f.removeAttribute('aria-invalid'));
+  }
+
   function validateStep(n) {
     // TEMPORAL: bypass total mientras Leonard revisa el form.
     if (BYPASS_STEP_VALIDATION) {
@@ -334,37 +391,58 @@
     }
     const step = $('.step[data-step="' + n + '"]');
     if (!step) return true;
+    clearFieldErrors(step);
     // 1) Required fields - check todo: presencia + pattern + type
     const requiredFields = $$('input[required]:not([type="file"]), select[required], textarea[required]', step);
     // 2) Optional fields con pattern - validar SOLO si tienen valor (para no rechazar vacío)
     const patternFields = $$('input[pattern]:not([required])', step);
     const errs = [];
     const errMsgs = [];
+    const errEls = [];
+    // Un error = el nombre (para saber si hubo), el texto (lista de abajo) y
+    // el campo (mensaje al lado + foco en el primero).
+    function fail(el, msg, name) {
+      errs.push(name || (el && el.name) || '?');
+      errMsgs.push(msg);
+      if (el) { errEls.push(el); markFieldError(el, msg); }
+    }
+    function formatMsg(f) {
+      const hintKey = f.dataset && f.dataset.i18nTitle;
+      const hint = hintKey ? t(hintKey) : null;
+      return fieldLabel(f) + ': ' + (hint || t('error.format') || 'formato inválido');
+    }
+    const radiosSeen = {};
     requiredFields.forEach(f => {
       f.classList.remove('invalid');
+      if (f.type === 'radio') {
+        if (radiosSeen[f.name]) return;
+        radiosSeen[f.name] = true;
+      }
       if (!f.checkValidity()) {
-        f.classList.add('invalid');
-        errs.push(f.name);
         // Mensaje específico según el tipo de error
+        let msg;
         if (f.validity.patternMismatch) {
-          errMsgs.push((f.title || f.name) + ': ' + (t('error.format') || 'formato inválido'));
+          msg = formatMsg(f);
         } else if (f.validity.typeMismatch && f.type === 'email') {
-          errMsgs.push(f.name + ': ' + (t('error.email') || 'email inválido'));
+          msg = fieldLabel(f) + ': ' + (t('error.email') || 'email inválido');
         } else if (f.validity.valueMissing) {
-          errMsgs.push(f.name + ': ' + (t('error.required') || 'requerido'));
+          msg = fieldLabel(f) + ': ' + (t('error.required') || 'requerido');
         } else if (f.validity.rangeUnderflow || f.validity.rangeOverflow) {
-          errMsgs.push(f.name + ': ' + (t('error.range') || 'valor fuera de rango'));
+          msg = fieldLabel(f) + ': ' + (t('error.range_vars', { min: f.min, max: f.max }) || t('error.range') || 'valor fuera de rango');
+        } else if (f.validity.stepMismatch) {
+          msg = fieldLabel(f) + ': ' + (t('error.step', { step: f.step }) || t('error.invalid') || 'inválido');
+        } else if (f.validity.tooShort) {
+          msg = fieldLabel(f) + ': ' + (t('error.too_short', { n: f.minLength }) || t('error.invalid') || 'inválido');
         } else {
-          errMsgs.push(f.name + ': ' + (t('error.invalid') || 'inválido'));
+          msg = fieldLabel(f) + ': ' + (t('error.invalid') || 'inválido');
         }
+        fail(f, msg);
       }
     });
     patternFields.forEach(f => {
       f.classList.remove('invalid');
       if (f.value && f.value.trim() !== '' && !f.checkValidity()) {
-        f.classList.add('invalid');
-        errs.push(f.name);
-        errMsgs.push((f.title || f.name) + ': ' + (t('error.format') || 'formato inválido'));
+        fail(f, formatMsg(f));
       }
     });
     // Documentos obligatorios: no dejar avanzar si falta alguno (respeta modo pensionado)
@@ -373,58 +451,51 @@
       f.classList.remove('invalid');
       if (lbl) lbl.classList.remove('invalid');
       if (!f.files || f.files.length === 0) {
-        f.classList.add('invalid');
         if (lbl) lbl.classList.add('invalid');
-        errs.push(f.name);
-        errMsgs.push((t('error.doc_required') || 'Falta subir un documento obligatorio') + ': ' + docLabelFor(f));
+        fail(f, (t('error.doc_required') || 'Falta subir un documento obligatorio') + ': ' + docLabelFor(f));
       }
     });
-    // Guard explícito para payslips (Step 2): si el cliente no es pensionado
+    // Guard explícito para payslips (Paso 3): si el cliente no es pensionado
     // debe haber al menos 1 payslip subido. Sin este check el bug era: si
     // el cliente no seleccionó frecuencia_salario, los slots de payslip no
     // se generaban y el submit pasaba sin payslips (caso Odalys Erica
     // Faneyte 2026-07-10 — empleada de gobierno tipo=fijo, 0 payslips en
     // S3, aplicación entró incompleta a Access).
-    if (n === 2) {
+    if (n === 3) {
       const tipo = ($('[name="tipo_empleado"]') || {}).value || '';
       const requiresPayslips = tipo && tipo !== 'pensionado';
       if (requiresPayslips) {
         const payslipInputs = $$('input[type="file"][name^="doc_payslips"]', step);
         const anyUploaded = payslipInputs.some(f => f.files && f.files.length > 0);
         if (payslipInputs.length === 0 || !anyUploaded) {
-          errs.push('doc_payslips');
-          errMsgs.push(
+          fail(payslipInputs[0] || null,
             t('error.payslips_required')
-            || 'Faltan payslips. Si sos empleado, tenés que subir al menos 1 payslip. Volvé al Paso 1 y elegí frecuencia de salario para que aparezcan los slots.'
-          );
+            || 'Faltan recibos de salario. Suba al menos uno. Si no ve los casilleros, vuelva al Paso 2 y elija la frecuencia de salario.',
+            'doc_payslips');
         }
-        // Además del "tenés que subir al menos 1", el período del payslip
-        // debe matchear el slot (últimos meses completos). Antes era solo
-        // warning informativo; ahora bloquea el submit. Regla Leonard
-        // 2026-07-11: "que cumpla los períodos de los últimos 3 meses".
+        // Además del "al menos 1", el período del payslip debe coincidir con
+        // el casillero (últimos meses completos). Regla Leonard 2026-07-11:
+        // "que cumpla los períodos de los últimos 3 meses".
         payslipInputs.forEach(f => {
           if (!f.files || f.files.length === 0) return;
           const c = docCheck[f.name];
           if (c && c.periodMatch === false) {
             const lbl = f.closest('.upload-label');
-            f.classList.add('invalid');
             if (lbl) lbl.classList.add('invalid');
-            errs.push(f.name);
             const detected = c.periodDetail || '?';
             const expY = f.dataset.expectedYear || '?';
             const expM = f.dataset.expectedMonth || '?';
             const expectedStr = expY + '-' + String(expM).padStart(2, '0');
-            errMsgs.push(
+            fail(f,
               t('error.payslip_period_mismatch', { doc: docLabelFor(f), detected: detected, expected: expectedStr })
-              || (docLabelFor(f) + ': período incorrecto (detectado ' + detected + ', se esperaba ' + expectedStr + '). Subí el payslip del período correcto.')
-            );
+              || (docLabelFor(f) + ': período incorrecto (detectado ' + detected + ', se esperaba ' + expectedStr + '). Suba el recibo del período correcto.'));
           }
         });
       }
 
       // Cobertura de los extractos: que entre todos cubran ~3 meses seguidos
-      // en alguna cuenta. AVISA, no bloquea — para bloquear, empujar el
-      // motivo a errs/errMsgs como hacen los payslips justo arriba.
+      // en alguna cuenta. AVISA, no bloquea — para bloquear, llamar a fail()
+      // como hacen los payslips justo arriba.
       const rangosBanco = [];
       Object.keys(bancoRangos).forEach(function (k) {
         (bancoRangos[k] || []).forEach(function (r) {
@@ -463,24 +534,18 @@
         // carta— siguen bloqueando: ahi el control existe por el caso
         // Raylian, que fue real (Leonard, 2026-09-18).
         if (!f.required) return;
-        f.classList.add('invalid');
         if (lbl) lbl.classList.add('invalid');
-        errs.push(f.name);
-        errMsgs.push(t('error.doc_tipo_incorrecto', { doc: docLabelFor(f), detected: tipoLabel(c.detected) })
+        fail(f, t('error.doc_tipo_incorrecto', { doc: docLabelFor(f), detected: tipoLabel(c.detected) })
           || (docLabelFor(f) + ': documento incorrecto'));
       } else if (c.expired) {
-        f.classList.add('invalid');
         if (lbl) lbl.classList.add('invalid');
-        errs.push(f.name);
-        errMsgs.push(t('error.doc_vencido', { doc: docLabelFor(f), date: c.vence })
+        fail(f, t('error.doc_vencido', { doc: docLabelFor(f), date: c.vence })
           || (docLabelFor(f) + ': documento vencido'));
       } else if (c.stale) {
-        f.classList.add('invalid');
         if (lbl) lbl.classList.add('invalid');
-        errs.push(f.name);
-        errMsgs.push(t('error.carta_vieja', { doc: docLabelFor(f), date: c.issueDate, dias: c.ageDays })
+        fail(f, t('error.carta_vieja', { doc: docLabelFor(f), date: c.issueDate, dias: c.ageDays })
           || (docLabelFor(f) + ': la carta de trabajo tiene ' + c.ageDays + ' días (emitida ' + c.issueDate +
-              '). Debe ser de los últimos ' + MAX_WORK_LETTER_AGE_DAYS + ' días — pedí una carta actualizada.'));
+              '). Debe ser de los últimos ' + MAX_WORK_LETTER_AGE_DAYS + ' días — pida una carta actualizada.'));
       }
     });
     // Documento repetido: el MISMO archivo subido en dos slots (contenido
@@ -498,75 +563,61 @@
           const lbl = inp.closest('.upload-label');
           if (lbl) lbl.classList.add('invalid');
         });
-        errs.push(d.second);
         const a = inpA ? docLabelFor(inpA) : d.first;
         const b = inpB ? docLabelFor(inpB) : d.second;
-        errMsgs.push(
+        fail(inpB || null,
           t('error.doc_duplicado', { a: a, b: b })
-          || ('Subiste el mismo archivo en dos lugares: "' + a + '" y "' + b +
-              '". Cada documento debe ser distinto — si no tenés 3 estados de banco, ' +
-              'subí otro comprobante (Aqualectra, flow o uittreksel), pero no repitas el mismo archivo.')
-        );
+          || ('Subió el mismo archivo en dos lugares: "' + a + '" y "' + b +
+              '". Cada documento debe ser distinto.'),
+          d.second);
       });
     }
     // Conditional required fields (e.g., dolencia_detalle solo si dolencia_salud=true)
     $$('.conditional.visible', step).forEach(c => {
       if (c.value === '' || c.value === null) {
-        c.classList.add('invalid');
-        errs.push(c.name);
-        errMsgs.push(c.name + ': ' + (t('error.required') || 'requerido'));
+        fail(c, fieldLabel(c) + ': ' + (t('error.detail_required') || t('error.required') || 'requerido'));
       }
     });
-    // Email verificado: en Step 3, exigimos que el email esté confirmado por código
-    // antes de seguir. Bypass si EMAIL_VERIFY_REQUIRED=false.
-    if (n === 3 && EMAIL_VERIFY_REQUIRED) {
+    // Email verificado: en el Paso 4 exigimos que el email esté confirmado por
+    // código antes de seguir. Bypass si EMAIL_VERIFY_REQUIRED=false.
+    if (n === 4 && EMAIL_VERIFY_REQUIRED) {
       const emailInput = step.querySelector('[name="email"]');
       if (emailInput && emailInput.value && !isEmailVerified()) {
-        emailInput.classList.add('invalid');
-        errs.push('email');
-        errMsgs.push(t('step3.email_verify_required') ||
-          'Verificá tu email antes de continuar (clic en "Verificar").');
+        fail(emailInput, t('step3.email_verify_required') ||
+          'Verifique su email antes de continuar (clic en "Verificar").');
       }
     }
     // Móvil verificado por WhatsApp. Bypass si PHONE_VERIFY_REQUIRED=false.
-    if (n === 3 && PHONE_VERIFY_REQUIRED) {
+    if (n === 4 && PHONE_VERIFY_REQUIRED) {
       const phoneInput = step.querySelector('[name="telefono_movil"]');
       if (phoneInput && phoneInput.value && !isPhoneVerified()) {
-        phoneInput.classList.add('invalid');
-        errs.push('telefono_movil');
-        errMsgs.push(t('step3.phone_verify_required') ||
-          'Verificá tu móvil antes de continuar (clic en "Verificar").');
+        fail(phoneInput, t('step3.phone_verify_required') ||
+          'Verifique su celular antes de continuar (clic en "Verificar").');
       }
     }
     // Sanity peso/altura: la altura en cm de una persona siempre supera el peso en kg.
     // Si peso >= altura el usuario casi seguro invirtió los dos campos.
-    if (n === 4) {
+    if (n === 5) {
       const pesoEl = step.querySelector('[name="peso_kg"]');
       const alturaEl = step.querySelector('[name="altura_cm"]');
       if (pesoEl && alturaEl && pesoEl.value && alturaEl.value &&
           Number(pesoEl.value) >= Number(alturaEl.value)) {
-        pesoEl.classList.add('invalid');
         alturaEl.classList.add('invalid');
-        errs.push('peso_kg');
-        errMsgs.push(t('error.peso_altura') ||
-          'Revisá peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los pusiste al revés?');
+        fail(pesoEl, t('error.peso_altura') ||
+          'Revise peso y altura: la altura (cm) debe ser mayor que el peso (kg). ¿Los puso al revés?');
       }
     }
-    // Paso 6: no permitir aplicar si la cuota de referencia es 0
-    if (n === 6) {
-      const montoEl = step.querySelector('[name="monto_solicitado"]');
-      const plazoEl = step.querySelector('[name="plazo_meses"]');
-      const m = parseFloat(montoEl && montoEl.value) || 0;
-      const p = parseInt(plazoEl && plazoEl.value, 10) || 0;
-      const cuotaRef = (m > 0 && p > 0) ? calcularCuotaCFL(m, p) : 0;
-      if (!(cuotaRef > 0)) {
-        if (montoEl) montoEl.classList.add('invalid');
-        errs.push('monto_solicitado');
-        errMsgs.push(t('error.cuota_cero') || 'La cuota de referencia no puede ser 0. Revise el monto y el plazo.');
-      }
-    }
+    // Paso 1 (préstamo): ya NO se bloquea por la cuota. Si el cotizador no
+    // responde, la persona puede seguir; la cuota real sale en la oferta.
     if (errs.length > 0) {
-      showErrors(errMsgs.length > 0 ? errMsgs : [t('error.fill_required') || 'Por favor kompletá tur fildt rekerí.']);
+      showErrors(errMsgs.length > 0 ? errMsgs : [t('error.fill_required') || 'Por favor complete todos los campos requeridos.']);
+      // Foco y scroll al PRIMER campo con error, para que no tenga que buscarlo.
+      const first = errEls.find(el => el && el.offsetParent !== null) || errEls[0];
+      if (first) {
+        const target = first.type === 'file' ? (first.closest('.upload-block') || first) : first;
+        try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+        try { first.focus({ preventScroll: true }); } catch (e) {}
+      }
       return false;
     }
     clearErrors();
@@ -574,7 +625,10 @@
   }
 
   function showErrors(messages) {
-    $errors.innerHTML = '<ul>' + messages.map(m => '<li>' + m + '</li>').join('') + '</ul>';
+    const ul = document.createElement('ul');
+    messages.forEach(m => { const li = document.createElement('li'); li.textContent = m; ul.appendChild(li); });
+    $errors.innerHTML = '';
+    $errors.appendChild(ul);
     $errors.classList.add('show');
   }
   function clearErrors() {
@@ -583,10 +637,21 @@
   }
 
   // ===== AUTO-SAVE =====
+  // El borrador vive en el localStorage del dispositivo: en un teléfono o una
+  // computadora compartida lo ve el siguiente que abra la página. Por eso NO
+  // se guardan las respuestas de salud (paso marcado data-no-draft) ni la
+  // cuenta bancaria (campo marcado data-no-draft): se vuelven a pedir.
+  function noDraftNames() {
+    const out = {};
+    $$('[data-no-draft] [name], [name][data-no-draft]').forEach(el => { out[el.name] = true; });
+    return out;
+  }
   function saveDraft() {
     const data = {};
+    const skip = noDraftNames();
     new FormData($form).forEach((val, key) => {
       if (val instanceof File) return; // Files not auto-saved
+      if (skip[key]) return;            // salud / cuenta bancaria: nunca al disco
       if (data[key] !== undefined) {
         if (!Array.isArray(data[key])) data[key] = [data[key]];
         data[key].push(val);
@@ -606,7 +671,14 @@
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
-      return JSON.parse(raw);
+      const draft = JSON.parse(raw);
+      // Borradores viejos (antes del 15-nov-2026) sí guardaban salud y cuenta:
+      // se descartan al leerlos y el borrador se reescribe limpio.
+      const skip = noDraftNames();
+      let sucio = false;
+      Object.keys(draft || {}).forEach(k => { if (skip[k]) { delete draft[k]; sucio = true; } });
+      if (sucio) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch (e) {} }
+      return draft;
     } catch (e) { return null; }
   }
 
@@ -712,6 +784,8 @@
           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
     en:  ['January', 'February', 'March', 'April', 'May', 'June',
           'July', 'August', 'September', 'October', 'November', 'December'],
+    nl:  ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+          'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
   };
 
   function monthLabel(year, monthIdx0) {
@@ -808,7 +882,7 @@
       typeLabel = t('step2.slot_banco') || 'Bank statement';
       accept = 'application/pdf';
       pdfOnlyHint = '<p class="slot-hint">' +
-        (t('step2.banco_pdf_only') || 'Solo PDF — descargá del internet banking del banco.') + '</p>';
+        (t('step2.banco_pdf_only') || 'Solo PDF — descárguelo del internet banking de su banco.') + '</p>';
     } else if (basename === 'doc_payslips') {
       icon = '💰';
       typeLabel = t('step2.slot_payslip') || 'Payslip';
@@ -867,7 +941,7 @@
 
     if (payslips.length === 0) {
       payslipsContainer.innerHTML = '<p class="hint">' +
-        (t('step2.choose_tipo_first') || 'Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 1.') +
+        (t('step2.choose_tipo_first') || 'Primero elija el tipo de empleo y (si aplica) la frecuencia de salario en el Paso 2.') +
         '</p>';
     } else {
       payslipsContainer.innerHTML = payslips
@@ -883,7 +957,8 @@
 
   // Cuenta documentos required cargados / total y muestra en #uploadCounter.
   function updateUploadCounter() {
-    const step2 = $('.step[data-step="2"]');
+    // Documentos financieros = Paso 3 desde que el préstamo pasó al Paso 1.
+    const step2 = $('.step[data-step="3"]');
     if (!step2) return;
     const counter = $('#uploadCounter');
     if (!counter) return;
@@ -915,55 +990,171 @@
     });
   }
 
-  // ===== QUOTE CALCULATION (Step 6) =====
-  // Tabla de referencia oficial CFL — cuota por cada 1000 XCG por término.
-  // Promedios calculados de la tabla publicada en curloans.com (incluye interés,
-  // garantía, seguro de vida y plan de ahorro).
-  const CFL_CUOTA_TABLE = [
-    { meses: 6,  cuotaPer1000: 242.86 },
-    { meses: 12, cuotaPer1000: 128.18 },
-    { meses: 18, cuotaPer1000: 91.35 },
-    { meses: 24, cuotaPer1000: 65.81 },
-    { meses: 36, cuotaPer1000: 48.53 },
-  ];
+  // ===== COTIZACIÓN (Paso 1) =====
+  // La cuota sale del motor REAL de v2 (`POST /v1/public/quote`): el mismo
+  // que arma la oferta, con TAE. Reemplaza a la tabla de promedios
+  // CFL_CUOTA_TABLE, que era incoherente (18 meses salía más caro que 24).
+  //
+  // - Debounce de 400 ms al mover monto/plazo, y sólo vale la ÚLTIMA
+  //   respuesta (un número viejo que llega tarde no pisa al nuevo).
+  // - Si el endpoint falla, se dice "No pudimos calcular la cuota ahora" y la
+  //   solicitud sigue: la cuota es información, no una condición.
+  // - Los topes de monto y plazo vienen en `limits` del mismo endpoint.
+  const QUOTE_URL = 'https://api.curloans.com/v1/public/quote';
+  const QUOTE_PRODUCT = 'MicroLoan';           // el mismo producto del intake
+  const QUOTE_DEBOUNCE_MS = 400;
+  const MONTO_STEP = 500;                       // "múltiplo de 500"
+  const PLAZO_OPCIONES = [6, 12, 18, 24, 36, 48, 60];
+  let quoteTimer = null;
+  let quoteSeq = 0;
+  let quoteLimits = null;
+  // Misma combinación = misma respuesta: no se vuelve a pedir (el endpoint
+  // tiene límite de 60 pedidos cada 10 minutos por IP).
+  const quoteCache = {};
 
-  function calcularCuotaCFL(monto, plazo) {
-    const table = CFL_CUOTA_TABLE;
-    if (plazo <= table[0].meses) {
-      return (monto / 1000) * table[0].cuotaPer1000;
-    }
-    if (plazo >= table[table.length - 1].meses) {
-      return (monto / 1000) * table[table.length - 1].cuotaPer1000;
-    }
-    for (let i = 0; i < table.length - 1; i++) {
-      if (plazo >= table[i].meses && plazo <= table[i + 1].meses) {
-        const t1 = table[i].meses;
-        const t2 = table[i + 1].meses;
-        const c1 = table[i].cuotaPer1000;
-        const c2 = table[i + 1].cuotaPer1000;
-        const ratio = (plazo - t1) / (t2 - t1);
-        const cuota1000 = c1 + (c2 - c1) * ratio;
-        return (monto / 1000) * cuota1000;
-      }
-    }
-    return 0;
+  function fmtMoney(n) {
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function updateQuote() {
-    const monto = parseFloat($('[name="monto_solicitado"]').value) || 0;
-    const plazo = parseInt($('[name="plazo_meses"]').value) || 0;
-    if (!monto || !plazo) return;
-    const cuota = calcularCuotaCFL(monto, plazo);
-    const total = cuota * plazo;
+  function setQuoteState(state) {
+    const box = $('#quoteBox');
+    if (box) box.dataset.state = state;
+    const err = $('#qError');
+    if (err) err.hidden = state !== 'error';
+  }
+
+  // Aplica los topes del producto a los controles (una sola vez por cambio).
+  function applyQuoteLimits(limits) {
+    if (!limits) return;
+    const minA = Number(limits.minAmount), maxA = Number(limits.maxAmount);
+    const minT = Number(limits.minTermMonths), maxT = Number(limits.maxTermMonths);
+    const sig = [minA, maxA, minT, maxT].join('|');
+    if (quoteLimits && quoteLimits.sig === sig) return;
+    quoteLimits = { minA, maxA, minT, maxT, sig };
+
+    const monto = $('[name="monto_solicitado"]');
+    const range = $('#montoRange');
+    if (minA > 0 && maxA >= minA) {
+      // Redondea a múltiplos de 500 dentro del tope.
+      const lo = Math.ceil(minA / MONTO_STEP) * MONTO_STEP;
+      const hi = Math.floor(maxA / MONTO_STEP) * MONTO_STEP;
+      [monto, range].forEach(el => { if (el) { el.min = lo; el.max = hi; } });
+      const marks = $('#montoMarks');
+      if (marks) {
+        const n = 4, out = [];
+        for (let i = 0; i <= n; i++) out.push(Math.round((lo + (hi - lo) * i / n) / MONTO_STEP) * MONTO_STEP);
+        marks.innerHTML = out.filter((v, i, a) => a.indexOf(v) === i).map(v => '<span>' + v + '</span>').join('');
+      }
+      const hint = $('#montoHint');
+      if (hint) {
+        hint.dataset.i18nVars = JSON.stringify({ min: String(lo), max: String(hi) });
+        const txt = t('step6.monto_hint', { min: lo, max: hi });
+        if (txt) hint.textContent = txt;
+      }
+    }
+    const plazo = $('[name="plazo_meses"]');
+    if (plazo && minT > 0 && maxT >= minT) {
+      const actual = plazo.value;
+      const ops = PLAZO_OPCIONES.filter(m => m >= minT && m <= maxT);
+      if (ops.length) {
+        plazo.innerHTML = '<option value="">—</option>' +
+          ops.map(m => '<option value="' + m + '">' + m + '</option>').join('');
+        plazo.value = ops.indexOf(Number(actual)) !== -1 ? actual : (ops.indexOf(12) !== -1 ? '12' : String(ops[0]));
+      }
+    }
+  }
+
+  function renderQuoteInputs(monto, plazo) {
     const $qMonto = $('#qMonto');
     const $qPlazo = $('#qPlazo');
-    const $qCuota = $('#qCuota');
-    const $qTotal = $('#qTotal');
-    const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if ($qMonto) $qMonto.textContent = 'XCG ' + fmt(monto);
-    if ($qPlazo) $qPlazo.textContent = plazo + ' ' + (t('step6.q_meses') || 'lunan');
-    if ($qCuota) $qCuota.textContent = 'XCG ' + fmt(cuota);
-    if ($qTotal) $qTotal.textContent = 'XCG ' + fmt(total);
+    if ($qMonto) $qMonto.textContent = 'XCG ' + fmtMoney(monto || 0);
+    if ($qPlazo) $qPlazo.textContent = (plazo || '—') + ' ' + (t('step6.q_meses') || '');
+  }
+
+  function renderQuoteResult(q) {
+    const cur = q.currency || 'XCG';
+    const cuota = Number(q.cuota);
+    const total = q.totals && Number(q.totals.toPay);
+    const apr = Number(q.aprAnnualPct);
+    $('#qCuota').textContent = cur + ' ' + fmtMoney(cuota);
+    $('#qTotal').textContent = Number.isFinite(total) ? cur + ' ' + fmtMoney(total) : '—';
+    $('#qTae').textContent = Number.isFinite(apr) ? apr.toFixed(2) + '%' : '—';
+    // El plan de ahorro es plata del cliente que vuelve al final: se dice,
+    // porque si no el "total a pagar" parece más caro de lo que es.
+    const sav = q.totals && Number(q.totals.savings);
+    const $sav = $('#qSavingsNote');
+    if ($sav) {
+      if (sav > 0) {
+        $sav.textContent = t('step6.q_ahorro', { monto: cur + ' ' + fmtMoney(sav) }) ||
+          ('Incluye ' + cur + ' ' + fmtMoney(sav) + ' de plan de ahorro, que se le devuelve al terminar de pagar.');
+        $sav.hidden = false;
+      } else {
+        $sav.hidden = true;
+      }
+    }
+    const $pol = $('#qPolicyNote');
+    if ($pol) $pol.hidden = q.withinPolicy !== false;
+  }
+
+  function quoteFailed() {
+    ['#qCuota', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+    const $sav = $('#qSavingsNote'); if ($sav) $sav.hidden = true;
+    const $pol = $('#qPolicyNote'); if ($pol) $pol.hidden = true;
+    setQuoteState('error');
+  }
+
+  async function fetchQuote(monto, plazo, seq) {
+    let res;
+    try {
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const to = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 12000) : null;
+      res = await fetch(QUOTE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productCode: QUOTE_PRODUCT, amount: monto, termMonths: plazo }),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+      if (to) clearTimeout(to);
+    } catch (e) {
+      if (seq === quoteSeq) quoteFailed();
+      return;
+    }
+    if (seq !== quoteSeq) return;                 // llegó tarde: hay una más nueva
+    const data = await res.json().catch(() => null);
+    if (seq !== quoteSeq) return;
+    if (!res.ok || !data || !Number.isFinite(Number(data.cuota))) {
+      // Aun con error (p. ej. fuera de tope) los límites pueden venir: se usan.
+      if (data && data.limits) applyQuoteLimits(data.limits);
+      quoteFailed();
+      return;
+    }
+    if (data.limits) applyQuoteLimits(data.limits);
+    quoteCache[monto + '|' + plazo] = data;
+    renderQuoteResult(data);
+    setQuoteState('ok');
+  }
+
+  // Pide la cuota (con debounce). `inmediato` = sin esperar (al cargar).
+  function updateQuote(inmediato) {
+    const montoEl = $('[name="monto_solicitado"]');
+    const plazoEl = $('[name="plazo_meses"]');
+    if (!montoEl || !plazoEl) return;
+    const monto = parseFloat(montoEl.value) || 0;
+    const plazo = parseInt(plazoEl.value, 10) || 0;
+    renderQuoteInputs(monto, plazo);
+    clearTimeout(quoteTimer);
+    const seq = ++quoteSeq;
+    if (!monto || !plazo) {
+      ['#qCuota', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+      setQuoteState('idle');
+      return;
+    }
+    const cached = quoteCache[monto + '|' + plazo];
+    if (cached) { renderQuoteResult(cached); setQuoteState('ok'); return; }
+    setQuoteState('loading');
+    const run = () => { if (seq === quoteSeq) fetchQuote(monto, plazo, seq); };
+    if (inmediato === true) run();
+    else quoteTimer = setTimeout(run, QUOTE_DEBOUNCE_MS);
   }
 
   // ===== DEDUP DE DOCUMENTOS (mismo archivo en dos slots) =====
@@ -1433,7 +1624,7 @@
           || ('Los extractos cubren ' + mejor.dias + ' días seguidos y hacen falta ' + requiredDays + '.');
         if (mejor.repetidos > 0) {
           motivo += ' ' + (t('error.extractos_repetidos', { dias: mejor.repetidos })
-            || ('Hay ' + mejor.repetidos + ' días repetidos: revisá si subiste el mismo mes más de una vez.'));
+            || ('Hay ' + mejor.repetidos + ' días repetidos: revise si subió el mismo mes más de una vez.'));
         }
       }
     }
@@ -1561,7 +1752,7 @@
     warn.textContent = '⚠️ ' +
       (t('ocr.period_mismatch', { expected: expectedStr, detected: periodDetail }) ||
         ('Período detectado: ' + periodDetail + '. Se esperaba ' + expectedStr +
-         '. Verificá que el archivo correcto esté en este slot.'));
+         '. Verifique que el archivo correcto esté en este casillero.'));
   }
 
   // ===== VALIDACIÓN DE NOMBRE (doc vs cédula) =====
@@ -1658,7 +1849,7 @@
     warn.textContent = '⚠️ ' +
       (t('ocr.name_mismatch', { doc: docName, cedula: cedulaName }) ||
         ('El titular de este documento ("' + docName + '") no coincide con el nombre de la cédula ("' +
-         cedulaName + '"). Verificá que el documento sea del mismo solicitante.'));
+         cedulaName + '"). Verifique que el documento sea del mismo solicitante.'));
   }
 
   async function runOcr(file, docType, container, inputName, idx) {
@@ -1726,7 +1917,10 @@
       } else {
         setOcrStatus(
           container,
-          '✓ ' + (t('ocr.filled') || 'Auto-completados') + ': ' + filled.join(', '),
+          '✓ ' + (t('ocr.filled') || 'Auto-completados') + ': ' + filled.map(n => {
+            const el = $('[name="' + n + '"]');
+            return el ? fieldLabel(el) : n;
+          }).join(', '),
           'ok'
         );
         saveDraft();
@@ -1787,19 +1981,20 @@
       return;
     }
     const rows = [];
-    if (data.nombre_completo) rows.push(['Nòmber kompleto', data.nombre_completo]);
-    if (data.numero_id) rows.push(['ID Number', data.numero_id]);
-    if (data.fecha_nacimiento) rows.push(['Nasementu', data.fecha_nacimiento]);
-    if (data.fecha_vencimiento) rows.push(['Vense', data.fecha_vencimiento]);
-    if (data.nacionalidad) rows.push(['Nacionalidat', data.nacionalidad]);
-    if (data.pais_nacimiento) rows.push(['Pais nasementu', data.pais_nacimiento]);
-    if (data.sexo) rows.push(['Sekso', data.sexo]);
-    if (data.estado_civil) rows.push(['Estado sivil', data.estado_civil]);
+    const L = (k, fb) => t('ocr.' + k) || fb;
+    if (data.nombre_completo) rows.push([L('lbl_nombre', 'Nombre'), data.nombre_completo]);
+    if (data.numero_id) rows.push([L('lbl_numero', 'Número'), data.numero_id]);
+    if (data.fecha_nacimiento) rows.push([L('lbl_nacimiento', 'Nacimiento'), data.fecha_nacimiento]);
+    if (data.fecha_vencimiento) rows.push([L('lbl_vence', 'Vence'), data.fecha_vencimiento]);
+    if (data.nacionalidad) rows.push([L('lbl_nacionalidad', 'Nacionalidad'), data.nacionalidad]);
+    if (data.pais_nacimiento) rows.push([L('lbl_pais_nac', 'País de nacimiento'), data.pais_nacimiento]);
+    if (data.sexo) rows.push([L('lbl_sexo', 'Sexo'), data.sexo]);
+    if (data.estado_civil) rows.push([L('lbl_estado_civil', 'Estado civil'), data.estado_civil]);
     if (!rows.length) {
       box.hidden = true;
       return;
     }
-    box.innerHTML = '<div class="ocr-info-header">📋 Datos di sédula (auto-detektá — esakí ta wat ta guardá)</div>' +
+    box.innerHTML = '<div class="ocr-info-header">📋 ' + escapeHtml(L('cedula_header', 'Datos de la cédula (detectados automáticamente)')) + '</div>' +
       '<dl class="ocr-info-list">' +
       rows.map(([k, v]) => '<dt>' + k + ':</dt><dd>' + escapeHtml(String(v)) + '</dd>').join('') +
       '</dl>';
@@ -1815,19 +2010,20 @@
       return;
     }
     const tipo = (data.tipo_documento || '').toLowerCase();
-    const tipoLabel = tipo === 'paspoort' ? 'Paspoort'
-                    : tipo === 'rijbewijs' ? 'Rijbewijs'
-                    : 'Documento';
+    const L = (k, fb) => t('ocr.' + k) || fb;
+    const tipoLabel = tipo === 'paspoort' ? (t('tipo_doc.paspoort') || 'Paspoort')
+                    : tipo === 'rijbewijs' ? (t('tipo_doc.rijbewijs') || 'Rijbewijs')
+                    : (t('tipo_doc.otro') || 'Documento');
     const rows = [];
-    if (data.numero) rows.push(['Number', data.numero]);
-    if (data.nombre_completo) rows.push(['Nòmber', data.nombre_completo]);
-    if (data.fecha_vencimiento) rows.push(['Vense', data.fecha_vencimiento]);
-    if (data.pais_emisor) rows.push(['Pais emisor', data.pais_emisor]);
+    if (data.numero) rows.push([L('lbl_numero', 'Número'), data.numero]);
+    if (data.nombre_completo) rows.push([L('lbl_nombre', 'Nombre'), data.nombre_completo]);
+    if (data.fecha_vencimiento) rows.push([L('lbl_vence', 'Vence'), data.fecha_vencimiento]);
+    if (data.pais_emisor) rows.push([L('lbl_pais_emisor', 'País emisor'), data.pais_emisor]);
     if (!rows.length) {
       box.hidden = true;
       return;
     }
-    box.innerHTML = '<div class="ocr-info-header">📄 ' + tipoLabel + ' (auto-detektá)</div>' +
+    box.innerHTML = '<div class="ocr-info-header">📄 ' + escapeHtml(tipoLabel + ' (' + L('auto_detected', 'detectado automáticamente') + ')') + '</div>' +
       '<dl class="ocr-info-list">' +
       rows.map(([k, v]) => '<dt>' + k + ':</dt><dd>' + escapeHtml(String(v)) + '</dd>').join('') +
       '</dl>';
@@ -1859,6 +2055,19 @@
       const inp = $('[name="' + name + '"]');
       return (inp && inp.files) ? inp.files.length : 0;
     };
+    // Los payslips y extractos viven en casilleros numerados (doc_payslips_1…):
+    // contar sólo "doc_payslips" daba siempre 0.
+    const slotCount = (base) => {
+      const inputs = $$('input[type="file"][name^="' + base + '_"]');
+      return inputs.filter(i => i.files && i.files.length > 0).length + '/' + inputs.length;
+    };
+    // Texto visible (traducido) de la opción elegida en un <select>.
+    const optText = (name) => {
+      const sel = $('select[name="' + name + '"]');
+      const opt = sel && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex] : null;
+      return opt ? opt.textContent.trim() : (get(name) || '');
+    };
+    const L = (key, fallback) => String(t(key) || fallback).replace(/\*/g, '').replace(/^[^0-9A-Za-zÀ-ÿ¿]+/, '').trim();
     // Construye <dt>/<dd> solo si hay valor
     const row = (label, value) => (value === null || value === undefined || value === '' || value === '—')
       ? ''
@@ -1880,20 +2089,20 @@
     let idAdicRows = '';
     if (idAdic && !idAdic.error && !idAdic._timeout) {
       const tipo = (idAdic.tipo_documento || '').toLowerCase();
-      const tipoLabel = tipo === 'paspoort' ? 'Paspoort'
-                      : tipo === 'rijbewijs' ? 'Rijbewijs'
-                      : 'Dok. adishonal';
+      const tipoLabel = tipo === 'paspoort' ? L('tipo_doc.paspoort', 'Paspoort')
+                      : tipo === 'rijbewijs' ? L('tipo_doc.rijbewijs', 'Rijbewijs')
+                      : L('tipo_doc.otro', 'Documento');
       idAdicRows = row(tipoLabel, idAdic.numero)
-                 + row('Vense', idAdic.fecha_vencimiento)
-                 + row('Pais emisor', idAdic.pais_emisor);
+                 + row(L('ocr.lbl_vence', 'Vence'), idAdic.fecha_vencimiento)
+                 + row(L('ocr.lbl_pais_emisor', 'País emisor'), idAdic.pais_emisor);
     }
 
     // ===== Datos OCR del aqualectra (extra info útil para verificación de domicilio) =====
     const aqua = ocrResults.doc_aqualectra;
     let aquaRows = '';
     if (aqua && !aqua.error && !aqua._timeout) {
-      aquaRows = row('Titular Aqualectra', aqua.titular)
-               + row('Kliente# Aqualectra', aqua.numero_cliente);
+      aquaRows = row(L('summary.aqua_titular', 'Titular Aqualectra'), aqua.titular)
+               + row(L('summary.aqua_cliente', 'Cliente Aqualectra'), aqua.numero_cliente);
     }
 
     $summary.innerHTML =
@@ -1947,8 +2156,9 @@
       '<h4>' + (t('summary.prestamo') || 'Fiansa') + '</h4>' +
       '<dl>' +
         rowAlways(t('step6.monto') || 'Monto', 'XCG ' + (get('monto_solicitado') || '0')) +
-        rowAlways(t('step6.plazo') || 'Plazo', (get('plazo_meses') || '0') + ' ' + (t('step6.q_meses') || 'lunan')) +
-        rowAlways(t('step6.proposito') || 'Propósito', get('proposito')) +
+        rowAlways(t('step6.plazo') || 'Plazo', (get('plazo_meses') || '0') + ' ' + (t('step6.q_meses') || 'meses')) +
+        rowAlways(t('step6.proposito') || 'Propósito',
+                  [optText('proposito_categoria'), get('proposito')].filter(Boolean).join(' — ')) +
       '</dl>' +
 
       '<h4>' + (t('summary.contacto') || 'Kontakto') + '</h4>' +
@@ -1956,10 +2166,10 @@
         rowAlways(t('step3.telefono_movil') || 'Selular', get('telefono_movil')) +
         row(t('step3.telefono_casa') || 'Tel kas', get('telefono_casa')) +
         rowAlways(t('step5.ref1') || 'Ref 1',
-                  (get('ref1_nombre') || '—') + ' (' + (get('ref1_relacion') || '—') + ') — ' + (get('ref1_telefono') || '—')) +
+                  (get('ref1_nombre') || '—') + ' (' + (optText('ref1_relacion') || '—') + ') — ' + (get('ref1_telefono') || '—')) +
         (has('ref2_nombre')
           ? rowAlways(t('step5.ref2') || 'Ref 2',
-                      get('ref2_nombre') + ' (' + (get('ref2_relacion') || '—') + ') — ' + (get('ref2_telefono') || '—'))
+                      get('ref2_nombre') + ' (' + (optText('ref2_relacion') || '—') + ') — ' + (get('ref2_telefono') || '—'))
           : '') +
       '</dl>' +
 
@@ -1967,7 +2177,7 @@
       '<dl>' +
         rowAlways((t('step4.peso') || 'Peso') + ' / ' + (t('step4.talla') || 'Altura'),
                   (get('peso_kg') || '0') + ' kg / ' + (get('altura_cm') || '0') + ' cm') +
-        rowAlways('Dòkter di kas', get('medico_cabecera')) +
+        rowAlways(L('summary.medico', 'Médico de cabecera'), get('medico_cabecera')) +
         yesNoDetail(t('step4.q1') || '1/6 Keho serio', 'dolencia_salud', 'dolencia_detalle') +
         yesNoDetail(t('step4.q2') || '2/6 Operashon 5a', 'operacion_5_anos', 'operacion_5_anos_detalle') +
         yesNoDetail(t('step4.q3') || '3/6 Malesa/Diskpasidat', 'otra_enfermedad', 'otra_enfermedad_detalle') +
@@ -1978,12 +2188,12 @@
 
       '<h4>' + (t('summary.docs') || 'Dokumentonan') + '</h4>' +
       '<dl>' +
-        rowAlways('Sédula', fileCount('doc_cedula') > 0 ? '✓' : '—') +
-        rowAlways('ID adicional', fileCount('doc_id_adicional') > 0 ? '✓' : '—') +
-        rowAlways('Payslips', fileCount('doc_payslips') + '/3') +
-        rowAlways('Estado di banko', fileCount('doc_bancos') + '/3') +
-        rowAlways('Karta trabou', fileCount('doc_carta_trabajo') > 0 ? '✓' : '—') +
-        rowAlways('Aqualectra', fileCount('doc_aqualectra') > 0 ? '✓' : '—') +
+        rowAlways(L('step1.cedula', 'Cédula'), fileCount('doc_cedula') > 0 ? '✓' : '—') +
+        rowAlways(L('step1.id_adicional', 'ID adicional'), fileCount('doc_id_adicional') > 0 ? '✓' : '—') +
+        rowAlways(L('step2.payslips_header', 'Payslips'), slotCount('doc_payslips')) +
+        rowAlways(L('step2.bancos_header', 'Estados de cuenta'), slotCount('doc_bancos')) +
+        rowAlways(L('step2.carta', 'Carta de trabajo'), fileCount('doc_carta_trabajo') > 0 ? '✓' : '—') +
+        rowAlways(L('summary.comprobante', 'Comprobante de domicilio'), fileCount('doc_aqualectra') > 0 ? '✓' : '—') +
         aquaRows +
       '</dl>';
   }
@@ -2006,6 +2216,17 @@
   }
 
   function applyI18n() {
+    // Atributos que también salen del archivo de idioma: antes los
+    // placeholders, los avisos `title` y el "Sédula" fijo quedaban en
+    // papiamento o en español aunque la página estuviera en otro idioma.
+    [['i18nPlaceholder', 'placeholder'], ['i18nTitle', 'title'], ['i18nValue', 'value'], ['i18nAria', 'aria-label']].forEach(([ds, attr]) => {
+      const sel = '[data-' + ds.replace(/[A-Z]/g, c => '-' + c.toLowerCase()) + ']';
+      $$(sel).forEach(el => {
+        const txt = t(el.dataset[ds]);
+        if (!txt) return;
+        if (attr === 'value') el.value = txt; else el.setAttribute(attr, txt);
+      });
+    });
     $$('[data-i18n]').forEach(el => {
       const key = el.dataset.i18n;
       const vars = el.dataset.i18nVars ? JSON.parse(el.dataset.i18nVars) : null;
@@ -2032,6 +2253,9 @@
       $langSwitch.value = lang;
       applyI18n();
       updateProgress();
+      // Etiquetas de la cuota (meses, nota de ahorro) en el idioma nuevo.
+      if (i18nReady) { try { updateQuote(true); } catch (err) {} }
+      i18nReady = true;
       // Los slots dinámicos usan el nombre de mes del idioma actual, re-renderizar.
       try { renderDynamicSlots(); } catch (err) {}
     } catch (e) {
@@ -2062,6 +2286,7 @@
         clearDraft();
         if (result.applicationId) {
           $('#aplicacionIdMsg').textContent = '#' + result.applicationId;
+          const box = $('#doneIdBox'); if (box) box.hidden = false;
         }
         showStep('done');
       } catch (err) {
@@ -2073,7 +2298,7 @@
         const avisos = [(t('error.submit') || 'Hubo un problema al enviar.') + ' (' + err.message + ')'];
         if (seReseteo) {
           avisos.push(t('error.captcha_retry') ||
-            'Marcá de nuevo la casilla "No soy un robot" antes de volver a enviar.');
+            'Marque de nuevo la casilla "No soy un robot" antes de volver a enviar.');
         }
         showErrors(avisos);
         $btnSubmit.disabled = false;
@@ -2151,7 +2376,7 @@
       const idVal  = fGet('numero_id').replace(/[\s\-]/g, '');
       if (telVal && idVal && telVal === idVal) {
         showErrors([
-          (t('error.tel_eq_id') || 'El teléfono móvil no puede ser igual a tu número de cédula. Revisá el campo Number di selular.')
+          (t('error.tel_eq_id') || 'El teléfono móvil no puede ser igual a su número de cédula. Revise el campo del número celular.')
         ]);
         $btnSubmit.disabled = false;
         $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
@@ -2181,6 +2406,7 @@
         clearDraft();
         if (result.aplicacion_id) {
           $('#aplicacionIdMsg').textContent = '#' + result.aplicacion_id;
+          const box = $('#doneIdBox'); if (box) box.hidden = false;
           vincularDocumentos(result.aplicacion_id);
         }
         showStep('done');
@@ -2318,20 +2544,20 @@
       const data = await res.json().catch(() => ({}));
       if (data.ok) {
         if (panel) panel.hidden = false;
-        setVerifyStatus(t('step3.email_verify_sent') || 'Código enviado. Revisá tu email.', 'ok');
+        setVerifyStatus(t('step3.email_verify_sent') || 'Código enviado. Revise su email.', 'ok');
         startResendCooldown(data.cooldown_seconds || 60);
         const codeInput = $('#emailVerifyCode');
         if (codeInput) codeInput.focus();
       } else if (data.reason === 'cooldown') {
         if (panel) panel.hidden = false;
-        setVerifyStatus(t('step3.email_verify_cooldown') || 'Esperá unos segundos antes de pedir otro código.', 'warn');
+        setVerifyStatus(t('step3.email_verify_cooldown') || 'Espere unos segundos antes de pedir otro código.', 'warn');
         startResendCooldown(data.cooldown_seconds || 60);
       } else {
-        setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+        setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
       }
     } catch (e) {
       console.warn('email verify send failed', e);
-      setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+      setVerifyStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
     } finally {
       if (verifyBtn) verifyBtn.disabled = false;
     }
@@ -2371,13 +2597,13 @@
       } else if (data.reason === 'wrong_code') {
         setVerifyStatus(
           (t('step3.email_verify_wrong', { left: data.attempts_left }) ||
-            'Código incorrecto. Te quedan ' + data.attempts_left + ' intentos.'),
+            'Código incorrecto. Le quedan ' + data.attempts_left + ' intentos.'),
           'warn'
         );
       } else if (data.reason === 'exhausted') {
-        setVerifyStatus(t('step3.email_verify_exhausted') || 'Demasiados intentos. Pedí un código nuevo.', 'warn');
+        setVerifyStatus(t('step3.email_verify_exhausted') || 'Demasiados intentos. Pida un código nuevo.', 'warn');
       } else if (data.reason === 'no_active_code') {
-        setVerifyStatus(t('step3.email_verify_no_active') || 'No hay código activo. Pedí uno nuevo.', 'warn');
+        setVerifyStatus(t('step3.email_verify_no_active') || 'No hay código activo. Pida uno nuevo.', 'warn');
       } else {
         setVerifyStatus(t('step3.email_verify_error') || 'No pudimos verificar el código.', 'warn');
       }
@@ -2425,7 +2651,7 @@
         const fix = suggestEmailFix(emailInput.value.trim());
         if (fix) {
           typoEl.hidden = false;
-          typoEl.innerHTML = (t('step3.email_typo_q') || '¿Querías decir') +
+          typoEl.innerHTML = (t('step3.email_typo_q') || '¿Quiso decir') +
             ' <a href="#" id="emailTypoFix">' + fix + '</a>?';
           const link = $('#emailTypoFix');
           if (link) link.addEventListener('click', e => {
@@ -2507,14 +2733,14 @@
         if (codeInput) codeInput.focus();
       } else if (data.reason === 'cooldown') {
         if (panel) panel.hidden = false;
-        setPhoneStatus(t('step3.phone_verify_cooldown') || 'Esperá unos segundos antes de pedir otro código.', 'warn');
+        setPhoneStatus(t('step3.phone_verify_cooldown') || 'Espere unos segundos antes de pedir otro código.', 'warn');
         startPhoneCooldown(data.cooldown_seconds || 60);
       } else {
-        setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+        setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
       }
     } catch (e) {
       console.warn('phone verify send failed', e);
-      setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Probá de nuevo.', 'warn');
+      setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
     } finally {
       if (verifyBtn) verifyBtn.disabled = false;
     }
@@ -2554,13 +2780,13 @@
       } else if (data.reason === 'wrong_code') {
         setPhoneStatus(
           (t('step3.phone_verify_wrong', { left: data.attempts_left }) ||
-            'Código incorrecto. Te quedan ' + data.attempts_left + ' intentos.'),
+            'Código incorrecto. Le quedan ' + data.attempts_left + ' intentos.'),
           'warn'
         );
       } else if (data.reason === 'exhausted') {
-        setPhoneStatus(t('step3.phone_verify_exhausted') || 'Demasiados intentos. Pedí un código nuevo.', 'warn');
+        setPhoneStatus(t('step3.phone_verify_exhausted') || 'Demasiados intentos. Pida un código nuevo.', 'warn');
       } else if (data.reason === 'no_active_code') {
-        setPhoneStatus(t('step3.phone_verify_no_active') || 'No hay código activo. Pedí uno nuevo.', 'warn');
+        setPhoneStatus(t('step3.phone_verify_no_active') || 'No hay código activo. Pida uno nuevo.', 'warn');
       } else {
         setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos verificar el código.', 'warn');
       }
@@ -2617,12 +2843,18 @@
         });
     return _trackingIdMemo;
   }
+  // El préstamo pasó del paso 6 al 1 (15-nov-2026) y los demás se corrieron un
+  // lugar. El tablero de n8n identifica cada SECCIÓN por su número viejo, así
+  // que se sigue mandando ese número en `paso` (misma sección, mismo nombre en
+  // el tablero) y el orden nuevo va aparte en `paso_v2`.
+  const PASO_LEGACY = { 1: 6, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 7 };
   function track(paso, evento) {
     try {
+      const legacy = evento === 'paso' ? (PASO_LEGACY[paso] || paso) : paso;
       fetch(TRACK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_id: getTrackingId(), paso: paso, evento: evento, idioma: currentLang }),
+        body: JSON.stringify({ tracking_id: getTrackingId(), paso: legacy, paso_v2: paso, evento: evento, idioma: currentLang }),
         keepalive: true
       }).catch(function () {});
     } catch (e) {}
@@ -2718,6 +2950,11 @@
     $form.addEventListener('submit', submitForm);
 
     $form.addEventListener('change', e => {
+      if (e.target && e.target.classList && e.target.classList.contains('invalid') && e.target.type !== 'file') clearFieldError(e.target);
+      if (e.target && e.target.type === 'radio') {
+        const g = e.target.closest('.field');
+        if (g) { const p = g.querySelector(':scope > .field-error'); if (p) p.remove(); }
+      }
       saveDraft();
       if (e.target.type === 'radio') updateConditionals();
       if (e.target.tagName === 'SELECT') updateConditionals();
@@ -2732,7 +2969,8 @@
       if (e.target.type === 'file') updateUploadCounter();
     });
 
-    $form.addEventListener('input', () => {
+    $form.addEventListener('input', (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains('invalid')) clearFieldError(e.target);
       // Debounce auto-save
       clearTimeout(window._cflSaveTimer);
       window._cflSaveTimer = setTimeout(saveDraft, 800);
@@ -2752,15 +2990,20 @@
     wireEmailVerification();
     wirePhoneVerification();
 
-    // Detect preferred language: localStorage > browser > pap
+    // Detect preferred language: ?lang= > localStorage > browser > pap
     const draft = loadDraft();
     const browserLang = (navigator.language || 'pap').toLowerCase().slice(0, 2);
+    let urlLang = null;
+    try { urlLang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
     const preferred =
-      (draft && draft._lang) ||
-      (['pap', 'es', 'en'].includes(browserLang) ? browserLang : 'pap');
+      (urlLang && LANGS.includes(urlLang) ? urlLang : null) ||
+      (draft && LANGS.includes(draft._lang) ? draft._lang : null) ||
+      (LANGS.includes(browserLang) ? browserLang : 'pap');
 
     await loadI18n(preferred);
     restoreDraft();
+    // La cuota se pide AL CARGAR (antes arrancaba en "XCG —" hasta mover algo).
+    updateQuote(true);
 
     // Render inicial de los slots de Step 2 según tipo_empleado / frecuencia_salario
     // restaurados desde el draft. Si todavía no fueron elegidos muestra hint.

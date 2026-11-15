@@ -21,6 +21,7 @@
       <option value="pap">Papiamentu</option>
       <option value="es">Español</option>
       <option value="en">English</option>
+      <option value="nl">Nederlands</option>
     </select>
   </div>
 </header>
@@ -36,12 +37,72 @@
 
   <form id="appForm" novalidate>
 
-    <!-- ============ PASO 1: Identificación ============ -->
+    <!-- ============ PASO 1: Su préstamo ============ -->
+    <!--
+      Monto, plazo y propósito van PRIMERO (revisión 15-nov-2026): la persona
+      tiene que ver su cuota antes de que le pidamos un solo documento. La cuota
+      sale del motor real de v2 (/v1/public/quote), el mismo de la oferta.
+    -->
     <section class="step active" data-step="1">
-      <h2 data-i18n="step1.title">Bo Identifikashon</h2>
-      <p class="hint" data-i18n="step1.hint">Manda un foto klaro di bo sédula. Mi lo ekstrae bo datos outomátikamente.</p>
+      <h2 data-i18n="step6.title">Bo Fiansa</h2>
+      <p class="hint" data-i18n="step6.hint">E kuota ta inkluí kapital, interes, seguro di bida i plan di spar. CFL ta debolbé bo plan di spar ora bo kaba di paga.</p>
 
-      <div class="intro-note">
+      <div class="field">
+        <label for="f_monto_solicitado" data-i18n="step6.monto">Monto ku bo desea presta (XCG) *</label>
+        <input type="number" id="f_monto_solicitado" name="monto_solicitado" required min="1000" max="5000" step="500" value="2000" inputmode="numeric" aria-describedby="montoHint">
+        <div class="slider-wrap">
+          <input type="range" min="1000" max="5000" step="500" value="2000" data-sync="monto_solicitado" aria-labelledby="montoHint" id="montoRange">
+          <div class="slider-marks" id="montoMarks"><span>1000</span><span>2000</span><span>3000</span><span>4000</span><span>5000</span></div>
+        </div>
+        <p class="field-hint" id="montoHint" data-i18n="step6.monto_hint" data-i18n-vars='{"min":"1000","max":"5000"}'>Entre 1000 i 5000 XCG, na múltiplo di 500.</p>
+      </div>
+
+      <div class="field">
+        <label for="f_plazo_meses" data-i18n="step6.plazo">Plazo (lunan) *</label>
+        <select id="f_plazo_meses" name="plazo_meses" required>
+          <option value="">—</option>
+          <option value="6">6</option>
+          <option value="12" selected>12</option>
+          <option value="18">18</option>
+          <option value="24">24</option>
+          <option value="36">36</option>
+          <option value="48">48</option>
+          <option value="60">60</option>
+        </select>
+      </div>
+
+      <div class="quote-box" id="quoteBox" aria-live="polite" data-state="loading">
+        <h3 data-i18n="step6.quote">💰 Kuota estimá</h3>
+        <div class="quote-main">
+          <span class="quote-main-label" data-i18n="step6.q_cuota">Kuota mensual:</span>
+          <strong class="quote-main-value" id="qCuota">XCG …</strong>
+        </div>
+        <div class="quote-row"><span data-i18n="step6.q_monto">Monto:</span><strong id="qMonto">XCG 2,000.00</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_plazo">Plazo:</span><strong id="qPlazo">12</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_total">Total a pagar:</span><strong id="qTotal">XCG …</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_tae">TAE:</span><strong id="qTae">…</strong></div>
+        <p class="quote-note" id="qSavingsNote" hidden></p>
+        <p class="quote-note" id="qPolicyNote" hidden data-i18n="step6.q_fuera_politica">E monto i plazo akí ta pidi un revishon adishonal; e kuota por kambia.</p>
+        <p class="quote-error" id="qError" hidden data-i18n="step6.q_error">Nos no por a kalkulá e kuota awor. Bo por sigui ku bo aplikashon.</p>
+        <p class="quote-disclaimer" data-i18n="step6.q_disclaimer">Estimá, sujeto na aprobashon.</p>
+      </div>
+
+      <div class="field">
+        <label for="f_proposito_categoria" data-i18n="step6.proposito">Pa kiko bo ta usa e fiansa? *</label>
+        <select id="f_proposito_categoria" name="proposito_categoria" required>
+          <option value="">—</option>
+          <option value="konsolidashon_di_debe" data-i18n="step6.proposito_konsolidashon">Konsolidashon di debe</option>
+          <option value="gastonan_medico" data-i18n="step6.proposito_medico">Gastonan médiko</option>
+          <option value="reparashon_di_kas" data-i18n="step6.proposito_kas">Reparashon di kas</option>
+          <option value="vehículo" data-i18n="step6.proposito_vehiculo">Vehíkulo (outo, scooter, repuesto)</option>
+          <option value="edukashon" data-i18n="step6.proposito_edukashon">Edukashon (skol, kurso)</option>
+          <option value="vakashon" data-i18n="step6.proposito_vakashon">Vakashon</option>
+          <option value="otro" data-i18n="step6.proposito_otro">Otro motibo (eksplika abou)</option>
+        </select>
+        <textarea name="proposito" id="f_proposito" rows="2" data-i18n-placeholder="step6.proposito_detalle_ph" placeholder="Detayá adishonal" class="conditional" data-show-when-select="proposito_categoria=otro"></textarea>
+      </div>
+
+      <div class="intro-note intro-note-after">
         <p class="intro-note-title" data-i18n="intro.title">📋 Promé ku bo kuminsá</p>
         <p data-i18n="intro.body">Rekohé TUR bo dokumentonan promé ku bo kuminsá e aplikashon. E sistema lo no laga bo pasa pa e siguiente página si ta falta un dokumento obligatorio.</p>
         <p class="intro-note-subtitle" data-i18n="intro.docs_title">Dokumentonan ku bo tin mester pa aplika:</p>
@@ -54,9 +115,16 @@
         </ul>
       </div>
 
+    </section>
+
+    <!-- ============ PASO 2: Identificación ============ -->
+    <section class="step" data-step="2">
+      <h2 data-i18n="step1.title">Bo Identifikashon</h2>
+      <p class="hint" data-i18n="step1.hint">Manda un foto klaro di bo sédula. Nos lo saka bo datos outomátikamente.</p>
+
       <div class="field">
-        <label data-i18n="step3.tipo_empleado">Tipo di empleo *</label>
-        <select name="tipo_empleado" required>
+        <label for="f_tipo_empleado" data-i18n="step3.tipo_empleado">Tipo di empleo *</label>
+        <select id="f_tipo_empleado" name="tipo_empleado" required>
           <option value="">—</option>
           <option value="fijo" data-i18n="step3.tipo_empleado_fijo">Fijo (vaste dienst / indefiní)</option>
           <option value="contrato" data-i18n="step3.tipo_empleado_contrato">Kontrato (temporal)</option>
@@ -67,8 +135,8 @@
 
       <!-- Frecuencia salario: visible solo si tipo_empleado es fijo o contrato -->
       <div class="field" id="frecuenciaSalarioField" style="display:none;">
-        <label data-i18n="step1.frecuencia_salario">Ki frekuensia bo ta haña salario? *</label>
-        <select name="frecuencia_salario">
+        <label for="f_frecuencia_salario" data-i18n="step1.frecuencia_salario">Ki frekuensia bo ta haña salario? *</label>
+        <select id="f_frecuencia_salario" name="frecuencia_salario">
           <option value="">—</option>
           <option value="mensual" data-i18n="step1.frecuencia_mensual">Tur luna (mensual)</option>
           <option value="quincenal" data-i18n="step1.frecuencia_quincenal">Kada 2 siman (kinsenal)</option>
@@ -95,8 +163,8 @@
       </div>
     </section>
 
-    <!-- ============ PASO 2: Documentos Financieros ============ -->
-    <section class="step" data-step="2">
+    <!-- ============ PASO 3: Documentos Financieros ============ -->
+    <section class="step" data-step="3">
       <h2 data-i18n="step2.title">Dokumentonan Finansiero</h2>
       <p class="hint" data-i18n="step2.hint">Karga bo último 3 luna di payslip i estado di banko.</p>
 
@@ -134,41 +202,41 @@
       </div>
     </section>
 
-    <!-- ============ PASO 3: Datos Personales ============ -->
-    <section class="step" data-step="3">
+    <!-- ============ PASO 4: Datos Personales ============ -->
+    <section class="step" data-step="4">
       <h2 data-i18n="step3.title">Bo Datos Pèrsonal</h2>
       <p class="hint" data-i18n="step3.hint">Verifiká i kompletá bo informashon.</p>
 
       <div class="field">
-        <label data-i18n="step3.nombre">Nòmber kompleto *</label>
-        <input type="text" name="nombre_completo" required minlength="3">
+        <label for="f_nombre_completo" data-i18n="step3.nombre">Nòmber kompleto *</label>
+        <input id="f_nombre_completo" type="text" name="nombre_completo" required minlength="3">
       </div>
 
       <div class="field">
-        <label data-i18n="step3.cedula_num">Number di sédula *</label>
-        <input type="text" name="numero_id" required pattern="[0-9A-Za-z\-]{5,15}" maxlength="15" title="5-15 caracteres — solo letras, dígitos y guiones">
+        <label for="f_numero_id" data-i18n="step3.cedula_num">Number di sédula *</label>
+        <input id="f_numero_id" type="text" name="numero_id" required pattern="[0-9A-Za-z\-]{5,15}" maxlength="15" data-i18n-title="hint.id_format" title="5-15 caracteres — solo letras, dígitos y guiones">
       </div>
 
       <div class="row">
         <div class="field flex-1">
-          <label data-i18n="step3.fecha_nac">Fecha di nasementu *</label>
-          <input type="date" name="fecha_nacimiento" required max="2008-12-31">
+          <label for="f_fecha_nacimiento" data-i18n="step3.fecha_nac">Fecha di nasementu *</label>
+          <input id="f_fecha_nacimiento" type="date" name="fecha_nacimiento" required max="2008-12-31">
         </div>
         <div class="field flex-1">
-          <label data-i18n="step3.tipo_id">Tipo di ID *</label>
-          <input type="text" value="Sédula" readonly class="readonly-field">
+          <label for="f_tipo_id_display" data-i18n="step3.tipo_id">Tipo di ID *</label>
+          <input type="text" id="f_tipo_id_display" value="Sédula" readonly class="readonly-field" data-i18n-value="step3.tipo_id_sedula" aria-readonly="true">
           <input type="hidden" name="tipo_id" value="sedula">
         </div>
       </div>
 
       <div class="row">
         <div class="field flex-1">
-          <label data-i18n="step3.fecha_venc_cedula">Fecha di vensemento di sédula *</label>
-          <input type="date" name="fecha_venc_id1" required>
+          <label for="f_fecha_venc_id1" data-i18n="step3.fecha_venc_cedula">Fecha di vensemento di sédula *</label>
+          <input id="f_fecha_venc_id1" type="date" name="fecha_venc_id1" required>
         </div>
         <div class="field flex-1">
-          <label data-i18n="step3.sexo">Seksu *</label>
-          <select name="sexo" required>
+          <label for="f_sexo" data-i18n="step3.sexo">Seksu *</label>
+          <select id="f_sexo" name="sexo" required>
             <option value="">—</option>
             <option value="M" data-i18n="step3.sexo_m">Maskulin</option>
             <option value="F" data-i18n="step3.sexo_f">Feminin</option>
@@ -178,8 +246,8 @@
 
       <div class="row">
         <div class="field flex-1">
-          <label data-i18n="step3.estado_civil">Estado sivil *</label>
-          <select name="estado_civil" required>
+          <label for="f_estado_civil" data-i18n="step3.estado_civil">Estado sivil *</label>
+          <select id="f_estado_civil" name="estado_civil" required>
             <option value="">—</option>
             <option value="soltero" data-i18n="step3.civil_soltero">Soltero</option>
             <option value="kasá" data-i18n="step3.civil_casado">Kasá</option>
@@ -188,14 +256,14 @@
           </select>
         </div>
         <div class="field flex-1">
-          <label data-i18n="step3.nacionalidad">Nashonalidat *</label>
-          <input type="text" name="nacionalidad" required minlength="2">
+          <label for="f_nacionalidad" data-i18n="step3.nacionalidad">Nashonalidat *</label>
+          <input id="f_nacionalidad" type="text" name="nacionalidad" required minlength="2">
         </div>
       </div>
 
       <div class="field">
-        <label data-i18n="step3.pais_nacimiento">Pais di nasementu *</label>
-        <input type="text" name="pais_nacimiento" required minlength="2">
+        <label for="f_pais_nacimiento" data-i18n="step3.pais_nacimiento">Pais di nasementu *</label>
+        <input id="f_pais_nacimiento" type="text" name="pais_nacimiento" required minlength="2">
       </div>
 
       <!--
@@ -219,31 +287,31 @@
         <p class="field-hint" data-i18n="step3.conyuge_hint">Bo kasá mester firma huntu ku bo na e sita, ku su identifikashon bálido. Nos ta usa e mesun datos akí komo Referensia 1.</p>
         <div class="row">
           <div class="field flex-1">
-            <label data-i18n="step3.conyuge_nombre">Nòmber di bo kasá *</label>
-            <input type="text" name="conyuge_nombre" minlength="2" maxlength="120" autocomplete="off">
+            <label for="f_conyuge_nombre" data-i18n="step3.conyuge_nombre">Nòmber di bo kasá *</label>
+            <input id="f_conyuge_nombre" type="text" name="conyuge_nombre" minlength="2" maxlength="120" autocomplete="off">
           </div>
           <div class="field flex-1">
-            <label data-i18n="step3.conyuge_apellido">Fam di bo kasá *</label>
-            <input type="text" name="conyuge_apellido" minlength="2" maxlength="120" autocomplete="off">
+            <label for="f_conyuge_apellido" data-i18n="step3.conyuge_apellido">Fam di bo kasá *</label>
+            <input id="f_conyuge_apellido" type="text" name="conyuge_apellido" minlength="2" maxlength="120" autocomplete="off">
           </div>
         </div>
         <div class="row">
           <div class="field flex-1">
-            <label data-i18n="step3.conyuge_telefono">Telefòn di bo kasá *</label>
-            <input type="tel" name="conyuge_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+            <label for="f_conyuge_telefono" data-i18n="step3.conyuge_telefono">Telefòn di bo kasá *</label>
+            <input id="f_conyuge_telefono" type="tel" name="conyuge_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone" placeholder="9 XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
           </div>
           <div class="field flex-1">
-            <label data-i18n="step3.conyuge_sedula">Number di sédula di bo kasá</label>
-            <input type="text" name="conyuge_numero_id" maxlength="30" pattern="[0-9A-Za-z\s\-]{5,30}" autocomplete="off" title="Opshonal — si bo no tin e na man, nos ta kompletá e na oficina.">
+            <label for="f_conyuge_numero_id" data-i18n="step3.conyuge_sedula">Number di sédula di bo kasá</label>
+            <input id="f_conyuge_numero_id" type="text" name="conyuge_numero_id" maxlength="30" pattern="[0-9A-Za-z\s\-]{5,30}" autocomplete="off" data-i18n-title="step3.conyuge_sedula_hint" title="Opshonal — si bo no tin e na man, nos ta kompletá e na oficina.">
             <p class="field-hint" data-i18n="step3.conyuge_sedula_hint">Opshonal. Si bo no tin e na man, nos ta kompletá e na oficina.</p>
           </div>
         </div>
       </fieldset>
 
       <div class="field" id="phoneField">
-        <label data-i18n="step3.telefono_movil">Number di selular *</label>
+        <label for="f_telefono_movil" data-i18n="step3.telefono_movil">Number di selular *</label>
         <div class="email-verify-row">
-          <input type="tel" name="telefono_movil" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+          <input id="f_telefono_movil" type="tel" name="telefono_movil" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone" placeholder="9 XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
           <button type="button" id="phoneVerifyBtn" class="btn-verify" data-i18n="step3.phone_verify_btn">Verifiká</button>
         </div>
         <div id="phoneVerifyPanel" class="email-verify-panel" hidden>
@@ -261,46 +329,46 @@
       </div>
 
       <div class="field">
-        <label data-i18n="step3.telefono_casa">Number di kas *</label>
-        <input type="tel" name="telefono_casa" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="X XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+        <label for="f_telefono_casa" data-i18n="step3.telefono_casa">Number di kas *</label>
+        <input id="f_telefono_casa" type="tel" name="telefono_casa" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone_home" placeholder="X XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
       </div>
 
       <div class="field">
-        <label data-i18n="step3.empleador" data-i18n-pensionado="step3.empleador_pensionado">Empleador (kompania kaminda bo ta traha) *</label>
-        <input type="text" name="empleador" required minlength="2">
+        <label for="f_empleador" data-i18n="step3.empleador" data-i18n-pensionado="step3.empleador_pensionado">Empleador (kompania kaminda bo ta traha) *</label>
+        <input id="f_empleador" type="text" name="empleador" required minlength="2">
       </div>
 
       <div class="row">
         <div class="field flex-1">
-          <label data-i18n="step3.profesion">Profesión *</label>
-          <input type="text" name="profesion" required minlength="2" placeholder="ej: Ingeniero, Maestro, Contador">
+          <label for="f_profesion" data-i18n="step3.profesion">Profesión *</label>
+          <input id="f_profesion" type="text" name="profesion" required minlength="2" data-i18n-placeholder="ph.profesion" placeholder="ej: Ingeniero, Maestro, Contador">
         </div>
         <div class="field flex-1">
-          <label data-i18n="step3.cargo">Posishon / Kargo *</label>
-          <input type="text" name="cargo" required minlength="2">
+          <label for="f_cargo" data-i18n="step3.cargo">Posishon / Kargo *</label>
+          <input id="f_cargo" type="text" name="cargo" required minlength="2">
         </div>
       </div>
 
       <!-- Datos del empleador (opcional — si el cliente sabe, sino el OCR de la carta lo llena) -->
       <div class="row" data-i18n-pensionado-hide>
         <div class="field flex-2">
-          <label data-i18n="step3.direccion_empleador">Direkshon di kompania (opshonal)</label>
-          <input type="text" name="direccion_empleador" minlength="3" placeholder="ej: Schottegatweg Oost 121">
+          <label for="f_direccion_empleador" data-i18n="step3.direccion_empleador">Direkshon di kompania (opshonal)</label>
+          <input id="f_direccion_empleador" type="text" name="direccion_empleador" minlength="3" data-i18n-placeholder="ph.direccion_empleador" placeholder="ej: Schottegatweg Oost 121">
         </div>
         <div class="field flex-1">
-          <label data-i18n="step3.telefono_empleador">Telefòn di kompania (opshonal)</label>
-          <input type="tel" name="telefono_empleador" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX">
+          <label for="f_telefono_empleador" data-i18n="step3.telefono_empleador">Telefòn di kompania (opshonal)</label>
+          <input id="f_telefono_empleador" type="tel" name="telefono_empleador" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone_short" placeholder="9 XXX XXXX">
         </div>
       </div>
 
       <div class="field">
-        <label data-i18n="step3.salario" data-i18n-pensionado="step3.salario_pensionado">Salario neto mensual (XCG) *</label>
-        <input type="number" name="salario_neto" required min="100" step="0.01">
+        <label for="f_salario_neto" data-i18n="step3.salario" data-i18n-pensionado="step3.salario_pensionado">Salario neto mensual (XCG) *</label>
+        <input id="f_salario_neto" type="number" name="salario_neto" required min="100" step="0.01">
       </div>
 
       <div class="field">
-        <label data-i18n="step3.banco">Banko ku ta resibí salario/penshon *</label>
-        <select name="banco_debito" required>
+        <label for="f_banco_debito" data-i18n="step3.banco">Banko ku ta resibí salario/penshon *</label>
+        <select id="f_banco_debito" name="banco_debito" required>
           <option value="">—</option>
           <option value="ORCOBANK">ORCOBANK</option>
           <option value="MCB">MCB</option>
@@ -322,7 +390,7 @@
         solisitut.
       -->
       <div class="field">
-        <label data-i18n="step3.inhouden">Bo dunadó di trabou ta aseptá deduccion di salario (inhouden)?</label>
+        <label for="inhoudenSelect" data-i18n="step3.inhouden">Bo dunadó di trabou ta aseptá deduccion di salario (inhouden)?</label>
         <select name="inhouden_posible" id="inhoudenSelect">
           <option value="">—</option>
           <option value="si" data-i18n="step3.inhouden_si">Sí, mi a puntra i nan ta aseptá</option>
@@ -339,14 +407,14 @@
       </div>
 
       <div class="field">
-        <label data-i18n="step3.cuenta_bancaria">Number di kuenta di banko *</label>
-        <input type="text" name="cuenta_bancaria_debito" required minlength="5" maxlength="30" pattern="[0-9\s\-]{5,30}" placeholder="ej: 12345678" inputmode="numeric" autocomplete="off" title="Solamente number, espasio of guion. 5-30 karakteres.">
+        <label for="f_cuenta_bancaria_debito" data-i18n="step3.cuenta_bancaria">Number di kuenta di banko *</label>
+        <input id="f_cuenta_bancaria_debito" type="text" name="cuenta_bancaria_debito" required minlength="5" maxlength="30" pattern="[0-9\s\-]{5,30}" placeholder="12345678" inputmode="numeric" autocomplete="off" data-i18n-title="hint.cuenta_format" title="Solamente number, espasio of guion. 5-30 karakteres." data-no-draft>
       </div>
 
       <div class="field" id="emailField">
-        <label data-i18n="step3.email">Email *</label>
+        <label for="f_email" data-i18n="step3.email">Email *</label>
         <div class="email-verify-row">
-          <input type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" placeholder="nombre@email.com" title="Email válido (ej: nombre@email.com)" autocomplete="email">
+          <input id="f_email" type="email" name="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" data-i18n-placeholder="ph.email" placeholder="nombre@email.com" data-i18n-title="hint.email_format" title="Email válido (ej: nombre@email.com)" autocomplete="email">
           <button type="button" id="emailVerifyBtn" class="btn-verify" data-i18n="step3.email_verify_btn">Verifiká</button>
         </div>
         <p class="field-hint email-typo-suggestion" id="emailTypoSuggestion" hidden></p>
@@ -366,115 +434,115 @@
       </div>
 
       <div class="field">
-        <label data-i18n="step3.direccion">Direkshon di kas (kompleto) *</label>
-        <input type="text" name="direccion" required minlength="3" placeholder="ej: Schottegatweg Oost 23">
+        <label for="f_direccion" data-i18n="step3.direccion">Direkshon di kas (kompleto) *</label>
+        <input id="f_direccion" type="text" name="direccion" required minlength="3" data-i18n-placeholder="ph.direccion" placeholder="ej: Schottegatweg Oost 23">
       </div>
 
       <div class="field">
-        <label data-i18n="step3.ciudad">Stad / Sektor *</label>
-        <input type="text" name="ciudad" required minlength="2" placeholder="ej: Willemstad" value="Willemstad">
+        <label for="f_ciudad" data-i18n="step3.ciudad">Stad / Sektor *</label>
+        <input id="f_ciudad" type="text" name="ciudad" required minlength="2" data-i18n-placeholder="ph.ciudad" placeholder="ej: Willemstad" value="Willemstad">
       </div>
     </section>
 
-    <!-- ============ PASO 4: Salud ============ -->
-    <section class="step" data-step="4">
+    <!-- ============ PASO 5: Salud ============ -->
+    <section class="step" data-step="5" data-no-draft>
       <h2 data-i18n="step4.title">Deklarashon di Salud</h2>
       <p class="hint" data-i18n="step4.hint">Pa e seguro di bida obligatorio. Tur respuesta ta konfidensial.</p>
 
       <div class="row">
         <div class="field flex-1">
-          <label data-i18n="step4.peso">Peso / Weight (kg) *</label>
-          <input type="number" name="peso_kg" required min="30" max="250" step="0.1" placeholder="ej: 75">
+          <label for="f_peso_kg" data-i18n="step4.peso">Peso / Weight (kg) *</label>
+          <input id="f_peso_kg" type="number" name="peso_kg" required min="30" max="250" step="0.1" data-i18n-placeholder="ph.peso" placeholder="ej: 75">
         </div>
         <div class="field flex-1">
-          <label data-i18n="step4.talla">Altura / Height (cm) *</label>
-          <input type="number" name="altura_cm" required min="100" max="250" placeholder="ej: 170">
+          <label for="f_altura_cm" data-i18n="step4.talla">Altura / Height (cm) *</label>
+          <input id="f_altura_cm" type="number" name="altura_cm" required min="100" max="250" data-i18n-placeholder="ph.altura" placeholder="ej: 170">
         </div>
       </div>
 
       <div class="field">
-        <label data-i18n="step4.medico">Ki ta bo dòkter di kas? *</label>
-        <input type="text" name="medico_cabecera" required minlength="2" placeholder="Nòmber of 'no tin'">
+        <label for="f_medico_cabecera" data-i18n="step4.medico">Ki ta bo dòkter di kas? *</label>
+        <input id="f_medico_cabecera" type="text" name="medico_cabecera" required minlength="2" data-i18n-placeholder="ph.medico" placeholder="Nòmber of 'no tin'">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q1">1/6. ¿Tin bo algun keho SERIO di salud aktualmente? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="dolencia_salud" value="false" required> No</label>
-          <label><input type="radio" name="dolencia_salud" value="true"> Sí</label>
+        <label id="lbl_dolencia_salud" data-i18n="step4.q1">1/6. ¿Tin bo algun keho SERIO di salud aktualmente? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_dolencia_salud">
+          <label><input type="radio" name="dolencia_salud" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="dolencia_salud" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="dolencia_detalle" placeholder="Splika brevemente ki tipo di keho..." class="conditional" data-show-when="dolencia_salud=true">
+        <input type="text" name="dolencia_detalle" data-i18n-placeholder="ph.dolencia" placeholder="Splika brevemente ki tipo di keho..." class="conditional" data-show-when="dolencia_salud=true">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q2">2/6. ¿Bo a haña un operashon den último 5 aña? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="operacion_5_anos" value="false" required> No</label>
-          <label><input type="radio" name="operacion_5_anos" value="true"> Sí</label>
+        <label id="lbl_operacion_5_anos" data-i18n="step4.q2">2/6. ¿Bo a haña un operashon den último 5 aña? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_operacion_5_anos">
+          <label><input type="radio" name="operacion_5_anos" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="operacion_5_anos" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="operacion_5_anos_detalle" placeholder="Splika ki tipo di operashon i na ki aña..." class="conditional" data-show-when="operacion_5_anos=true">
+        <input type="text" name="operacion_5_anos_detalle" data-i18n-placeholder="ph.operacion" placeholder="Splika ki tipo di operashon i na ki aña..." class="conditional" data-show-when="operacion_5_anos=true">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q3">3/6. ¿Tin bo aktualmente un malesa, dolencia of diskpasidat? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="otra_enfermedad" value="false" required> No</label>
-          <label><input type="radio" name="otra_enfermedad" value="true"> Sí</label>
+        <label id="lbl_otra_enfermedad" data-i18n="step4.q3">3/6. ¿Tin bo aktualmente un malesa, dolencia of diskpasidat? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_otra_enfermedad">
+          <label><input type="radio" name="otra_enfermedad" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="otra_enfermedad" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="otra_enfermedad_detalle" placeholder="Splika ki malesa, dolencia of diskpasidat..." class="conditional" data-show-when="otra_enfermedad=true">
+        <input type="text" name="otra_enfermedad_detalle" data-i18n-placeholder="ph.enfermedad" placeholder="Splika ki malesa, dolencia of diskpasidat..." class="conditional" data-show-when="otra_enfermedad=true">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q4">4/6. ¿Bo ta tuma medikamentu ku reseta aktualmente? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="medicamentos_receta" value="false" required> No</label>
-          <label><input type="radio" name="medicamentos_receta" value="true"> Sí</label>
+        <label id="lbl_medicamentos_receta" data-i18n="step4.q4">4/6. ¿Bo ta tuma medikamentu ku reseta aktualmente? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_medicamentos_receta">
+          <label><input type="radio" name="medicamentos_receta" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="medicamentos_receta" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="medicamentos_detalle" placeholder="Kondishon, medikamentu i dosis..." class="conditional" data-show-when="medicamentos_receta=true">
+        <input type="text" name="medicamentos_detalle" data-i18n-placeholder="ph.medicamentos" placeholder="Kondishon, medikamentu i dosis..." class="conditional" data-show-when="medicamentos_receta=true">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q5">5/6. ¿Bo tin AIDS of bo ta HIV-positivo? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="hiv" value="false" required> No</label>
-          <label><input type="radio" name="hiv" value="true"> Sí</label>
+        <label id="lbl_hiv" data-i18n="step4.q5">5/6. ¿Bo tin AIDS of bo ta HIV-positivo? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_hiv">
+          <label><input type="radio" name="hiv" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="hiv" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="hiv_detalle" placeholder="Desde ki aña..." class="conditional" data-show-when="hiv=true">
+        <input type="text" name="hiv_detalle" data-i18n-placeholder="ph.hiv" placeholder="Desde ki aña..." class="conditional" data-show-when="hiv=true">
       </div>
 
       <div class="field">
-        <label data-i18n="step4.q7">6/6. ¿Tin otro kos importante di bo salud ku por afektá e seguro? *</label>
-        <div class="radio-group">
-          <label><input type="radio" name="circunstancias_salud" value="false" required> No</label>
-          <label><input type="radio" name="circunstancias_salud" value="true"> Sí</label>
+        <label id="lbl_circunstancias_salud" data-i18n="step4.q7">6/6. ¿Tin otro kos importante di bo salud ku por afektá e seguro? *</label>
+        <div class="radio-group" role="radiogroup" aria-labelledby="lbl_circunstancias_salud">
+          <label><input type="radio" name="circunstancias_salud" value="false" required> <span data-i18n="common.no">No</span></label>
+          <label><input type="radio" name="circunstancias_salud" value="true"> <span data-i18n="common.yes">Sí</span></label>
         </div>
-        <input type="text" name="circunstancias_detalle" placeholder="Splika brevemente..." class="conditional" data-show-when="circunstancias_salud=true">
+        <input type="text" name="circunstancias_detalle" data-i18n-placeholder="ph.circunstancias" placeholder="Splika brevemente..." class="conditional" data-show-when="circunstancias_salud=true">
       </div>
     </section>
 
-    <!-- ============ PASO 5: Contacto + Referencias ============ -->
-    <section class="step" data-step="5">
+    <!-- ============ PASO 6: Contacto + Referencias ============ -->
+    <section class="step" data-step="6">
       <h2 data-i18n="step5.title">Kontakto i Referensia</h2>
 
       <fieldset class="fieldset">
         <legend data-i18n="step5.ref1">Referensia 1 (obligatorio)</legend>
         <div class="field">
-          <label data-i18n="step5.ref_nombre">Nòmber i fam kompleto *</label>
-          <input type="text" name="ref1_nombre" required minlength="4">
+          <label for="f_ref1_nombre" data-i18n="step5.ref_nombre">Nòmber i fam kompleto *</label>
+          <input id="f_ref1_nombre" type="text" name="ref1_nombre" required minlength="4">
         </div>
         <div class="row">
           <div class="field flex-1">
-            <label data-i18n="step5.ref_tel">Telefòn *</label>
-            <input type="tel" name="ref1_telefono" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+            <label for="f_ref1_telefono" data-i18n="step5.ref_tel">Telefòn *</label>
+            <input id="f_ref1_telefono" type="tel" name="ref1_telefono" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone" placeholder="9 XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
           </div>
           <div class="field flex-1">
-            <label data-i18n="step5.ref_rel">Relashon *</label>
-            <select name="ref1_relacion" required>
+            <label for="f_ref1_relacion" data-i18n="step5.ref_rel">Relashon *</label>
+            <select id="f_ref1_relacion" name="ref1_relacion" required>
               <option value="">—</option>
               <option value="kasá" data-i18n="step5.rel_conyuge">Kasá</option>
-              <option value="famia">Famia</option>
-              <option value="amigu">Amigu</option>
-              <option value="otro">Otro</option>
+              <option value="famia" data-i18n="step5.rel_famia">Famia</option>
+              <option value="amigu" data-i18n="step5.rel_amigu">Amigu</option>
+              <option value="otro" data-i18n="step5.rel_otro">Otro</option>
             </select>
           </div>
         </div>
@@ -483,22 +551,22 @@
       <fieldset class="fieldset">
         <legend data-i18n="step5.ref2">Referensia 2 (opshonal)</legend>
         <div class="field">
-          <label data-i18n="step5.ref_nombre">Nòmber i fam kompleto</label>
-          <input type="text" name="ref2_nombre" minlength="4">
+          <label for="f_ref2_nombre" data-i18n="step5.ref_nombre">Nòmber i fam kompleto</label>
+          <input id="f_ref2_nombre" type="text" name="ref2_nombre" minlength="4">
         </div>
         <div class="row">
           <div class="field flex-1">
-            <label data-i18n="step5.ref_tel">Telefòn</label>
-            <input type="tel" name="ref2_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+            <label for="f_ref2_telefono" data-i18n="step5.ref_tel">Telefòn</label>
+            <input id="f_ref2_telefono" type="tel" name="ref2_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone" placeholder="9 XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
           </div>
           <div class="field flex-1">
-            <label data-i18n="step5.ref_rel">Relashon</label>
-            <select name="ref2_relacion">
+            <label for="f_ref2_relacion" data-i18n="step5.ref_rel">Relashon</label>
+            <select id="f_ref2_relacion" name="ref2_relacion">
               <option value="">—</option>
               <option value="kasá" data-i18n="step5.rel_conyuge">Kasá</option>
-              <option value="famia">Famia</option>
-              <option value="amigu">Amigu</option>
-              <option value="otro">Otro</option>
+              <option value="famia" data-i18n="step5.rel_famia">Famia</option>
+              <option value="amigu" data-i18n="step5.rel_amigu">Amigu</option>
+              <option value="otro" data-i18n="step5.rel_otro">Otro</option>
             </select>
           </div>
         </div>
@@ -508,64 +576,14 @@
         <legend data-i18n="step5.beneficiario">Benefisiario di seguro di bida (opshonal)</legend>
         <p class="field-hint" data-i18n="step5.beneficiario_hint">Si bo no yena esaki, ta usa Referensia 1 komo benefisiario.</p>
         <div class="field">
-          <label data-i18n="step5.benef_nombre">Nòmber kompleto di benefisiario</label>
-          <input type="text" name="beneficiario_nombre" minlength="4">
+          <label for="f_beneficiario_nombre" data-i18n="step5.benef_nombre">Nòmber kompleto di benefisiario</label>
+          <input id="f_beneficiario_nombre" type="text" name="beneficiario_nombre" minlength="4">
         </div>
         <div class="field">
-          <label data-i18n="step5.benef_tel">Telefòn di benefisiario</label>
-          <input type="tel" name="beneficiario_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" placeholder="9 XXX XXXX o +5999 XXX XXXX">
+          <label for="f_beneficiario_telefono" data-i18n="step5.benef_tel">Telefòn di benefisiario</label>
+          <input id="f_beneficiario_telefono" type="tel" name="beneficiario_telefono" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone" placeholder="9 XXX XXXX o +5999 XXX XXXX">
         </div>
       </fieldset>
-    </section>
-
-    <!-- ============ PASO 6: Datos Préstamo ============ -->
-    <section class="step" data-step="6">
-      <h2 data-i18n="step6.title">Bo Fiansa</h2>
-      <p class="hint" data-i18n="step6.hint">Tasa: 23.5% pa aña (standing order). Tin un plan di spar inkluí ku CFL ta debolbé ora bo paga.</p>
-
-      <div class="field">
-        <label data-i18n="step6.monto">Monto ku bo desea presta (múltiplo di 500 — 1000 a 4000 XCG) *</label>
-        <input type="number" name="monto_solicitado" required min="1000" max="4000" step="500" value="2000">
-        <div class="slider-wrap">
-          <input type="range" min="1000" max="4000" step="500" value="2000" data-sync="monto_solicitado">
-          <div class="slider-marks"><span>1000</span><span>2000</span><span>3000</span><span>4000</span></div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label data-i18n="step6.plazo">Plazo (lunan) *</label>
-        <select name="plazo_meses" required>
-          <option value="">—</option>
-          <option value="6">6</option>
-          <option value="12" selected>12</option>
-          <option value="18">18</option>
-          <option value="24">24</option>
-          <option value="36">36</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label data-i18n="step6.proposito">Pa kiko bo ta usa e fiansa? *</label>
-        <select name="proposito_categoria" required>
-          <option value="">—</option>
-          <option value="konsolidashon_di_debe" data-i18n="step6.proposito_konsolidashon">Konsolidashon di debe</option>
-          <option value="gastonan_medico" data-i18n="step6.proposito_medico">Gastonan médiko</option>
-          <option value="reparashon_di_kas" data-i18n="step6.proposito_kas">Reparashon di kas</option>
-          <option value="vehículo" data-i18n="step6.proposito_vehiculo">Vehíkulo (outo, scooter, repuesto)</option>
-          <option value="edukashon" data-i18n="step6.proposito_edukashon">Edukashon (skol, kurso)</option>
-          <option value="vakashon" data-i18n="step6.proposito_vakashon">Vakashon</option>
-          <option value="otro" data-i18n="step6.proposito_otro">Otro motibo (eksplika abou)</option>
-        </select>
-        <textarea name="proposito" rows="2" placeholder="Detayé adishonal (opshonal — obligatorio si bo skohe 'Otro motibo')" class="conditional" data-show-when-select="proposito_categoria=otro"></textarea>
-      </div>
-
-      <div class="quote-box" id="quoteBox" aria-live="polite">
-        <h3 data-i18n="step6.quote">💰 Kuota estimá</h3>
-        <div class="quote-row"><span data-i18n="step6.q_monto">Monto:</span><strong id="qMonto">XCG 2,000.00</strong></div>
-        <div class="quote-row"><span data-i18n="step6.q_plazo">Plazo:</span><strong id="qPlazo">12 lunan</strong></div>
-        <div class="quote-row"><span data-i18n="step6.q_cuota">Kuota mensual:</span><strong id="qCuota">XCG —</strong></div>
-        <div class="quote-row"><span data-i18n="step6.q_total">Total a pagar:</span><strong id="qTotal">XCG —</strong></div>
-      </div>
     </section>
 
     <!-- ============ PASO 7: Confirmación ============ -->
@@ -575,7 +593,7 @@
 
       <div class="summary" id="summary"></div>
 
-      <div class="legal-notes" data-i18n="step7.legal_notes_title_wrap">
+      <div class="legal-notes">
         <h3 data-i18n="step7.legal_notes_title">Declarations</h3>
         <p data-i18n="step7.legal_health">Submitting this application declares have fully and truthfully answered the previous questions and is aware that afterward any incorrect or incomplete health declaration may lead to decline or modification of the rights under the insurance contract.</p>
         <p data-i18n="step7.legal_aska">Submitting the application, also declares that he/she has no objection to the medical advisor of Aska Insurance seeks medical information from his/her doctor or specialist.</p>
@@ -585,7 +603,7 @@
 
       <label class="terms">
         <input type="checkbox" name="acepta_terminos" required>
-        <span data-i18n="step7.terms">Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href="#" target="_blank">Términos i Kondishon</a> i <a href="#" target="_blank">Polítika di Privasidat</a> di CFL.</span>
+        <span data-i18n="step7.terms">Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href="terminos.html?lang=pap" target="_blank" rel="noopener">Términos i Kondishon</a> i e <a href="privacidad.html?lang=pap" target="_blank" rel="noopener">Polítika di Privasidat</a> di CFL.</span>
       </label>
 
       <!-- reCAPTCHA v2 (anti-bot) — el token viaja en el POST a v2 -->
@@ -595,10 +613,23 @@
     <!-- ============ Confirmación Final ============ -->
     <section class="step" data-step="done">
       <div class="done-box">
-        <div class="done-icon">✓</div>
+        <div class="done-icon" aria-hidden="true">✓</div>
         <h2 data-i18n="done.title">Aplikashon entregá!</h2>
-        <p data-i18n="done.body">Bo aplikashon a wordu risibí. Un agente di CFL lo tuma kontakto den 3–5 dia.</p>
-        <p class="aplicacion-id" id="aplicacionIdMsg"></p>
+        <p data-i18n="done.body">Nos a risibí bo aplikashon.</p>
+        <div class="done-id-box" id="doneIdBox" hidden>
+          <p class="done-id-label" data-i18n="done.id_label">Bo number di aplikashon</p>
+          <p class="aplicacion-id" id="aplicacionIdMsg"></p>
+          <p class="field-hint" data-i18n="done.id_hint">Warda e number akí. Menshoné ora bo tuma kontakto ku nos.</p>
+        </div>
+        <div class="done-next">
+          <h3 data-i18n="done.next_title">Kiko ta sigui?</h3>
+          <ol>
+            <li data-i18n="done.next_1">Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.</li>
+            <li data-i18n="done.next_2">Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3–5 dia.</li>
+            <li data-i18n="done.next_3">Si e aplikashon wòrdu aprobá, nos ta manda bo e oferta ku e kuota definitivo i nos ta fiha un sita pa firma.</li>
+          </ol>
+          <p class="field-hint" data-i18n="done.next_contact">Pregunta? Yama nos na +5999 526 8480.</p>
+        </div>
         <p data-i18n="done.thanks">Danki pa bo konfiansa na Curaçao Fast Loans.</p>
       </div>
     </section>
