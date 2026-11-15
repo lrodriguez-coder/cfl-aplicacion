@@ -1,6 +1,10 @@
 {
-  "header": { "tagline": "Aplikashon di fiansa pèrsonal" },
-  "progress": { "label": "Paso {current} di {total}" },
+  "header": {
+    "tagline": "Aplikashon di fiansa pèrsonal"
+  },
+  "progress": {
+    "label": "Paso {current} di {total}"
+  },
   "nav": {
     "prev": "← Anterior",
     "next": "Próksimo →",
@@ -8,7 +12,10 @@
     "submitting": "Mandando...",
     "waiting_uploads": "Ta spera dokumentonan..."
   },
-  "common": { "yes": "Sí", "no": "No" },
+  "common": {
+    "yes": "Sí",
+    "no": "No"
+  },
   "upload": {
     "remove": "Kita"
   },
@@ -28,7 +35,21 @@
     "doc_tipo_incorrecto": "{doc}: e dokumento ku bo a manda ta parse {detected}. Kita e of manda e dokumento korekto.",
     "doc_vencido": "{doc}: e dokumento a vense ({date}). Manda un dokumento bálido.",
     "doc_duplicado": "Bo a manda e mesun dokumento na \"{a}\" i \"{b}\". Kada dokumento mester ta diferente — si bo no tin 3 estado di banko, manda otro komprobante (Aqualectra, flow òf uittreksel), pero no ripití e mesun dokumento.",
-    "carta_vieja": "{doc}: e karta di trabou tin {dias} dia (emití {date}). Mester ta di último 30 dia — pidi un karta aktualisá ku ta konfirmá bo empleo aktual."
+    "carta_vieja": "{doc}: e karta di trabou tin {dias} dia (emití {date}). Mester ta di último 30 dia — pidi un karta aktualisá ku ta konfirmá bo empleo aktual.",
+    "captcha": "Por fabor konfirmá ku bo no ta un robot.",
+    "payslips_required": "Ta falta payslip. Karga por lo ménos un. Si bo no ta mira e kashinan, bai bèk na Paso 2 i skohe e frekuensia di salario.",
+    "payslip_period_mismatch": "{doc}: periodo robes (detektá {detected}, mester ta {expected}). Karga e payslip di e periodo korekto.",
+    "extractos_sin_periodo": "Nos no por a lesa e periodo di e estadonan di banko.",
+    "extractos_hueco": "Ta falta e periodo di {desde} te {hasta} ({dias} dia sin kubrí).",
+    "extractos_cortos": "E estadonan di banko ta kubri {dias} dia seguí; ta falta {faltan} dia.",
+    "extractos_repetidos": "Tin {dias} dia ripití: chèk si bo a karga e mesun luna mas ku un biaha.",
+    "uploads_failed": "No por a karga e dokumentonan akí na e server:",
+    "uploads_retry": "Por fabor anesá nan atrobe i manda bèk.",
+    "tel_eq_id": "Bo number di selular no por ta igual na bo number di sédula. Chèk e kampo di selular.",
+    "range_vars": "mester ta entre {min} i {max}",
+    "step": "mester ta múltiplo di {step}",
+    "too_short": "mester tin por lo ménos {n} karakter",
+    "detail_required": "splika kòrtiku (obligatorio)"
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -42,7 +63,7 @@
   },
   "step1": {
     "title": "Bo Identifikashon",
-    "hint": "Manda un foto klaro di bo sédula. Mi lo ekstrae bo datos outomátikamente.",
+    "hint": "Manda un foto klaro di bo sédula. Nos ta lesa bo datos outomátikamente.",
     "tipo_empleado_hint": "Si bo ta pensionado, payslips ta opshonal i bo por usa karta di penshon en su lugar.",
     "cedula": "📷 Sédula (ID card) *",
     "id_adicional": "📷 Paspoort / Rijbewijs (opshonal)",
@@ -70,7 +91,7 @@
     "comprobante_domicilio": "📄 Resibo di Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia (opshonal)",
     "comprobante_hint": "Komprobante di adres. Bo por usa kualke un di esakinan — loke nos mester ta e adres.",
     "counter_label": "dokumento kargá",
-    "choose_tipo_first": "Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 1.",
+    "choose_tipo_first": "Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 2.",
     "slot_payslip": "Payslip",
     "slot_banco": "Estado di banko"
   },
@@ -121,7 +142,7 @@
     "email_verify_invalid": "Email no ta válido.",
     "email_verify_code_format": "E kodigo ta di 6 sifras.",
     "email_verify_checking": "Ta verifiká...",
-    "email_verify_wrong": "Kodigo robes. Bo tin {{left}} oportunidat mas.",
+    "email_verify_wrong": "Kodigo robes. Bo tin {left} oportunidat mas.",
     "email_verify_exhausted": "Muchu intento. Pidi un kodigo nobo.",
     "email_verify_no_active": "No tin kodigo aktivo. Pidi un nobo.",
     "email_verify_resend": "Manda kodigo atrobe",
@@ -137,7 +158,7 @@
     "phone_verify_invalid": "Number inválido.",
     "phone_verify_code_format": "E kodigo ta 6 dígito.",
     "phone_verify_checking": "Ta verifiká...",
-    "phone_verify_wrong": "Kodigo robes. Bo tin {{left}} intento restante.",
+    "phone_verify_wrong": "Kodigo robes. Bo tin {left} intento restante.",
     "phone_verify_exhausted": "Muchu intento. Pidi un kodigo nobo.",
     "phone_verify_no_active": "No tin kodigo aktivo. Pidi un nobo.",
     "phone_verify_resend": "Manda kodigo atrobe",
@@ -158,7 +179,8 @@
     "civil_divorciado": "Divorsiá",
     "civil_viudo": "Biuda",
     "nacionalidad": "Nashonalidat *",
-    "pais_nacimiento": "Pais di nasementu *"
+    "pais_nacimiento": "Pais di nasementu *",
+    "tipo_id_sedula": "Sédula"
   },
   "step4": {
     "title": "Deklarashon di Salud",
@@ -168,7 +190,7 @@
     "medico": "Ki ta bo dòkter di kas? (nòmber of \"no tin\")",
     "q1": "1/6. ¿Tin bo algun keho SERIO di salud aktualmente?",
     "q2": "2/6. ¿Bo a haña un operashon den último 5 aña?",
-    "q3": "3/6. ¿Tin bo aktualmente un malesa, dolencia of diskpasidat?",
+    "q3": "3/6. ¿Tin bo aktualmente un malesa, dolensia òf desabilidat?",
     "q4": "4/6. ¿Bo ta tuma medikamentu ku reseta aktualmente?",
     "q5": "5/6. ¿Bo tin AIDS of bo ta HIV-positivo?",
     "q7": "6/6. ¿Tin otro kos importante di bo salud ku por afektá e seguro?"
@@ -185,14 +207,17 @@
     "beneficiario": "Benefisiario di seguro di bida (opshonal)",
     "beneficiario_hint": "Si bo no yena esaki, ta usa Referensia 1 komo benefisiario.",
     "benef_nombre": "Nòmber kompleto di benefisiario",
-    "benef_tel": "Telefòn di benefisiario"
+    "benef_tel": "Telefòn di benefisiario",
+    "rel_famia": "Famia",
+    "rel_amigu": "Amigu",
+    "rel_otro": "Otro"
   },
   "step6": {
     "title": "Bo Fiansa",
-    "hint": "Tasa: 23.5% pa aña (standing order). Tin un plan di spar inkluí ku CFL ta debolbé ora bo paga.",
-    "monto": "Monto ku bo desea presta (múltiplo di 500 — 1000 a 4000 XCG)",
-    "plazo": "Plazo (lunan)",
-    "proposito": "Pa kiko bo ta usa e fiansa?",
+    "hint": "E kuota ta inkluí kapital, interes, seguro di bida i plan di spar. Nos ta debolbé bo plan di spar ora bo kaba di paga.",
+    "monto": "Monto ku bo ke fia (XCG) *",
+    "plazo": "Plazo (lunan) *",
+    "proposito": "Pa kiko bo ta usa e fiansa? *",
     "proposito_konsolidashon": "Konsolidashon di debe",
     "proposito_medico": "Gastonan médiko",
     "proposito_kas": "Reparashon di kas",
@@ -207,29 +232,47 @@
     "q_plazo": "Plazo:",
     "q_cuota": "Kuota mensual:",
     "q_total": "Total a pagar:",
-    "q_meses": "lunan"
+    "q_meses": "lunan",
+    "monto_hint": "Entre {min} i {max} XCG, na múltiplo di 500.",
+    "proposito_detalle_ph": "Detaye adishonal (opshonal; obligatorio si bo skohe \"Otro motibo\")",
+    "q_tae": "TAE:",
+    "q_ahorro": "Inkluí {monto} di plan di spar, ku nos ta debolbé bo ora bo kaba di paga.",
+    "q_fuera_politica": "E monto i plazo akí ta pidi un revishon adishonal; e kuota por kambia.",
+    "q_error": "Nos no por a kalkulá e kuota awor. Bo por sigui ku bo aplikashon.",
+    "q_disclaimer": "Estimashon, sujeto na aprobashon."
   },
   "step7": {
     "title": "Konfirmá bo Aplikashon",
-    "hint": "Revisa tur informashon abou. Ora bo dal \"Submit\", bo aplikashon ta entregá.",
+    "hint": "Revisá tur informashon abou. Ora bo dal \"Entregá aplikashon\", bo aplikashon ta registrá.",
     "legal_notes_title": "Deklarashon",
     "legal_health": "Ku entrega di e aplikashon aki, mi ta deklará ku mi a kontestá tur e pregunta anterior kompletu i ku berdat, i mi sa ku kualkier deklarashon di salud no korekto of inkompleto por hiba na refusal of modifikashon di e derechinan bao di e kontrato di seguro.",
     "legal_aska": "Ku entrega di e aplikashon, mi ta deklará tambe ku mi no tin obheshon ku e konsehero médiko di Aska Insurance buska informashon médiko serka mi dòkter of spesialista.",
     "legal_credit_check": "Ku entrega di e aplikashon, ami ta outorisá bo pa chèk mi historial di krédito ku tersero proveedornan, i tambe pa chèk mi informashon serka mi empleador.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. ta partisipá den un sistema di registrashon di krédito i por hasi chèk di krédito komo parti di e prosedura di akseptashon i monitoreo di kréditonan.",
-    "terms": "Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href='#' target='_blank'>Términos i Kondishon</a> i <a href='#' target='_blank'>Polítika di Privasidat</a> di CFL."
+    "terms": "Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href='terminos.html?lang=pap' target='_blank' rel='noopener'>Términos i Kondishon</a> i e <a href='privacidad.html?lang=pap' target='_blank' rel='noopener'>Polítika di Privasidat</a> di CFL."
   },
   "summary": {
     "personal": "Datos Pèrsonal",
     "prestamo": "Fiansa",
     "contacto": "Kontakto",
     "salud": "Salud",
-    "docs": "Dokumentonan"
+    "docs": "Dokumentonan",
+    "medico": "Dòkter di kas",
+    "aqua_titular": "Titular Aqualectra",
+    "aqua_cliente": "Number di kliente Aqualectra",
+    "comprobante": "Komprobante di adres"
   },
   "done": {
     "title": "Aplikashon entregá!",
-    "body": "Bo aplikashon a wordu risibí. Un agente di CFL lo tuma kontakto den 3–5 dia.",
-    "thanks": "Danki pa bo konfiansa na Curaçao Fast Loans."
+    "body": "Nos a risibí bo aplikashon.",
+    "thanks": "Danki pa bo konfiansa na Curaçao Fast Loans.",
+    "id_label": "Bo number di aplikashon",
+    "id_hint": "Warda e number akí i menshoné ora bo tuma kontakto ku nos.",
+    "next_title": "Kiko ta sigui?",
+    "next_1": "Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.",
+    "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia.",
+    "next_3": "Si bo aplikashon wòrdu aprobá, nos ta manda bo e oferta ku e kuota definitivo i nos ta duna bo un sita pa firma.",
+    "next_contact": "Pregunta? Yama nos na +5999 526 8480."
   },
   "ocr": {
     "analyzing": "Ta analisá dokumento…",
@@ -243,7 +286,18 @@
     "tipo_mismatch": "Esaki ta parse {detected}, mester ta {expected}",
     "expired": "Dokumento vensí (a vense {date})",
     "period_mismatch": "Periodo detektá: {detected}. Slot ta pa {expected}. Verifiká si bo a karga e dokumento korekto akí.",
-    "name_mismatch": "E titular di e dokumento akí (\"{doc}\") no ta koresponde ku e nòmber di sédula (\"{cedula}\"). Verifiká ku e dokumento ta di e mesun solisitante."
+    "name_mismatch": "E titular di e dokumento akí (\"{doc}\") no ta koresponde ku e nòmber di sédula (\"{cedula}\"). Verifiká ku e dokumento ta di e mesun solisitante.",
+    "lbl_nombre": "Nòmber",
+    "lbl_numero": "Number",
+    "lbl_nacimiento": "Nasementu",
+    "lbl_vence": "Ta vense",
+    "lbl_nacionalidad": "Nashonalidat",
+    "lbl_pais_nac": "Pais di nasementu",
+    "lbl_sexo": "Seksu",
+    "lbl_estado_civil": "Estado sivil",
+    "lbl_pais_emisor": "Pais emisor",
+    "cedula_header": "Datos di sédula (detektá outomátikamente; esaki ta loke ta wòrdu wardá)",
+    "auto_detected": "detektá outomátikamente"
   },
   "tipo": {
     "cedula": "un sédula",
@@ -259,5 +313,35 @@
     "comprobante_domicilio": "un komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)",
     "otro": "otro tipo di dokumento",
     "unknown": "un dokumento no rekonosí"
+  },
+  "hint": {
+    "phone_format": "solamente sifra, espasio, guion i + (mínimo 7 sifra)",
+    "id_format": "5 te 15 karakter: solamente lèter, sifra i guion",
+    "cuenta_format": "solamente number, espasio òf guion (5 te 30 karakter)",
+    "email_format": "skirbi un email válido (eh: nòmber@email.com)"
+  },
+  "ph": {
+    "phone": "9 XXX XXXX òf +5999 XXX XXXX",
+    "phone_home": "X XXX XXXX òf +5999 XXX XXXX",
+    "phone_short": "9 XXX XXXX",
+    "profesion": "eh: inheniero, maestro, kontador",
+    "direccion_empleador": "eh: Schottegatweg Oost 121",
+    "email": "nòmber@email.com",
+    "direccion": "eh: Schottegatweg Oost 23",
+    "ciudad": "eh: Willemstad",
+    "peso": "eh: 75",
+    "altura": "eh: 170",
+    "medico": "Nòmber, òf 'no tin'",
+    "dolencia": "Splika kòrtiku ki tipo di keho...",
+    "operacion": "Splika ki tipo di operashon i na ki aña...",
+    "enfermedad": "Splika ki malesa, dolensia òf desabilidat...",
+    "medicamentos": "Kondishon, medikamentu i dosis...",
+    "hiv": "Desde ki aña...",
+    "circunstancias": "Splika kòrtiku..."
+  },
+  "tipo_doc": {
+    "paspoort": "Paspoort",
+    "rijbewijs": "Rijbewijs",
+    "otro": "Dokumento"
   }
 }
