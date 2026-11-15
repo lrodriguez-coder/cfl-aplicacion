@@ -76,6 +76,11 @@
     });
     form._lang = currentLang;
     form._submitted_at = new Date().toISOString();
+    // Plan de ahorro: 'si' | 'no' sólo si se le preguntó (interruptor visible).
+    // Si no se preguntó, no se manda nada y la solicitud toma el valor por
+    // plazo de siempre. v2 lo guarda en selected_addons.
+    delete form.plan_ahorro;
+    if (savingsToggleShown()) form.plan_ahorro = savingsChosen() ? 'si' : 'no';
 
     const documents = [];
     const fileInputs = $$('input[type="file"]');
@@ -659,6 +664,9 @@
         data[key] = val;
       }
     });
+    // La casilla desmarcada no viaja en FormData: se guarda explícito, si no al
+    // volver aparecería marcada otra vez.
+    data.plan_ahorro = savingsChosen() ? 'si' : 'no';
     data._step = currentStep;
     data._lang = currentLang;
     data._updated = new Date().toISOString();
@@ -1012,8 +1020,31 @@
   // tiene límite de 60 pedidos cada 10 minutos por IP).
   const quoteCache = {};
 
+  // Montos en el formato del idioma activo: es/nl/pap escriben 2.000,00 y en
+  // 2,000.00. A mano y no con toLocaleString('es'), que no agrupa los miles
+  // de un número de 4 cifras ("2000,00") y depende del navegador.
   function fmtMoney(n) {
-    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '—';
+    const en = currentLang === 'en';
+    const [ent, dec] = Math.abs(v).toFixed(2).split('.');
+    const miles = ent.replace(/\B(?=(\d{3})+(?!\d))/g, en ? ',' : '.');
+    return (v < 0 ? '-' : '') + miles + (en ? '.' : ',') + dec;
+  }
+
+  // El plan de ahorro es OPCIONAL (T&C §12). El interruptor sólo se muestra
+  // cuando el API dice que a este plazo se ofrece (`savingsOffered`); el API
+  // anterior no lo dice, y entonces el formulario queda como estaba.
+  function savingsChosen() {
+    const el = $('#f_plan_ahorro');
+    return el ? el.checked : true;
+  }
+  function savingsToggleShown() {
+    const box = $('#savingsToggle');
+    return !!box && !box.hidden;
+  }
+  function quoteKey(monto, plazo, savings) {
+    return monto + '|' + plazo + '|' + (savings ? 1 : 0);
   }
 
   function setQuoteState(state) {
@@ -1071,39 +1102,70 @@
     if ($qPlazo) $qPlazo.textContent = (plazo || '—') + ' ' + (t('step6.q_meses') || '');
   }
 
-  function renderQuoteResult(q) {
+  function renderQuoteResult(q, monto, plazo) {
     const cur = q.currency || 'XCG';
+    const money = (n) => cur + ' ' + fmtMoney(n);
     const cuota = Number(q.cuota);
-    const total = q.totals && Number(q.totals.toPay);
+    const tot = q.totals || {};
+    const total = Number(tot.toPay);
     const apr = Number(q.aprAnnualPct);
-    $('#qCuota').textContent = cur + ' ' + fmtMoney(cuota);
-    $('#qTotal').textContent = Number.isFinite(total) ? cur + ' ' + fmtMoney(total) : '—';
-    $('#qTae').textContent = Number.isFinite(apr) ? apr.toFixed(2) + '%' : '—';
-    // El plan de ahorro es plata del cliente que vuelve al final: se dice,
-    // porque si no el "total a pagar" parece más caro de lo que es.
-    const sav = q.totals && Number(q.totals.savings);
-    const $sav = $('#qSavingsNote');
-    if ($sav) {
-      if (sav > 0) {
-        $sav.textContent = t('step6.q_ahorro', { monto: cur + ' ' + fmtMoney(sav) }) ||
-          ('Incluye ' + cur + ' ' + fmtMoney(sav) + ' de plan de ahorro, que se le devuelve al terminar de pagar.');
-        $sav.hidden = false;
-      } else {
-        $sav.hidden = true;
+    $('#qCuota').textContent = money(cuota);
+    // Costo del crédito = lo que el cliente paga y NO vuelve: interés + seguro
+    // (+ comisiones, si el producto las tuviera). El ahorro va aparte, porque
+    // se le devuelve; sumarlo al costo lo hacía parecer más caro.
+    const interes = Number(tot.interest) || 0;
+    const seguro = Number(tot.insurance) || 0;
+    const fees = Number(tot.fees) || 0;
+    $('#qCosto').textContent = money(interes + seguro + fees);
+    const $costoLbl = $('#qCostoLabel');
+    if ($costoLbl) {
+      const key = fees > 0 ? 'step6.q_costo_fees' : 'step6.q_costo';
+      $costoLbl.dataset.i18n = key;
+      const txt = t(key);
+      if (txt) $costoLbl.textContent = txt;
+    }
+    const sav = Number(tot.savings) || 0;
+    const $ahRow = $('#qAhorroRow');
+    if ($ahRow) $ahRow.hidden = !(sav > 0);
+    const $ah = $('#qAhorro');
+    if ($ah) $ah.textContent = money(sav);
+    $('#qTotal').textContent = Number.isFinite(total) ? money(total) : '—';
+    $('#qTae').textContent = Number.isFinite(apr)
+      ? apr.toFixed(2).replace('.', currentLang === 'en' ? '.' : ',') + '%'
+      : '—';
+
+    // Interruptor del ahorro: sólo si el API dice que se ofrece a este plazo.
+    const $tog = $('#savingsToggle');
+    if ($tog) $tog.hidden = q.savingsOffered !== true;
+    // Cuánto suma el ahorro a la cuota (el número sale del motor: la parte de
+    // ahorro de la primera cuota). Sin ahorro, se dice si ya se conoce.
+    const $delta = $('#savingsDelta');
+    if ($delta) {
+      let txt = null;
+      const porCuota = q.breakdown && Number(q.breakdown.savings);
+      if (q.savingsOffered === true && savingsChosen() && porCuota > 0) {
+        txt = t('step6.ahorro_suma', { monto: money(porCuota) });
+      } else if (q.savingsOffered === true && !savingsChosen()) {
+        const con = quoteCache[quoteKey(monto, plazo, true)];
+        const p2 = con && con.breakdown && Number(con.breakdown.savings);
+        if (p2 > 0) txt = t('step6.ahorro_suma_si', { monto: money(p2) });
       }
+      $delta.textContent = txt || '';
+      $delta.hidden = !txt;
     }
     const $pol = $('#qPolicyNote');
     if ($pol) $pol.hidden = q.withinPolicy !== false;
   }
 
   function quoteFailed() {
-    ['#qCuota', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
-    const $sav = $('#qSavingsNote'); if ($sav) $sav.hidden = true;
+    ['#qCuota', '#qCosto', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+    const $ah = $('#qAhorroRow'); if ($ah) $ah.hidden = true;
+    const $d = $('#savingsDelta'); if ($d) $d.hidden = true;
     const $pol = $('#qPolicyNote'); if ($pol) $pol.hidden = true;
     setQuoteState('error');
   }
 
-  async function fetchQuote(monto, plazo, seq) {
+  async function fetchQuote(monto, plazo, savings, seq) {
     let res;
     try {
       const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -1111,7 +1173,9 @@
       res = await fetch(QUOTE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productCode: QUOTE_PRODUCT, amount: monto, termMonths: plazo }),
+        // `savings`: la elección del cliente. El API anterior la ignora (y
+        // cotiza con ahorro, como siempre); el nuevo la respeta.
+        body: JSON.stringify({ productCode: QUOTE_PRODUCT, amount: monto, termMonths: plazo, savings: savings }),
         signal: ctrl ? ctrl.signal : undefined
       });
       if (to) clearTimeout(to);
@@ -1129,8 +1193,8 @@
       return;
     }
     if (data.limits) applyQuoteLimits(data.limits);
-    quoteCache[monto + '|' + plazo] = data;
-    renderQuoteResult(data);
+    quoteCache[quoteKey(monto, plazo, savings)] = data;
+    renderQuoteResult(data, monto, plazo);
     setQuoteState('ok');
   }
 
@@ -1145,14 +1209,15 @@
     clearTimeout(quoteTimer);
     const seq = ++quoteSeq;
     if (!monto || !plazo) {
-      ['#qCuota', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+      ['#qCuota', '#qCosto', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
       setQuoteState('idle');
       return;
     }
-    const cached = quoteCache[monto + '|' + plazo];
-    if (cached) { renderQuoteResult(cached); setQuoteState('ok'); return; }
+    const savings = savingsChosen();
+    const cached = quoteCache[quoteKey(monto, plazo, savings)];
+    if (cached) { renderQuoteResult(cached, monto, plazo); setQuoteState('ok'); return; }
     setQuoteState('loading');
-    const run = () => { if (seq === quoteSeq) fetchQuote(monto, plazo, seq); };
+    const run = () => { if (seq === quoteSeq) fetchQuote(monto, plazo, savings, seq); };
     if (inmediato === true) run();
     else quoteTimer = setTimeout(run, QUOTE_DEBOUNCE_MS);
   }
@@ -2215,6 +2280,22 @@
     return result;
   }
 
+  // El asterisco de obligatorio sale del atributo `required`, no del texto de
+  // la traducción: las traducciones lo habían perdido en 15 campos, y uno
+  // opcional lo tenía. Se recalcula al cambiar el idioma y con cada cambio del
+  // formulario (casado, tipo de empleo y frecuencia encienden y apagan
+  // obligatorios). Sólo etiquetas de texto plano de campos que no son casilla.
+  function markRequiredLabels() {
+    $$('label[for]').forEach(lbl => {
+      if (lbl.childElementCount > 0) return;
+      const ctl = document.getElementById(lbl.htmlFor);
+      if (!ctl || ctl.type === 'checkbox' || ctl.type === 'radio' || ctl.type === 'file') return;
+      const base = lbl.textContent.replace(/\s*\*\s*$/, '');
+      const txt = ctl.required ? base + ' *' : base;
+      if (txt !== lbl.textContent) lbl.textContent = txt;
+    });
+  }
+
   function applyI18n() {
     // Atributos que también salen del archivo de idioma: antes los
     // placeholders, los avisos `title` y el "Sédula" fijo quedaban en
@@ -2240,6 +2321,7 @@
         el.textContent = text;
       }
     });
+    markRequiredLabels();
   }
 
   async function loadI18n(lang) {
@@ -2963,10 +3045,13 @@
       // cambiar el plazo. El monto ya recalcula por su slider, se incluye por
       // las dudas si alguna vez deja de ser slider.
       if (e.target.name === 'plazo_meses' || e.target.name === 'monto_solicitado') updateQuote();
+      // Quitar o poner el plan de ahorro recalcula la cuota en el motor.
+      if (e.target.name === 'plan_ahorro') updateQuote(true);
       if (e.target.name === 'tipo_empleado') updatePensionadoMode();
       if (e.target.name === 'frecuencia_salario') renderDynamicSlots();
       // Cualquier upload en Step 2 actualiza el contador.
       if (e.target.type === 'file') updateUploadCounter();
+      markRequiredLabels();
     });
 
     $form.addEventListener('input', (e) => {
@@ -3009,6 +3094,7 @@
     // restaurados desde el draft. Si todavía no fueron elegidos muestra hint.
     updatePensionadoMode();
     renderDynamicSlots();
+    markRequiredLabels();
 
     // Siempre arrancar en Step 1 después de refresh — los file inputs no se pueden
     // restaurar (restricción del navegador) y el usuario debe re-subir documentos.

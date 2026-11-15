@@ -951,3 +951,17 @@ select.ocr-filled {
 .done-next h3 { margin: 0 0 0.5rem 0; color: var(--cfl-primary); font-size: 1.05rem; }
 .done-next ol { margin: 0; padding-left: 1.2rem; }
 .done-next li { margin: 0.35rem 0; }
+
+/* ====== Plan de ahorro opcional (Paso 1) ====== */
+.savings-toggle { margin: 1rem 0 0; }
+.savings-toggle-label { cursor: pointer; }
+.savings-toggle-label strong { display: block; color: var(--cfl-primary); font-size: 0.95rem; }
+.savings-toggle-explain,
+.savings-toggle-delta { display: block; margin-top: 0.25rem; color: var(--cfl-text-soft); line-height: 1.4; }
+.savings-toggle-delta { color: var(--cfl-primary); font-weight: 600; }
+.savings-toggle-delta[hidden],
+.quote-box .quote-row[hidden] { display: none; }
+.quote-box[data-state="loading"] #qCosto,
+.quote-box[data-state="loading"] #qAhorro { opacity: 0.55; }
+.quote-box .quote-row { gap: 0.75rem; }
+.quote-box .quote-row strong { white-space: nowrap; }
