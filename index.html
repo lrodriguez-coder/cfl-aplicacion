@@ -72,21 +72,10 @@
       </div>
 
       <!--
-        Plan de ahorro OPCIONAL (T&C §12, revisión 15-nov-2026). Sólo aparece
-        cuando el API dice que a este plazo se ofrece (`savingsOffered`): con
-        el API anterior, que no lo dice, el formulario queda como estaba. El
-        seguro de vida no se elige aquí: va en todos los préstamos.
+        Plan de ahorro: OBLIGATORIO a 24 meses o más (Leonard, 15-nov-2026),
+        salvo excepción que decide CFL en la ficha. El cliente no lo elige: la
+        cuota que devuelve el API ya lo incluye a 24+ meses y no a menos.
       -->
-      <div class="savings-toggle" id="savingsToggle" hidden>
-        <label class="terms savings-toggle-label" for="f_plan_ahorro">
-          <input type="checkbox" id="f_plan_ahorro" name="plan_ahorro" value="si" checked>
-          <span>
-            <strong data-i18n="step6.ahorro_toggle">Agregá plan di spar (opshonal)</strong>
-            <span class="savings-toggle-explain" data-i18n="step6.ahorro_explain">Bo ta paga e tur luna huntu ku bo kuota, i nos ta debolbé bo e ora e fiansa kaba. Bo por kit'é.</span>
-            <span class="savings-toggle-delta" id="savingsDelta" hidden></span>
-          </span>
-        </label>
-      </div>
 
       <div class="quote-box" id="quoteBox" aria-live="polite" data-state="loading">
         <h3 data-i18n="step6.quote">💰 Kuota estimá</h3>

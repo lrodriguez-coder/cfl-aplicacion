@@ -214,7 +214,7 @@
   },
   "step6": {
     "title": "Your Loan",
-    "hint": "The instalment includes principal, interest and life insurance. The savings plan is optional.",
+    "hint": "The instalment includes principal, interest and life insurance. For loans of 24 months or more it also includes the savings plan, which is returned to you at the end.",
     "monto": "Amount you wish to borrow (XCG) *",
     "plazo": "Term (months) *",
     "proposito": "What will you use the loan for? *",

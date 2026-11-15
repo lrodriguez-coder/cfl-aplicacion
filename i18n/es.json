@@ -214,7 +214,7 @@
   },
   "step6": {
     "title": "Su Préstamo",
-    "hint": "La cuota incluye capital, interés y seguro de vida. El plan de ahorro es opcional.",
+    "hint": "La cuota incluye capital, interés y seguro de vida. En préstamos de 24 meses o más incluye además el plan de ahorro, que se le devuelve al terminar.",
     "monto": "Monto que desea pedir prestado (XCG) *",
     "plazo": "Plazo (meses) *",
     "proposito": "¿Para qué usará el préstamo? *",

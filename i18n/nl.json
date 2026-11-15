@@ -214,7 +214,7 @@
   },
   "step6": {
     "title": "Uw lening",
-    "hint": "De termijn omvat aflossing, rente en levensverzekering. Het spaarplan is optioneel.",
+    "hint": "De termijn omvat aflossing, rente en levensverzekering. Bij leningen van 24 maanden of langer omvat hij ook het spaarplan, dat u aan het einde terugkrijgt.",
     "monto": "Bedrag dat u wilt lenen (XCG) *",
     "plazo": "Looptijd (maanden) *",
     "proposito": "Waarvoor gaat u de lening gebruiken? *",
