@@ -45,7 +45,7 @@
     -->
     <section class="step active" data-step="1">
       <h2 data-i18n="step6.title">Bo Fiansa</h2>
-      <p class="hint" data-i18n="step6.hint">E kuota ta inkluí kapital, interes, seguro di bida i plan di spar. CFL ta debolbé bo plan di spar ora bo kaba di paga.</p>
+      <p class="hint" data-i18n="step6.hint">E kuota ta inkluí kapital, interes i seguro di bida. E plan di spar ta opshonal.</p>
 
       <div class="field">
         <label for="f_monto_solicitado" data-i18n="step6.monto">Monto ku bo desea presta (XCG) *</label>
@@ -71,6 +71,23 @@
         </select>
       </div>
 
+      <!--
+        Plan de ahorro OPCIONAL (T&C §12, revisión 15-nov-2026). Sólo aparece
+        cuando el API dice que a este plazo se ofrece (`savingsOffered`): con
+        el API anterior, que no lo dice, el formulario queda como estaba. El
+        seguro de vida no se elige aquí: va en todos los préstamos.
+      -->
+      <div class="savings-toggle" id="savingsToggle" hidden>
+        <label class="terms savings-toggle-label" for="f_plan_ahorro">
+          <input type="checkbox" id="f_plan_ahorro" name="plan_ahorro" value="si" checked>
+          <span>
+            <strong data-i18n="step6.ahorro_toggle">Agregá plan di spar (opshonal)</strong>
+            <span class="savings-toggle-explain" data-i18n="step6.ahorro_explain">Bo ta paga e tur luna huntu ku bo kuota, i nos ta debolbé bo e ora e fiansa kaba. Bo por kit'é.</span>
+            <span class="savings-toggle-delta" id="savingsDelta" hidden></span>
+          </span>
+        </label>
+      </div>
+
       <div class="quote-box" id="quoteBox" aria-live="polite" data-state="loading">
         <h3 data-i18n="step6.quote">💰 Kuota estimá</h3>
         <div class="quote-main">
@@ -79,9 +96,10 @@
         </div>
         <div class="quote-row"><span data-i18n="step6.q_monto">Monto:</span><strong id="qMonto">XCG 2,000.00</strong></div>
         <div class="quote-row"><span data-i18n="step6.q_plazo">Plazo:</span><strong id="qPlazo">12</strong></div>
-        <div class="quote-row"><span data-i18n="step6.q_total">Total a pagar:</span><strong id="qTotal">XCG …</strong></div>
+        <div class="quote-row"><span id="qCostoLabel" data-i18n="step6.q_costo">Kosto di e krédito (interes + seguro):</span><strong id="qCosto">XCG …</strong></div>
+        <div class="quote-row" id="qAhorroRow" hidden><span data-i18n="step6.q_ahorro_row">Plan di spar (nos ta debolbé bo):</span><strong id="qAhorro">XCG …</strong></div>
+        <div class="quote-row"><span data-i18n="step6.q_total">Total di kuotanan:</span><strong id="qTotal">XCG …</strong></div>
         <div class="quote-row"><span data-i18n="step6.q_tae">TAE:</span><strong id="qTae">…</strong></div>
-        <p class="quote-note" id="qSavingsNote" hidden></p>
         <p class="quote-note" id="qPolicyNote" hidden data-i18n="step6.q_fuera_politica">E monto i plazo akí ta pidi un revishon adishonal; e kuota por kambia.</p>
         <p class="quote-error" id="qError" hidden data-i18n="step6.q_error">Nos no por a kalkulá e kuota awor. Bo por sigui ku bo aplikashon.</p>
         <p class="quote-disclaimer" data-i18n="step6.q_disclaimer">Estimá, sujeto na aprobashon.</p>
@@ -104,13 +122,13 @@
 
       <div class="intro-note intro-note-after">
         <p class="intro-note-title" data-i18n="intro.title">📋 Promé ku bo kuminsá</p>
-        <p data-i18n="intro.body">Rekohé TUR bo dokumentonan promé ku bo kuminsá e aplikashon. E sistema lo no laga bo pasa pa e siguiente página si ta falta un dokumento obligatorio.</p>
+        <p data-i18n="intro.body">Tene bo dokumentonan kla promé ku bo kuminsá: pa pasa pa e siguiente página bo mester karga esnan obligatorio.</p>
         <p class="intro-note-subtitle" data-i18n="intro.docs_title">Dokumentonan ku bo tin mester pa aplika:</p>
         <ul class="intro-note-list">
           <li data-i18n="intro.doc_cedula">Sédula (foto klaro)</li>
-          <li data-i18n="intro.doc_payslips">Último payslips (1 te 3) — of karta di penshon si bo ta pensionado</li>
-          <li data-i18n="intro.doc_bancos">Estado di kuenta di banko (1 te 3)</li>
-          <li data-i18n="intro.doc_carta">Karta di trabou</li>
+          <li data-i18n="intro.doc_payslips">Bo último 3 payslip, un pa luna (si bo ta kobra kada kinsena, 6: un pa kinsena) — si bo ta pensionado, bo karta di penshon (opshonal)</li>
+          <li data-i18n="intro.doc_bancos">Bo último 3 estado di kuenta di banko, un pa luna, na PDF di bo banko na internet</li>
+          <li data-i18n="intro.doc_carta">Karta di trabou (no ta nesesario si bo ta pensionado)</li>
           <li data-i18n="intro.doc_opcionales">Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)</li>
         </ul>
       </div>
@@ -166,7 +184,7 @@
     <!-- ============ PASO 3: Documentos Financieros ============ -->
     <section class="step" data-step="3">
       <h2 data-i18n="step2.title">Dokumentonan Finansiero</h2>
-      <p class="hint" data-i18n="step2.hint">Karga bo último 3 luna di payslip i estado di banko.</p>
+      <p class="hint" data-i18n="step2.hint">Karga bo payslip i estado di banko di bo último 3 luna (si bo ta kobra kada kinsena, un payslip pa kinsena).</p>
 
       <!-- Contador dinámico (se actualiza desde JS) -->
       <div class="upload-counter" id="uploadCounter">
@@ -329,8 +347,8 @@
       </div>
 
       <div class="field">
-        <label for="f_telefono_casa" data-i18n="step3.telefono_casa">Number di kas *</label>
-        <input id="f_telefono_casa" type="tel" name="telefono_casa" required pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone_home" placeholder="X XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
+        <label for="f_telefono_casa" data-i18n="step3.telefono_casa">Telefòn fiho (opshonal)</label>
+        <input id="f_telefono_casa" type="tel" name="telefono_casa" pattern="\+?[0-9][0-9\s\-]{6,16}" minlength="7" maxlength="18" data-i18n-placeholder="ph.phone_home" placeholder="X XXX XXXX o +5999 XXX XXXX" data-i18n-title="hint.phone_format" title="Solo dígitos, espacios, guiones y + (mínimo 7 dígitos)">
       </div>
 
       <div class="field">
@@ -447,7 +465,7 @@
     <!-- ============ PASO 5: Salud ============ -->
     <section class="step" data-step="5" data-no-draft>
       <h2 data-i18n="step4.title">Deklarashon di Salud</h2>
-      <p class="hint" data-i18n="step4.hint">Pa e seguro di bida obligatorio. Tur respuesta ta konfidensial.</p>
+      <p class="hint" data-i18n="step4.hint">Pa e seguro di bida inkluí den bo fiansa (obligatorio na 24 luna of mas). Tur respuesta ta konfidensial.</p>
 
       <div class="row">
         <div class="field flex-1">
@@ -466,7 +484,7 @@
       </div>
 
       <div class="field">
-        <label id="lbl_dolencia_salud" data-i18n="step4.q1">1/6. ¿Tin bo algun keho SERIO di salud aktualmente? *</label>
+        <label id="lbl_dolencia_salud" data-i18n="step4.q1">1/6. ¿Bo tin aktualmente algun problema serio di salud? *</label>
         <div class="radio-group" role="radiogroup" aria-labelledby="lbl_dolencia_salud">
           <label><input type="radio" name="dolencia_salud" value="false" required> <span data-i18n="common.no">No</span></label>
           <label><input type="radio" name="dolencia_salud" value="true"> <span data-i18n="common.yes">Sí</span></label>
@@ -502,7 +520,7 @@
       </div>
 
       <div class="field">
-        <label id="lbl_hiv" data-i18n="step4.q5">5/6. ¿Bo tin AIDS of bo ta HIV-positivo? *</label>
+        <label id="lbl_hiv" data-i18n="step4.q5">5/6. ¿A yega di diagnostiká bo ku HIV of AIDS? *</label>
         <div class="radio-group" role="radiogroup" aria-labelledby="lbl_hiv">
           <label><input type="radio" name="hiv" value="false" required> <span data-i18n="common.no">No</span></label>
           <label><input type="radio" name="hiv" value="true"> <span data-i18n="common.yes">Sí</span></label>
