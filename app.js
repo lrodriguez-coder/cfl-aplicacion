@@ -2843,12 +2843,18 @@
         });
     return _trackingIdMemo;
   }
+  // El préstamo pasó del paso 6 al 1 (15-nov-2026) y los demás se corrieron un
+  // lugar. El tablero de n8n identifica cada SECCIÓN por su número viejo, así
+  // que se sigue mandando ese número en `paso` (misma sección, mismo nombre en
+  // el tablero) y el orden nuevo va aparte en `paso_v2`.
+  const PASO_LEGACY = { 1: 6, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 7 };
   function track(paso, evento) {
     try {
+      const legacy = evento === 'paso' ? (PASO_LEGACY[paso] || paso) : paso;
       fetch(TRACK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracking_id: getTrackingId(), paso: paso, evento: evento, idioma: currentLang }),
+        body: JSON.stringify({ tracking_id: getTrackingId(), paso: legacy, paso_v2: paso, evento: evento, idioma: currentLang }),
         keepalive: true
       }).catch(function () {});
     } catch (e) {}
