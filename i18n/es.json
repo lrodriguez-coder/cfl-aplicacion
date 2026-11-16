@@ -49,7 +49,8 @@
     "range_vars": "debe estar entre {min} y {max}",
     "step": "debe ser múltiplo de {step}",
     "too_short": "debe tener al menos {n} caracteres",
-    "detail_required": "explique brevemente (requerido)"
+    "detail_required": "explique brevemente (requerido)",
+    "menor_edad": "Debe tener {edad} años o más para solicitar un préstamo. Revise su fecha de nacimiento."
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -239,10 +240,6 @@
     "q_fuera_politica": "Este monto y plazo requieren una revisión adicional; la cuota puede cambiar.",
     "q_error": "No pudimos calcular la cuota ahora. Puede seguir con su solicitud.",
     "q_disclaimer": "Estimado, sujeto a aprobación.",
-    "ahorro_toggle": "Agregar plan de ahorro (opcional)",
-    "ahorro_explain": "Se aporta cada mes junto con la cuota y se le devuelve al terminar el préstamo. Puede quitarlo.",
-    "ahorro_suma": "Suma {monto} a su cuota mensual.",
-    "ahorro_suma_si": "Si lo agrega: {monto} más al mes.",
     "q_costo": "Costo del crédito (interés + seguro):",
     "q_costo_fees": "Costo del crédito (interés, seguro y comisiones):",
     "q_ahorro_row": "Plan de ahorro (se le devuelve):"
@@ -274,6 +271,7 @@
     "thanks": "Gracias por su confianza en Curaçao Fast Loans.",
     "id_label": "Su número de solicitud",
     "id_hint": "Guarde este número y menciónelo cuando nos contacte.",
+    "email_sent": "Le enviaremos una confirmación a {email}.",
     "next_title": "¿Qué sigue?",
     "next_1": "Un oficial de CFL revisa su solicitud y sus documentos.",
     "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días.",

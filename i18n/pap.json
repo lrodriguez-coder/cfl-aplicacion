@@ -49,7 +49,8 @@
     "range_vars": "mester ta entre {min} i {max}",
     "step": "mester ta múltiplo di {step}",
     "too_short": "mester tin por lo ménos {n} karakter",
-    "detail_required": "splika kòrtiku (obligatorio)"
+    "detail_required": "splika kòrtiku (obligatorio)",
+    "menor_edad": "Bo mester tin {edad} aña òf mas pa aplika pa un fiansa. Chèk bo fecha di nasementu."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -239,10 +240,6 @@
     "q_fuera_politica": "E monto i plazo akí ta pidi un revishon adishonal; e kuota por kambia.",
     "q_error": "Nos no por a kalkulá e kuota awor. Bo por sigui ku bo aplikashon.",
     "q_disclaimer": "Estimashon, sujeto na aprobashon.",
-    "ahorro_toggle": "Agregá plan di spar (opshonal)",
-    "ahorro_explain": "Bo ta paga e tur luna huntu ku bo kuota, i nos ta debolbé bo e ora e fiansa kaba. Bo por kit'é.",
-    "ahorro_suma": "Ta subi bo kuota mensual ku {monto}.",
-    "ahorro_suma_si": "Si bo agreg'é: {monto} mas pa luna.",
     "q_costo": "Kosto di e krédito (interes + seguro):",
     "q_costo_fees": "Kosto di e krédito (interes, seguro i komishon):",
     "q_ahorro_row": "Plan di spar (nos ta debolbé bo):"
@@ -274,6 +271,7 @@
     "thanks": "Danki pa bo konfiansa na Curaçao Fast Loans.",
     "id_label": "Bo number di aplikashon",
     "id_hint": "Warda e number akí i menshoné ora bo tuma kontakto ku nos.",
+    "email_sent": "Nos ta manda un konfirmashon na {email}.",
     "next_title": "Kiko ta sigui?",
     "next_1": "Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.",
     "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia.",

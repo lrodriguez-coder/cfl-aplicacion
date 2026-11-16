@@ -49,7 +49,8 @@
     "range_vars": "must be between {min} and {max}",
     "step": "must be a multiple of {step}",
     "too_short": "must be at least {n} characters",
-    "detail_required": "please explain briefly (required)"
+    "detail_required": "please explain briefly (required)",
+    "menor_edad": "You must be {edad} or older to apply for a loan. Please check your date of birth."
   },
   "intro": {
     "title": "📋 Before you start",
@@ -239,10 +240,6 @@
     "q_fuera_politica": "This amount and term need an additional review; the instalment may change.",
     "q_error": "We could not calculate the instalment right now. You can continue with your application.",
     "q_disclaimer": "Estimate, subject to approval.",
-    "ahorro_toggle": "Add a savings plan (optional)",
-    "ahorro_explain": "You pay into it every month together with your instalment, and it is paid back to you when the loan ends. You can remove it.",
-    "ahorro_suma": "Adds {monto} to your monthly instalment.",
-    "ahorro_suma_si": "If you add it: {monto} more per month.",
     "q_costo": "Cost of credit (interest + insurance):",
     "q_costo_fees": "Cost of credit (interest, insurance and fees):",
     "q_ahorro_row": "Savings plan (paid back to you):"
@@ -274,6 +271,7 @@
     "thanks": "Thank you for your trust in Curaçao Fast Loans.",
     "id_label": "Your application number",
     "id_hint": "Keep this number and mention it when you contact us.",
+    "email_sent": "We will send a confirmation to {email}.",
     "next_title": "What happens next?",
     "next_1": "A CFL officer reviews your application and your documents.",
     "next_2": "We will contact you by WhatsApp or phone within 3 to 5 days.",
