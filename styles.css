@@ -578,7 +578,9 @@ input[readonly] {
 
 .summary dl {
   display: grid;
-  grid-template-columns: max-content 1fr;
+  /* La etiqueta se lleva como mucho el 55%: con max-content una etiqueta
+     larga dejaba al valor una letra por línea en el celular. */
+  grid-template-columns: fit-content(55%) 1fr;
   column-gap: 1rem;
   row-gap: 0.35rem;
   margin: 0 0 0.8rem 0;

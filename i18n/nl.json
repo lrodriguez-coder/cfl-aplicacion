@@ -49,7 +49,8 @@
     "range_vars": "moet tussen {min} en {max} liggen",
     "step": "moet een veelvoud van {step} zijn",
     "too_short": "moet minstens {n} tekens hebben",
-    "detail_required": "licht kort toe (verplicht)"
+    "detail_required": "licht kort toe (verplicht)",
+    "menor_edad": "U moet {edad} jaar of ouder zijn om een lening aan te vragen. Controleer uw geboortedatum."
   },
   "intro": {
     "title": "📋 Voordat u begint",
@@ -239,10 +240,6 @@
     "q_fuera_politica": "Voor dit bedrag en deze looptijd is een extra beoordeling nodig; de termijn kan wijzigen.",
     "q_error": "We konden de termijn nu niet berekenen. U kunt gewoon verdergaan met uw aanvraag.",
     "q_disclaimer": "Schatting, onder voorbehoud van goedkeuring.",
-    "ahorro_toggle": "Spaarplan toevoegen (optioneel)",
-    "ahorro_explain": "U legt elke maand samen met uw termijn in, en u krijgt het terug wanneer de lening afloopt. U kunt het weglaten.",
-    "ahorro_suma": "Verhoogt uw maandtermijn met {monto}.",
-    "ahorro_suma_si": "Als u het toevoegt: {monto} meer per maand.",
     "q_costo": "Kosten van het krediet (rente + verzekering):",
     "q_costo_fees": "Kosten van het krediet (rente, verzekering en provisie):",
     "q_ahorro_row": "Spaarplan (krijgt u terug):"
@@ -274,6 +271,7 @@
     "thanks": "Dank u voor uw vertrouwen in Curaçao Fast Loans.",
     "id_label": "Uw aanvraagnummer",
     "id_hint": "Bewaar dit nummer en vermeld het wanneer u contact met ons opneemt.",
+    "email_sent": "We sturen een bevestiging naar {email}.",
     "next_title": "Wat gebeurt er nu?",
     "next_1": "Een medewerker van CFL beoordeelt uw aanvraag en uw documenten.",
     "next_2": "We nemen binnen 3 tot 5 dagen contact met u op via WhatsApp of telefoon.",

@@ -76,11 +76,6 @@
     });
     form._lang = currentLang;
     form._submitted_at = new Date().toISOString();
-    // Plan de ahorro: 'si' | 'no' sólo si se le preguntó (interruptor visible).
-    // Si no se preguntó, no se manda nada y la solicitud toma el valor por
-    // plazo de siempre. v2 lo guarda en selected_addons.
-    delete form.plan_ahorro;
-    if (savingsToggleShown()) form.plan_ahorro = savingsChosen() ? 'si' : 'no';
 
     const documents = [];
     const fileInputs = $$('input[type="file"]');
@@ -388,6 +383,41 @@
     $$('[aria-invalid="true"]', scope).forEach(f => f.removeAttribute('aria-invalid'));
   }
 
+  // ===== EDAD MÍNIMA (18 años, regla de CFL) =====
+  // "Hoy" es hoy en Curaçao, no en el reloj del teléfono: a las 22:00 en
+  // Willemstad ya es mañana en UTC, y nadie puede cumplir 18 antes de tiempo.
+  // El API hace el mismo control (segunda red); éste tiene que valer solo.
+  const EDAD_MINIMA = 18;
+  function hoyEnCuracao() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Curacao' }).format(new Date());
+    } catch (e) {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+  }
+  // La fecha de nacimiento más reciente que ya tiene 18 años hoy. Un 29 de
+  // febrero en año no bisiesto pasa a 28: el nacido el 29 cumple el 1 de marzo.
+  function fechaNacimientoMaxima() {
+    const [y, m, d] = hoyEnCuracao().split('-');
+    const yy = Number(y) - EDAD_MINIMA;
+    const bisiesto = (yy % 4 === 0 && yy % 100 !== 0) || yy % 400 === 0;
+    const dd = (m === '02' && d === '29' && !bisiesto) ? '28' : d;
+    return String(yy).padStart(4, '0') + '-' + m + '-' + dd;
+  }
+  function esMenorDeEdad(fechaIso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaIso || '')) return false;
+    return fechaIso > fechaNacimientoMaxima();
+  }
+  function aplicarMaxNacimiento() {
+    const el = $('[name="fecha_nacimiento"]');
+    if (el) el.max = fechaNacimientoMaxima();
+  }
+  function msgMenorDeEdad() {
+    return t('error.menor_edad', { edad: EDAD_MINIMA }) ||
+      'Debe tener 18 años o más para solicitar un préstamo. Revise su fecha de nacimiento.';
+  }
+
   function validateStep(n) {
     // TEMPORAL: bypass total mientras Leonard revisa el form.
     if (BYPASS_STEP_VALIDATION) {
@@ -424,6 +454,9 @@
         radiosSeen[f.name] = true;
       }
       if (!f.checkValidity()) {
+        // Pasarse del `max` de la fecha de nacimiento = menor de edad: lo dice
+        // el control de abajo con su propio mensaje, no "fuera de rango".
+        if (f.name === 'fecha_nacimiento' && f.validity.rangeOverflow && !f.validity.valueMissing) return;
         // Mensaje específico según el tipo de error
         let msg;
         if (f.validity.patternMismatch) {
@@ -600,6 +633,13 @@
           'Verifique su celular antes de continuar (clic en "Verificar").');
       }
     }
+    // Menor de edad: no se avanza. Se recalcula el `max` por si la página
+    // quedó abierta desde ayer.
+    const nacEl = step.querySelector('[name="fecha_nacimiento"]');
+    if (nacEl) {
+      aplicarMaxNacimiento();
+      if (nacEl.value && esMenorDeEdad(nacEl.value)) fail(nacEl, msgMenorDeEdad());
+    }
     // Sanity peso/altura: la altura en cm de una persona siempre supera el peso en kg.
     // Si peso >= altura el usuario casi seguro invirtió los dos campos.
     if (n === 5) {
@@ -664,9 +704,6 @@
         data[key] = val;
       }
     });
-    // La casilla desmarcada no viaja en FormData: se guarda explícito, si no al
-    // volver aparecería marcada otra vez.
-    data.plan_ahorro = savingsChosen() ? 'si' : 'no';
     data._step = currentStep;
     data._lang = currentLang;
     data._updated = new Date().toISOString();
@@ -799,6 +836,19 @@
   function monthLabel(year, monthIdx0) {
     const arr = MONTH_NAMES[currentLang] || MONTH_NAMES.pap;
     return arr[monthIdx0] + ' ' + year;
+  }
+
+  // yyyy-mm-dd → "15 de noviembre de 2008" / "15 November 2008" en el idioma
+  // activo. Lo que no sea una fecha se devuelve tal cual.
+  function fmtFecha(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!m) return iso || '';
+    const arr = MONTH_NAMES[currentLang] || MONTH_NAMES.pap;
+    const dia = String(Number(m[3]));
+    const mes = arr[Number(m[2]) - 1];
+    if (!mes) return iso;
+    if (currentLang === 'es') return dia + ' de ' + mes.toLowerCase() + ' de ' + m[1];
+    return dia + ' ' + mes + ' ' + m[1];
   }
 
   // Retorna los últimos N meses completos (más reciente primero).
@@ -1032,19 +1082,19 @@
     return (v < 0 ? '-' : '') + miles + (en ? '.' : ',') + dec;
   }
 
-  // El plan de ahorro es OPCIONAL (T&C §12). El interruptor sólo se muestra
-  // cuando el API dice que a este plazo se ofrece (`savingsOffered`); el API
-  // anterior no lo dice, y entonces el formulario queda como estaba.
-  function savingsChosen() {
-    const el = $('#f_plan_ahorro');
-    return el ? el.checked : true;
+  // TAE con la coma o el punto del idioma activo.
+  function fmtPct(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '—';
+    return v.toFixed(2).replace('.', currentLang === 'en' ? '.' : ',') + '%';
   }
-  function savingsToggleShown() {
-    const box = $('#savingsToggle');
-    return !!box && !box.hidden;
-  }
-  function quoteKey(monto, plazo, savings) {
-    return monto + '|' + plazo + '|' + (savings ? 1 : 0);
+
+  // El plan de ahorro NO lo elige el cliente: es obligatorio a 24 meses o más
+  // y no se ofrece por debajo (Leonard, 15-nov-2026). La cuota que devuelve el
+  // API ya lo incluye cuando corresponde, así que la cotización sólo depende
+  // de monto y plazo.
+  function quoteKey(monto, plazo) {
+    return monto + '|' + plazo;
   }
 
   function setQuoteState(state) {
@@ -1102,7 +1152,7 @@
     if ($qPlazo) $qPlazo.textContent = (plazo || '—') + ' ' + (t('step6.q_meses') || '');
   }
 
-  function renderQuoteResult(q, monto, plazo) {
+  function renderQuoteResult(q) {
     const cur = q.currency || 'XCG';
     const money = (n) => cur + ' ' + fmtMoney(n);
     const cuota = Number(q.cuota);
@@ -1130,29 +1180,7 @@
     const $ah = $('#qAhorro');
     if ($ah) $ah.textContent = money(sav);
     $('#qTotal').textContent = Number.isFinite(total) ? money(total) : '—';
-    $('#qTae').textContent = Number.isFinite(apr)
-      ? apr.toFixed(2).replace('.', currentLang === 'en' ? '.' : ',') + '%'
-      : '—';
-
-    // Interruptor del ahorro: sólo si el API dice que se ofrece a este plazo.
-    const $tog = $('#savingsToggle');
-    if ($tog) $tog.hidden = q.savingsOffered !== true;
-    // Cuánto suma el ahorro a la cuota (el número sale del motor: la parte de
-    // ahorro de la primera cuota). Sin ahorro, se dice si ya se conoce.
-    const $delta = $('#savingsDelta');
-    if ($delta) {
-      let txt = null;
-      const porCuota = q.breakdown && Number(q.breakdown.savings);
-      if (q.savingsOffered === true && savingsChosen() && porCuota > 0) {
-        txt = t('step6.ahorro_suma', { monto: money(porCuota) });
-      } else if (q.savingsOffered === true && !savingsChosen()) {
-        const con = quoteCache[quoteKey(monto, plazo, true)];
-        const p2 = con && con.breakdown && Number(con.breakdown.savings);
-        if (p2 > 0) txt = t('step6.ahorro_suma_si', { monto: money(p2) });
-      }
-      $delta.textContent = txt || '';
-      $delta.hidden = !txt;
-    }
+    $('#qTae').textContent = fmtPct(apr);
     const $pol = $('#qPolicyNote');
     if ($pol) $pol.hidden = q.withinPolicy !== false;
   }
@@ -1160,12 +1188,11 @@
   function quoteFailed() {
     ['#qCuota', '#qCosto', '#qTotal', '#qTae'].forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
     const $ah = $('#qAhorroRow'); if ($ah) $ah.hidden = true;
-    const $d = $('#savingsDelta'); if ($d) $d.hidden = true;
     const $pol = $('#qPolicyNote'); if ($pol) $pol.hidden = true;
     setQuoteState('error');
   }
 
-  async function fetchQuote(monto, plazo, savings, seq) {
+  async function fetchQuote(monto, plazo, seq) {
     let res;
     try {
       const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -1173,9 +1200,10 @@
       res = await fetch(QUOTE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // `savings`: la elección del cliente. El API anterior la ignora (y
-        // cotiza con ahorro, como siempre); el nuevo la respeta.
-        body: JSON.stringify({ productCode: QUOTE_PRODUCT, amount: monto, termMonths: plazo, savings: savings }),
+        // `savings: true` es lo que se mandó siempre (no hay casilla). El API
+        // lo ignora y aplica la regla por plazo; se deja para que una versión
+        // anterior del API cotice igual que hoy.
+        body: JSON.stringify({ productCode: QUOTE_PRODUCT, amount: monto, termMonths: plazo, savings: true }),
         signal: ctrl ? ctrl.signal : undefined
       });
       if (to) clearTimeout(to);
@@ -1193,8 +1221,8 @@
       return;
     }
     if (data.limits) applyQuoteLimits(data.limits);
-    quoteCache[quoteKey(monto, plazo, savings)] = data;
-    renderQuoteResult(data, monto, plazo);
+    quoteCache[quoteKey(monto, plazo)] = data;
+    renderQuoteResult(data);
     setQuoteState('ok');
   }
 
@@ -1213,11 +1241,10 @@
       setQuoteState('idle');
       return;
     }
-    const savings = savingsChosen();
-    const cached = quoteCache[quoteKey(monto, plazo, savings)];
-    if (cached) { renderQuoteResult(cached, monto, plazo); setQuoteState('ok'); return; }
+    const cached = quoteCache[quoteKey(monto, plazo)];
+    if (cached) { renderQuoteResult(cached); setQuoteState('ok'); return; }
     setQuoteState('loading');
-    const run = () => { if (seq === quoteSeq) fetchQuote(monto, plazo, savings, seq); };
+    const run = () => { if (seq === quoteSeq) fetchQuote(monto, plazo, seq); };
     if (inmediato === true) run();
     else quoteTimer = setTimeout(run, QUOTE_DEBOUNCE_MS);
   }
@@ -2170,13 +2197,21 @@
                + row(L('summary.aqua_cliente', 'Cliente Aqualectra'), aqua.numero_cliente);
     }
 
+    // La cotización que ya se pidió para este monto y plazo (paso 1).
+    const montoN = parseFloat(get('monto_solicitado')) || 0;
+    const plazoN = parseInt(get('plazo_meses'), 10) || 0;
+    const cotRaw = quoteCache[quoteKey(montoN, plazoN)];
+    const cot = cotRaw && Number.isFinite(Number(cotRaw.cuota)) ? cotRaw : null;
+    const moneda = ((cot && cot.currency) || 'XCG') + ' ';
+    const sinDosPuntos = (txt) => String(txt).replace(/\s*:\s*$/, '');
+
     $summary.innerHTML =
       '<h4>' + (t('summary.personal') || 'Datos Personales') + '</h4>' +
       '<dl>' +
         rowAlways(t('step3.nombre') || 'Nòmber kompleto', get('nombre_completo')) +
         rowAlways(t('step3.cedula_num') || 'Number sédula', get('numero_id')) +
         idAdicRows +
-        rowAlways(t('step3.fecha_nac') || 'Nasementu', get('fecha_nacimiento')) +
+        rowAlways(t('step3.fecha_nac') || 'Nasementu', fmtFecha(get('fecha_nacimiento'))) +
         rowAlways(t('step3.tipo_empleado') || 'Tipo empleo',
                   (t('step3.tipo_empleado_' + (get('tipo_empleado') || 'otro')) || get('tipo_empleado') || '—')) +
         rowAlways(t('step3.profesion') || 'Profesión', get('profesion')) +
@@ -2220,11 +2255,17 @@
 
       '<h4>' + (t('summary.prestamo') || 'Fiansa') + '</h4>' +
       '<dl>' +
-        rowAlways(t('step6.monto') || 'Monto', 'XCG ' + (get('monto_solicitado') || '0')) +
+        rowAlways(t('step6.monto') || 'Monto', moneda + fmtMoney(get('monto_solicitado') || 0)) +
         rowAlways(t('step6.plazo') || 'Plazo', (get('plazo_meses') || '0') + ' ' + (t('step6.q_meses') || 'meses')) +
+        // Lo mismo que vio en la cotización del paso 1 (no se recalcula acá).
+        rowAlways(sinDosPuntos(t('step6.q_cuota') || 'Cuota mensual'), cot ? moneda + fmtMoney(cot.cuota) : '—') +
+        rowAlways(sinDosPuntos(t('step6.q_total') || 'Total a pagar'),
+                  cot && cot.totals && Number.isFinite(Number(cot.totals.toPay)) ? moneda + fmtMoney(cot.totals.toPay) : '—') +
+        rowAlways(sinDosPuntos(t('step6.q_tae') || 'TAE'), cot ? fmtPct(cot.aprAnnualPct) : '—') +
         rowAlways(t('step6.proposito') || 'Propósito',
                   [optText('proposito_categoria'), get('proposito')].filter(Boolean).join(' — ')) +
       '</dl>' +
+      '<p class="quote-disclaimer">' + (cot ? (t('step6.q_disclaimer') || '') : (t('step6.q_error') || '')) + '</p>' +
 
       '<h4>' + (t('summary.contacto') || 'Kontakto') + '</h4>' +
       '<dl>' +
@@ -2335,7 +2376,7 @@
       $langSwitch.value = lang;
       applyI18n();
       updateProgress();
-      // Etiquetas de la cuota (meses, nota de ahorro) en el idioma nuevo.
+      // Etiquetas de la cuota (meses, montos) en el idioma nuevo.
       if (i18nReady) { try { updateQuote(true); } catch (err) {} }
       i18nReady = true;
       // Los slots dinámicos usan el nombre de mes del idioma actual, re-renderizar.
@@ -2350,6 +2391,12 @@
   async function submitForm(e) {
     e.preventDefault();
     if (!validateStep(7)) return;
+    // Un borrador viejo pudo traer una fecha que no pasó por el paso 4.
+    const nacSubmit = $('[name="fecha_nacimiento"]');
+    if (nacSubmit && esMenorDeEdad(nacSubmit.value)) {
+      showErrors([msgMenorDeEdad()]);
+      return;
+    }
     if (!$('[name="acepta_terminos"]').checked) {
       showErrors([t('error.terms') || 'Debes aseptá e términos i kondishon.']);
       return;
@@ -2366,9 +2413,21 @@
         const result = await submitToV2();
         track(7, 'enviado');
         clearDraft();
-        if (result.applicationId) {
-          $('#aplicacionIdMsg').textContent = '#' + result.applicationId;
+        // El número que conoce la persona (CFL-…); el UUID sólo si el API no
+        // lo devolviera.
+        const ref = result.applicationNumber || result.applicationId;
+        if (ref) {
+          $('#aplicacionIdMsg').textContent = result.applicationNumber ? ref : '#' + ref;
           const box = $('#doneIdBox'); if (box) box.hidden = false;
+        }
+        // El API manda el acuse a este correo (el que se verificó en el paso 4).
+        const emailEl = $('[name="email"]');
+        const email = emailEl && emailEl.value ? emailEl.value.trim() : '';
+        const $mail = $('#doneEmailMsg');
+        if ($mail && email) {
+          $mail.textContent = t('done.email_sent', { email: email }) ||
+            ('Le enviaremos una confirmación a ' + email + '.');
+          $mail.hidden = false;
         }
         showStep('done');
       } catch (err) {
@@ -3045,8 +3104,6 @@
       // cambiar el plazo. El monto ya recalcula por su slider, se incluye por
       // las dudas si alguna vez deja de ser slider.
       if (e.target.name === 'plazo_meses' || e.target.name === 'monto_solicitado') updateQuote();
-      // Quitar o poner el plan de ahorro recalcula la cuota en el motor.
-      if (e.target.name === 'plan_ahorro') updateQuote(true);
       if (e.target.name === 'tipo_empleado') updatePensionadoMode();
       if (e.target.name === 'frecuencia_salario') renderDynamicSlots();
       // Cualquier upload en Step 2 actualiza el contador.
@@ -3069,6 +3126,7 @@
 
   // ===== INIT =====
   async function init() {
+    aplicarMaxNacimiento();
     setupUploads();
     syncSliders();
     wireEvents();
