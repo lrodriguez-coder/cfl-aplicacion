@@ -295,6 +295,8 @@
     "id_label": "Bo number di aplikashon",
     "id_hint": "Warda e number akí i menshoné ora bo tuma kontakto ku nos.",
     "email_sent": "Nos ta manda un konfirmashon na {email}.",
+    "status_link": "Mira e estado di bo aplikashon i manda un dokumento ku falta",
+    "status_link_hint": "Warda e link akí: e ta personal i e ta bálido pa 30 dia.",
     "next_title": "Kiko ta sigui?",
     "next_1": "Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.",
     "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia laboral.",

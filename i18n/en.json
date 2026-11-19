@@ -295,6 +295,8 @@
     "id_label": "Your application number",
     "id_hint": "Keep this number and mention it when you contact us.",
     "email_sent": "We will send a confirmation to {email}.",
+    "status_link": "Check the status of your application and send a missing document",
+    "status_link_hint": "Keep this link: it is personal and valid for 30 days.",
     "next_title": "What happens next?",
     "next_1": "A CFL officer reviews your application and your documents.",
     "next_2": "We will contact you by WhatsApp or phone within 3 to 5 business days.",

@@ -3056,6 +3056,9 @@
             ('Le enviaremos una confirmación a ' + email + '.');
           $mail.hidden = false;
         }
+        // Ronda 13: el enlace firmado para ver el estado y mandar el documento que falte (estado.html).
+        const $st = $('#doneStatusBox'), $stA = $('#doneStatusLink');
+        if ($st && $stA && /^https:\/\//.test(result.statusUrl || '')) { $stA.href = result.statusUrl; $st.hidden = false; }
         showStep('done');
       } catch (err) {
         console.error('v2 intake error:', err);
