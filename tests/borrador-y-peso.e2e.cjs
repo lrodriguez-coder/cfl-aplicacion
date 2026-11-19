@@ -103,6 +103,8 @@ async function goToStep2(page, base) {
   await page.waitForSelector('.step[data-step="2"].active');
   await page.selectOption('[name="tipo_empleado"]', 'fijo');
   await page.selectOption('[name="frecuencia_salario"]', 'mensual');
+  // Required for an employee since ronda 13 (one year with the employer).
+  await page.fill('[name="fecha_ingreso_empleo"]', '2020-01-15');
 }
 
 // The stored files are written asynchronously; give the page a moment to
