@@ -55,7 +55,20 @@
     "menor_edad": "Debe tener {edad} años o más para solicitar un préstamo. Revise su fecha de nacimiento.",
     "file_too_big": "{doc}: el archivo pesa {mb} MB y el máximo es {max} MB por documento. Si es un PDF escaneado, escanéelo con menos resolución o suba una foto del documento.",
     "total_too_big": "{doc}: con este archivo los documentos sumarían {mb} MB y el máximo por solicitud es {max} MB. Quite algún documento opcional o suba una versión más liviana (una foto en lugar de un PDF escaneado).",
-    "total_too_big_submit": "Los documentos suman {mb} MB y el máximo por solicitud es {max} MB. Vuelva a los pasos 2 y 3 y quite algún documento opcional o súbalo en una versión más liviana."
+    "total_too_big_submit": "Los documentos suman {mb} MB y el máximo por solicitud es {max} MB. Vuelva a los pasos 2 y 3 y quite algún documento opcional o súbalo en una versión más liviana.",
+    "antiguedad": "Para solicitar un préstamo necesita al menos 1 año con su empleador actual (o una pensión vigente). Según la fecha que indicó, todavía no cumple ese año.",
+    "menor_edad_cedula": "Según su cédula, usted tiene menos de {edad} años. Para solicitar un préstamo debe tener {edad} años o más.",
+    "verify_expired": "La verificación de su email o de su celular venció. Vuelva al paso 4 y pida un código nuevo.",
+    "code": {
+      "captcha": "La verificación \"No soy un robot\" venció. Márquela de nuevo y vuelva a enviar.",
+      "validation": "Faltan datos de su solicitud. Revise los pasos anteriores y vuelva a enviar.",
+      "too_large": "Los documentos pesan demasiado para enviarlos juntos. Quite algún documento opcional o súbalo en una versión más liviana.",
+      "rate_limited": "Recibimos muchos intentos seguidos. Espere unos minutos y vuelva a enviar; sus datos siguen guardados.",
+      "timeout": "La conexión tardó demasiado y no sabemos si su solicitud llegó. Sus datos siguen guardados: vuelva a enviar; si ya llegó, no se duplicará.",
+      "network": "No pudimos conectarnos. Revise su conexión a internet y vuelva a enviar; sus datos siguen guardados y la solicitud no se duplicará.",
+      "unavailable": "La recepción de solicitudes en línea no está disponible en este momento. Llámenos al +5999 526 8480.",
+      "failed": "No pudimos registrar su solicitud; sus datos siguen guardados. Intente de nuevo o llámenos al +5999 526 8480."
+    }
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -65,7 +78,10 @@
     "doc_payslips": "Sus 3 últimos recibos de salario, uno por mes (si cobra quincenal, 6: uno por quincena) — si es pensionado, la carta de pensión (opcional)",
     "doc_bancos": "Sus 3 últimos estados de cuenta bancarios, uno por mes, en PDF descargado de la banca por internet",
     "doc_carta": "Carta de trabajo (no hace falta si es pensionado)",
-    "doc_opcionales": "Opcionales: pasaporte o licencia, comprobante de domicilio (Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia)"
+    "doc_opcionales": "Opcionales: pasaporte o licencia, comprobante de domicilio (Aqualectra, teléfono, uittreksel de Kranshi o permiso de residencia)",
+    "req_title": "✅ Requisitos para solicitar",
+    "req_age": "Tener 18 años o más.",
+    "req_employment": "Tener al menos 1 año con su empleador actual (contrato fijo o temporal), o una pensión vigente."
   },
   "step1": {
     "title": "Identificación",
@@ -76,7 +92,9 @@
     "frecuencia_salario": "¿Con qué frecuencia recibe su salario? *",
     "frecuencia_mensual": "Cada mes (mensual)",
     "frecuencia_quincenal": "Cada 2 semanas (quincenal)",
-    "frecuencia_hint": "Esto determina cuántos recibos debe subir (3 si es mensual, 6 si es quincenal)."
+    "frecuencia_hint": "Esto determina cuántos recibos debe subir (3 si es mensual, 6 si es quincenal).",
+    "fecha_ingreso": "Fecha de ingreso a su empleo actual *",
+    "fecha_ingreso_hint": "El día en que empezó a trabajar con su empleador actual. Debe tener al menos 1 año con él."
   },
   "step2": {
     "title": "Documentos Financieros",
@@ -279,7 +297,7 @@
     "email_sent": "Le enviaremos una confirmación a {email}.",
     "next_title": "¿Qué sigue?",
     "next_1": "Un oficial de CFL revisa su solicitud y sus documentos.",
-    "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días.",
+    "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días hábiles.",
     "next_3": "Si su solicitud se aprueba, le enviaremos la oferta con la cuota definitiva y le daremos una cita para firmar.",
     "next_contact": "¿Preguntas? Llámenos al +5999 526 8480."
   },
@@ -306,7 +324,8 @@
     "lbl_estado_civil": "Estado civil",
     "lbl_pais_emisor": "País emisor",
     "cedula_header": "Datos de la cédula (detectados automáticamente; esto es lo que se guarda)",
-    "auto_detected": "detectado automáticamente"
+    "auto_detected": "detectado automáticamente",
+    "tipo_empleo_otro": "Su carta de trabajo indica otro tipo de empleo. Verifique el tipo de empleo que eligió en el paso 2."
   },
   "tipo": {
     "cedula": "una cédula",

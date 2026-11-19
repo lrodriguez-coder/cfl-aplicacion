@@ -55,7 +55,20 @@
     "menor_edad": "Bo mester tin {edad} aña òf mas pa aplika pa un fiansa. Chèk bo fecha di nasementu.",
     "file_too_big": "{doc}: e archivo ta pisa {mb} MB i e máksimo ta {max} MB pa dokumento. Si e ta un PDF skèn, skèn’é ku ménos resolushon òf manda un potret di e dokumento.",
     "total_too_big": "{doc}: ku e archivo akí bo dokumentonan lo pisa {mb} MB i e máksimo pa aplikashon ta {max} MB. Kita un dokumento opshonal òf manda un version mas liviano (un potret na lugá di un PDF skèn).",
-    "total_too_big_submit": "Bo dokumentonan ta pisa {mb} MB i e máksimo pa aplikashon ta {max} MB. Bai bèk na paso 2 i 3 i kita un dokumento opshonal òf manda un version mas liviano."
+    "total_too_big_submit": "Bo dokumentonan ta pisa {mb} MB i e máksimo pa aplikashon ta {max} MB. Bai bèk na paso 2 i 3 i kita un dokumento opshonal òf manda un version mas liviano.",
+    "antiguedad": "Pa aplika pa un fiansa bo mester tin por lo ménos 1 aña ku bo empleador aktual (òf un penshon vigente). Segun e fecha ku bo a duna, bo no tin e aña ei ainda.",
+    "menor_edad_cedula": "Segun bo sédula, bo tin ménos ku {edad} aña. Bo mester tin {edad} aña òf mas pa aplika pa un fiansa.",
+    "verify_expired": "E verifikashon di bo email òf bo selular a vense. Bai bèk na paso 4 i pidi un kódigo nobo.",
+    "code": {
+      "captcha": "E verifikashon \"Mi no ta un robot\" a vense. Marká e kashi atrobe i manda bèk.",
+      "validation": "Tin datos ku ta falta den bo aplikashon. Chèk e pasonan anterior i manda bèk.",
+      "too_large": "E dokumentonan ta mashá pisá pa manda huntu. Kita un dokumento opshonal òf kargé den un version mas liviano.",
+      "rate_limited": "Nos a risibí hopi purba un tras di otro. Warda algun minüt i manda bèk; bo datos ta keda warda.",
+      "timeout": "E konekshon a tarda muchu i nos no sa si bo aplikashon a yega. Bo datos ta keda warda: manda bèk; si e la yega kaba, e no ta dobla.",
+      "network": "Nos no por a konektá. Chèk bo konekshon di internet i manda bèk; bo datos ta keda warda i e aplikashon no ta dobla.",
+      "unavailable": "Aplikashon na internet no ta disponibel awor. Yama nos na +5999 526 8480.",
+      "failed": "Nos no por a registrá bo aplikashon; bo datos ta keda warda. Purba atrobe òf yama nos na +5999 526 8480."
+    }
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -65,7 +78,10 @@
     "doc_payslips": "Bo último 3 payslip, un pa luna (si bo ta kobra kada kinsena, 6: un pa kinsena) — si bo ta pensionado, bo karta di penshon (opshonal)",
     "doc_bancos": "Bo último 3 estado di kuenta di banko, un pa luna, na PDF di bo banko na internet",
     "doc_carta": "Karta di trabou (no ta nesesario si bo ta pensionado)",
-    "doc_opcionales": "Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)"
+    "doc_opcionales": "Opshonal: paspoort of rijbewijs, komprobante di adres (Aqualectra, telefòn, uittreksel di Kranshi òf pèrmit di estadia)",
+    "req_title": "✅ Rekisitonan pa aplika",
+    "req_age": "Bo tin 18 aña òf mas.",
+    "req_employment": "Bo ta traha por lo ménos 1 aña kaba ku bo empleador aktual (kontrato fijo òf temporal), òf bo tin un penshon vigente."
   },
   "step1": {
     "title": "Bo Identifikashon",
@@ -76,7 +92,9 @@
     "frecuencia_salario": "Ki frekuensia bo ta haña salario? *",
     "frecuencia_mensual": "Tur luna (mensual)",
     "frecuencia_quincenal": "Kada 2 siman (kinsenal)",
-    "frecuencia_hint": "Esaki ta determiná kuantu payslip bo mester karga (3 si ta mensual, 6 si ta kinsenal)."
+    "frecuencia_hint": "Esaki ta determiná kuantu payslip bo mester karga (3 si ta mensual, 6 si ta kinsenal).",
+    "fecha_ingreso": "Fecha di drenta na bo trabou aktual *",
+    "fecha_ingreso_hint": "E dia ku bo a kuminsá traha ku bo empleador aktual. Bo mester tin por lo ménos 1 aña ku nan."
   },
   "step2": {
     "title": "Dokumentonan Finansiero",
@@ -279,7 +297,7 @@
     "email_sent": "Nos ta manda un konfirmashon na {email}.",
     "next_title": "Kiko ta sigui?",
     "next_1": "Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.",
-    "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia.",
+    "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia laboral.",
     "next_3": "Si bo aplikashon wòrdu aprobá, nos ta manda bo e oferta ku e kuota definitivo i nos ta duna bo un sita pa firma.",
     "next_contact": "Pregunta? Yama nos na +5999 526 8480."
   },
@@ -306,7 +324,8 @@
     "lbl_estado_civil": "Estado sivil",
     "lbl_pais_emisor": "Pais emisor",
     "cedula_header": "Datos di sédula (detektá outomátikamente; esaki ta loke ta wòrdu wardá)",
-    "auto_detected": "detektá outomátikamente"
+    "auto_detected": "detektá outomátikamente",
+    "tipo_empleo_otro": "Bo karta di trabou ta indiká otro tipo di empleo. Chèk e tipo di empleo ku bo a skohe na paso 2."
   },
   "tipo": {
     "cedula": "un sédula",

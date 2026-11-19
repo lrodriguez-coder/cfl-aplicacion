@@ -136,21 +136,89 @@
       throw new Error(t('error.captcha') || 'Por favor konfirmá ku bo no ta un robot.');
     }
 
-    const res = await fetch(V2_INTAKE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-intake-secret': V2_INTAKE_SECRET },
-      // trackingId: the same session id the e-mail and mobile codes were
-      // confirmed under (/email-verify, /phone-verify). The server only mails
-      // the acknowledgement to, and only marks as verified, a contact whose
-      // code was confirmed in THIS session; without it any confirmed code for
-      // that address counted (Leonard 18-nov-2026).
-      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, captchaToken: captchaToken, trackingId: getTrackingId() })
-    });
+    // submissionId: generated ONCE per draft and kept in it, so every attempt
+    // of this application carries the same id. When the answer to a send is
+    // lost (phone network, proxy timeout) after the server already created the
+    // application, the retry gets that same application back instead of a
+    // duplicate (gauntlet r13, formulario#1). Saved BEFORE sending, so a
+    // reload between attempts keeps it.
+    const submissionId = getSubmissionId();
+    saveDraft();
+
+    // A send with ~20 MB of documents from a phone can hang for ever on a bad
+    // connection; without a limit the button just said "Sending..." with no
+    // way out. On timeout the customer gets a clear message and can retry —
+    // safely, thanks to the submissionId.
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, INTAKE_TIMEOUT_MS) : null;
+    let res;
+    try {
+      res = await fetch(V2_INTAKE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-intake-secret': V2_INTAKE_SECRET },
+        // trackingId: the same session id the e-mail and mobile codes were
+        // confirmed under (/email-verify, /phone-verify). The server only mails
+        // the acknowledgement to, and only marks as verified, a contact whose
+        // code was confirmed in THIS session; without it any confirmed code for
+        // that address counted (Leonard 18-nov-2026).
+        body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, captchaToken: captchaToken, trackingId: getTrackingId(), submissionId: submissionId }),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (e) {
+      throw intakeError(e && e.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK');
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     const result = await res.json().catch(function () { return {}; });
     if (!res.ok || !result.ok) {
-      throw new Error((result.error && result.error.message) || ('v2 intake HTTP ' + res.status));
+      // Only the stable CODE is used. The server's message is for developers
+      // and used to reach the screen as-is: Postgres text, or a Spanish
+      // sentence in voseo whatever the language (gauntlet r13, formulario#7).
+      let code = (result.error && result.error.code) || '';
+      if (!code && res.status === 413) code = 'TOO_LARGE';
+      if (!code && res.status === 429) code = 'RATE_LIMITED';
+      throw intakeError(code || 'INTAKE_FAILED');
     }
-    return result; // { applicationId, clientId, ... }
+    return result; // { ok, applicationNumber, emailVerified }
+  }
+
+  // How long a send may take before the customer is told and can retry.
+  // Generous on purpose: up to ~22 MB of base64 from a phone.
+  const INTAKE_TIMEOUT_MS = 180 * 1000;
+
+  function intakeError(code) {
+    const e = new Error(code);
+    e.intakeCode = code;
+    return e;
+  }
+
+  // Codes the API answers (error.code) and the ones the form itself raises,
+  // mapped to the customer's language. Anything unknown falls back to the
+  // generic "could not register" message — never a raw server text.
+  const INTAKE_ERROR_KEYS = {
+    CAPTCHA_REQUIRED: 'error.code.captcha',
+    CAPTCHA_EXPIRED: 'error.code.captcha',
+    CAPTCHA_FAILED: 'error.code.captcha',
+    UNDERAGE: 'error.menor_edad',
+    VALIDATION_FAILED: 'error.code.validation',
+    TOO_LARGE: 'error.code.too_large',
+    RATE_LIMITED: 'error.code.rate_limited',
+    TIMEOUT: 'error.code.timeout',
+    NETWORK: 'error.code.network',
+    INTAKE_DISABLED: 'error.code.unavailable',
+    UNAUTHORIZED: 'error.code.unavailable',
+    INTAKE_FAILED: 'error.code.failed',
+  };
+  function intakeErrorMessage(err) {
+    const code = err && err.intakeCode;
+    if (!code) {
+      // Raised by the form itself before sending (e.g. the captcha box):
+      // already worded for the customer.
+      return (err && err.message) || t('error.code.failed') || t('error.submit');
+    }
+    const key = INTAKE_ERROR_KEYS[code] || 'error.code.failed';
+    return t(key, { edad: EDAD_MINIMA }) || t('error.code.failed') || t('error.submit') ||
+      'No pudimos registrar su solicitud; sus datos siguen guardados. Intente de nuevo o llame al +5999 526 8480.';
   }
 
   // Master switch: si está en false la verificación de email se vuelve
@@ -465,6 +533,51 @@
       'Debe tener 18 años o más para solicitar un préstamo. Revise su fecha de nacimiento.';
   }
 
+  // La fecha de nacimiento que leyó el OCR de la cédula (ISO), o ''. Se mira
+  // apenas vuelve el OCR, en el paso 2: antes la edad se revisaba recién en el
+  // paso 4, después de subir unos 13 documentos (gauntlet r13, formulario#2).
+  // El API rechaza igual si CUALQUIERA de las dos fechas (escrita o de la
+  // cédula) dice menor, así que bloquear aquí no es más estricto que el servidor.
+  function fechaNacimientoCedula() {
+    let d = ocrResults.doc_cedula;
+    if (Array.isArray(d)) d = d[0];
+    const f = d && typeof d === 'object' ? String(d.fecha_nacimiento || '').trim() : '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : '';
+  }
+  function msgMenorSegunCedula() {
+    return t('error.menor_edad_cedula', { edad: EDAD_MINIMA }) ||
+      ('Según su cédula, usted tiene menos de ' + EDAD_MINIMA + ' años. Para solicitar un préstamo debe tener ' + EDAD_MINIMA + ' años o más.');
+  }
+
+  // ===== ANTIGÜEDAD MÍNIMA (1 año con el empleador actual) =====
+  // Requisito de los Términos (cláusula 3): al menos un año de empleo con
+  // contrato fijo o temporal, o una pensión vigente (Leonard 19-nov-2026:
+  // los pensionados SÍ son elegibles). El formulario nunca preguntaba la
+  // antigüedad, así que alguien con 8 meses subía todos sus documentos para
+  // recibir días después un rechazo previsible (gauntlet r13, formulario#2).
+  // Los pensionados no tienen empleador: el campo no se les pide.
+  const ANTIGUEDAD_MINIMA_MESES = 12;
+  // La fecha de ingreso más reciente que ya cumple la antigüedad hoy (en
+  // Curaçao). Un día que no existe en el mes de destino (31 → 30, 29-feb)
+  // pasa al último día de ese mes.
+  function fechaIngresoMaxima() {
+    const [y, m, d] = hoyEnCuracao().split('-').map(Number);
+    const total = y * 12 + (m - 1) - ANTIGUEDAD_MINIMA_MESES;
+    const yy = Math.floor(total / 12);
+    const mm = total % 12 + 1;
+    const ultimo = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+    const dd = Math.min(d, ultimo);
+    return String(yy).padStart(4, '0') + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+  }
+  function antiguedadInsuficiente(fechaIso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaIso || '')) return false;
+    return fechaIso > fechaIngresoMaxima();
+  }
+  function msgAntiguedad() {
+    return t('error.antiguedad', { meses: ANTIGUEDAD_MINIMA_MESES }) ||
+      'Para solicitar un préstamo necesita al menos 1 año con su empleador actual (o una pensión vigente). Revise la fecha de ingreso a su empleo.';
+  }
+
   function validateStep(n) {
     // TEMPORAL: bypass total mientras Leonard revisa el form.
     if (BYPASS_STEP_VALIDATION) {
@@ -680,6 +793,22 @@
           'Verifique su celular antes de continuar (clic en "Verificar").');
       }
     }
+    // Antigüedad: menos de 12 meses con el empleador actual no avanza.
+    const ingresoEl = step.querySelector('[name="fecha_ingreso_empleo"]');
+    if (ingresoEl) {
+      ingresoEl.max = hoyEnCuracao();
+      const tipoIngreso = ($('[name="tipo_empleado"]') || {}).value || '';
+      if (tipoIngreso && tipoIngreso !== 'pensionado' && ingresoEl.value &&
+          antiguedadInsuficiente(ingresoEl.value)) {
+        fail(ingresoEl, msgAntiguedad());
+      }
+    }
+    // Menor según la cédula: se sabe apenas vuelve el OCR (paso 2).
+    const cedulaInput = step.querySelector('input[type="file"][name="doc_cedula"]');
+    if (cedulaInput) {
+      const nacCed = fechaNacimientoCedula();
+      if (nacCed && esMenorDeEdad(nacCed)) fail(cedulaInput, msgMenorSegunCedula(), 'doc_cedula_edad');
+    }
     // Menor de edad: no se avanza. Se recalcula el `max` por si la página
     // quedó abierta desde ayer.
     const nacEl = step.querySelector('[name="fecha_nacimiento"]');
@@ -761,6 +890,13 @@
     // confirmed; isEmailVerified still compares it with the field.
     data._emailVerifiedFor = emailVerifiedFor || undefined;
     data._phoneVerifiedFor = phoneVerifiedFor || undefined;
+    // And WHEN: the server only accepts a code confirmed in the last 24 h
+    // (VERIFICATION_VALID_HOURS), so a draft resumed after that must ask for
+    // a new code instead of showing "verified" (gauntlet r13, formulario#4).
+    data._emailVerifiedAt = emailVerifiedFor && emailVerifiedAt ? emailVerifiedAt : undefined;
+    data._phoneVerifiedAt = phoneVerifiedFor && phoneVerifiedAt ? phoneVerifiedAt : undefined;
+    // Kept only once a send was attempted (getSubmissionId): see submitToV2.
+    data._submissionId = _submissionIdMemo || undefined;
     // The session id goes with the draft: the codes above were confirmed under
     // it, and the intake now checks that the verification belongs to the
     // session that submits. A reload that drew a fresh id would keep the
@@ -808,8 +944,9 @@
 
   function clearDraft() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-    // A new application on this device is a new session.
+    // A new application on this device is a new session, and a new submission.
     _trackingIdMemo = '';
+    _submissionIdMemo = '';
     // The documents go with the answers: after Submit nothing of the
     // application should be left on the device.
     borradorCerrado = true;
@@ -1082,6 +1219,20 @@
           freqSel.removeAttribute('required');
           freqSel.value = ''; // no contaminar submit
         }
+      }
+    }
+
+    // Fecha de ingreso al empleo: sólo para quien tiene empleador (fijo o
+    // contrato). Un pensionado no la tiene; sin tipo elegido todavía, tampoco
+    // se pide (el tipo ya es obligatorio).
+    const ingresoField = $('#fechaIngresoField');
+    if (ingresoField) {
+      const conEmpleador = tipoSel.value === 'fijo' || tipoSel.value === 'contrato';
+      ingresoField.style.display = conEmpleador ? '' : 'none';
+      const ingresoEl = ingresoField.querySelector('[name="fecha_ingreso_empleo"]');
+      if (ingresoEl) {
+        if (conEmpleador) ingresoEl.setAttribute('required', '');
+        else ingresoEl.removeAttribute('required');
       }
     }
 
@@ -2409,6 +2560,23 @@
       }
       // Auto-fill solo desde el PRIMER archivo (los demás se mandan al backend)
       const filled = (idx === 0) ? applyOcrAutoFill(docType, result.data) : [];
+      // Cédula de un menor: se dice YA, no en el paso 4 (formulario#2).
+      if (docType === 'cedula' && idx === 0) {
+        const nacCed = fechaNacimientoCedula();
+        if (nacCed && esMenorDeEdad(nacCed)) {
+          setOcrStatus(container, '⚠️ ' + msgMenorSegunCedula(), 'warn');
+          showErrors([msgMenorSegunCedula()]);
+          saveDraft();
+          return;
+        }
+      }
+      if (idx === 0 && tipoEmpleoNoReconocido) {
+        const aviso = container.querySelector('.tipo-empleo-warn') || document.createElement('div');
+        aviso.className = 'tipo-empleo-warn period-mismatch-warn';
+        aviso.textContent = '⚠️ ' + (t('ocr.tipo_empleo_otro') ||
+          'Su carta de trabajo indica otro tipo de empleo. Verifique el tipo de empleo que eligió en el paso 2.');
+        if (!aviso.parentNode) container.appendChild(aviso);
+      }
       if (chk.expired) {
         setOcrStatus(
           container,
@@ -2436,6 +2604,9 @@
     }
   }
 
+  // La carta dijo un tipo de empleo que el formulario no ofrece
+  // (independiente / otro): se avisa en vez de vaciar el campo.
+  let tipoEmpleoNoReconocido = false;
   function applyOcrAutoFill(docType, data) {
     // id_adicional no llena form fields, solo muestra preview readonly
     if (docType === 'id_adicional') {
@@ -2448,19 +2619,34 @@
     }
     const map = OCR_FIELD_MAP[docType] || {};
     const filledLabels = [];
+    tipoEmpleoNoReconocido = false;
     Object.keys(map).forEach(srcKey => {
       const targetName = map[srcKey];
       let val = data[srcKey];
       if (val === null || val === undefined || val === '') return;
       const field = $('[name="' + targetName + '"]');
       if (!field) return;
-      // Mapeo especial para tipo_empleado (carta usa fijo|temporal|independiente; form usa fijo|contrato|pensionado|otro)
+      // Mapeo especial para tipo_empleado: la carta devuelve
+      // fijo|temporal|independiente|otro y el select sólo tiene
+      // fijo|contrato|pensionado. Antes 'independiente'/'otro' se mapeaba a
+      // 'otro', que no existe en el select: el campo quedaba en blanco y
+      // updatePensionadoMode borraba la frecuencia y los casilleros de
+      // payslips ya adjuntados (gauntlet r13, formulario#8). Ahora, si la
+      // carta no dice algo que el select tenga, NO se toca el campo y se avisa.
       if (targetName === 'tipo_empleado') {
         const lower = String(val).toLowerCase();
-        if (lower.includes('pension') || lower.includes('jubilad') || lower.includes('penshon')) val = 'pensionado';
-        else if (lower.includes('fij') || lower.includes('perman') || lower.includes('indefin')) val = 'fijo';
-        else if (lower.includes('tempor') || lower.includes('contrat')) val = 'contrato';
-        else val = 'otro';
+        let mapped = null;
+        if (lower.includes('pension') || lower.includes('jubilad') || lower.includes('penshon')) mapped = 'pensionado';
+        else if (lower.includes('fij') || lower.includes('perman') || lower.includes('indefin')) mapped = 'fijo';
+        else if (lower.includes('tempor') || lower.includes('contrat')) mapped = 'contrato';
+        if (!mapped || !field.querySelector('option[value="' + mapped + '"]')) {
+          tipoEmpleoNoReconocido = true;
+          return;
+        }
+        // Ya es lo que eligió la persona: nada que cambiar (y sin volver a
+        // dibujar los casilleros).
+        if (field.value === mapped) return;
+        val = mapped;
       }
       // Cuando se sube un doc nuevo, OCR siempre sobrescribe (el usuario espera ver
       // los datos del documento que acaba de subir). Si quiere corregir, lo hace después.
@@ -2626,6 +2812,9 @@
         rowAlways(t('step3.fecha_nac') || 'Nasementu', fmtFecha(get('fecha_nacimiento'))) +
         rowAlways(t('step3.tipo_empleado') || 'Tipo empleo',
                   (t('step3.tipo_empleado_' + (get('tipo_empleado') || 'otro')) || get('tipo_empleado') || '—')) +
+        (get('tipo_empleado') === 'pensionado' ? '' :
+          rowAlways(t('step1.fecha_ingreso') ? t('step1.fecha_ingreso').replace(/\s*\*\s*$/, '') : 'Fecha di drenta',
+                    fmtFecha(get('fecha_ingreso_empleo')))) +
         rowAlways(t('step3.profesion') || 'Profesión', get('profesion')) +
         rowAlways(
           (get('tipo_empleado') === 'pensionado'
@@ -2813,6 +3002,19 @@
       showErrors([t('error.terms') || 'Debes aseptá e términos i kondishon.']);
       return;
     }
+    // A verification that aged out while the page stayed open: ask for a new
+    // code rather than send a contact the server will not count as verified.
+    const emailSubmit = $('[name="email"]');
+    const phoneSubmit = $('[name="telefono_movil"]');
+    const emailVencido = EMAIL_VERIFY_REQUIRED && emailSubmit && emailSubmit.value && emailVerifiedFor && !isEmailVerified();
+    const phoneVencido = PHONE_VERIFY_REQUIRED && phoneSubmit && phoneSubmit.value && phoneVerifiedFor && !isPhoneVerified();
+    if (emailVencido || phoneVencido) {
+      if (emailVencido) resetEmailVerification();
+      if (phoneVencido) resetPhoneVerification();
+      showErrors([t('error.verify_expired') ||
+        'La verificación de su email o celular venció. Vuelva al paso 4 y pida un código nuevo.']);
+      return;
+    }
 
     // Last guard on the weight (each selection is already checked when it is
     // attached; this covers anything that slipped past, e.g. an old draft).
@@ -2841,11 +3043,15 @@
           $('#aplicacionIdMsg').textContent = result.applicationNumber ? ref : '#' + ref;
           const box = $('#doneIdBox'); if (box) box.hidden = false;
         }
-        // El API manda el acuse a este correo (el que se verificó en el paso 4).
+        // El API manda el acuse SÓLO si el email quedó verificado en esta
+        // sesión (dentro de su ventana de 24 h), y ahora lo dice en la
+        // respuesta. La pantalla promete el correo únicamente en ese caso:
+        // antes lo prometía siempre, y un borrador retomado al otro día no
+        // recibía nada (gauntlet r13, formulario#4).
         const emailEl = $('[name="email"]');
         const email = emailEl && emailEl.value ? emailEl.value.trim() : '';
         const $mail = $('#doneEmailMsg');
-        if ($mail && email) {
+        if ($mail && email && result.emailVerified === true) {
           $mail.textContent = t('done.email_sent', { email: email }) ||
             ('Le enviaremos una confirmación a ' + email + '.');
           $mail.hidden = false;
@@ -2857,8 +3063,10 @@
         // uno nuevo ANTES de devolverle el boton, para que el reintento no
         // vuelva a fallar por la misma razon.
         const seReseteo = resetCaptcha();
-        const avisos = [(t('error.submit') || 'Hubo un problema al enviar.') + ' (' + err.message + ')'];
-        if (seReseteo) {
+        const avisos = [intakeErrorMessage(err)];
+        // El mensaje del captcha ya pide marcar la casilla: no repetirlo.
+        const esCaptcha = err && /^CAPTCHA_/.test(err.intakeCode || '');
+        if (seReseteo && !esCaptcha) {
           avisos.push(t('error.captcha_retry') ||
             'Marque de nuevo la casilla "No soy un robot" antes de volver a enviar.');
         }
@@ -3024,6 +3232,7 @@
   // emailVerifiedFor guarda el email exacto que se verificó; si lo cambia, se
   // invalida y tiene que verificar de nuevo.
   let emailVerifiedFor = null;
+  let emailVerifiedAt = null;
   let resendCooldownTimer = null;
 
   // Lista corta de typos comunes en dominios populares.
@@ -3053,7 +3262,8 @@
     if (!EMAIL_VERIFY_REQUIRED) return true;
     const emailInput = $('[name="email"]');
     if (!emailInput) return true;
-    return emailVerifiedFor && emailInput.value.trim().toLowerCase() === emailVerifiedFor;
+    return !!emailVerifiedFor && verificacionVigente(emailVerifiedAt) &&
+      emailInput.value.trim().toLowerCase() === emailVerifiedFor;
   }
 
   function setVerifyStatus(msg, kind) {
@@ -3169,8 +3379,9 @@
     }
   }
 
-  function marcarEmailVerificado(email) {
+  function marcarEmailVerificado(email, at) {
     emailVerifiedFor = email;
+    emailVerifiedAt = at || new Date().toISOString();
     const panel = $('#emailVerifyPanel');
     const success = $('#emailVerifySuccess');
     const verifyBtn = $('#emailVerifyBtn');
@@ -3236,13 +3447,15 @@
 
   // ===== PHONE (WhatsApp) VERIFICATION ===== (espejo del email)
   let phoneVerifiedFor = null;
+  let phoneVerifiedAt = null;
   let phoneResendTimer = null;
 
   function isPhoneVerified() {
     if (!PHONE_VERIFY_REQUIRED) return true;
     const phoneInput = $('[name="telefono_movil"]');
     if (!phoneInput) return true;
-    return phoneVerifiedFor && phoneInput.value.trim() === phoneVerifiedFor;
+    return !!phoneVerifiedFor && verificacionVigente(phoneVerifiedAt) &&
+      phoneInput.value.trim() === phoneVerifiedFor;
   }
 
   function setPhoneStatus(msg, kind) {
@@ -3358,8 +3571,9 @@
     }
   }
 
-  function marcarTelefonoVerificado(phone) {
+  function marcarTelefonoVerificado(phone, at) {
     phoneVerifiedFor = phone;
+    phoneVerifiedAt = at || new Date().toISOString();
     const panel = $('#phoneVerifyPanel');
     const success = $('#phoneVerifySuccess');
     const verifyBtn = $('#phoneVerifyBtn');
@@ -3375,20 +3589,34 @@
   // A reload keeps a confirmed e-mail / mobile confirmed, but only while the
   // field still holds that same value (the same rule isEmailVerified and
   // isPhoneVerified apply on every check).
+  // The server counts a confirmed code for 24 h. The form stops trusting it an
+  // hour earlier, so a customer who submits right at the edge is not told
+  // "verified" by the screen and "unverified" by the server.
+  const VERIFICACION_VALIDA_HORAS = 23;
+  function verificacionVigente(at) {
+    const ms = Date.parse(at || '');
+    if (!isFinite(ms)) return false;
+    const edad = Date.now() - ms;
+    return edad >= -5 * 60 * 1000 && edad < VERIFICACION_VALIDA_HORAS * 3600 * 1000;
+  }
+
   function restaurarVerificaciones(draft) {
     if (!draft) return;
     // A draft saved before the session id was kept (18-nov-2026) cannot say
     // under which session its codes were confirmed: the customer confirms
     // them again rather than submit contacts the server will not accept.
     if (!draft._trackingId) return;
+    // Only a verification still inside the window the server accepts. A draft
+    // without the time (saved before 19-nov-2026) cannot prove it: new code.
     const emailInput = $('[name="email"]');
-    if (draft._emailVerifiedFor && emailInput &&
+    if (draft._emailVerifiedFor && emailInput && verificacionVigente(draft._emailVerifiedAt) &&
         emailInput.value.trim().toLowerCase() === draft._emailVerifiedFor) {
-      marcarEmailVerificado(draft._emailVerifiedFor);
+      marcarEmailVerificado(draft._emailVerifiedFor, draft._emailVerifiedAt);
     }
     const phoneInput = $('[name="telefono_movil"]');
-    if (draft._phoneVerifiedFor && phoneInput && phoneInput.value.trim() === draft._phoneVerifiedFor) {
-      marcarTelefonoVerificado(draft._phoneVerifiedFor);
+    if (draft._phoneVerifiedFor && phoneInput && verificacionVigente(draft._phoneVerifiedAt) &&
+        phoneInput.value.trim() === draft._phoneVerifiedFor) {
+      marcarTelefonoVerificado(draft._phoneVerifiedFor, draft._phoneVerifiedAt);
     }
   }
 
@@ -3425,6 +3653,23 @@
 
   // ===== EVENT WIRING =====
   // ===== TRACKING (progreso del formulario, para el dashboard de aplicaciones) =====
+  // Idempotency key of THIS application (see submitToV2). Same lifetime as
+  // the draft: kept in it, dropped by clearDraft after a successful send.
+  let _submissionIdMemo = '';
+  function adoptarSubmissionId(id) {
+    if (typeof id === 'string' && /^[A-Za-z0-9-]{8,100}$/.test(id)) _submissionIdMemo = id;
+  }
+  function getSubmissionId() {
+    if (_submissionIdMemo) return _submissionIdMemo;
+    _submissionIdMemo = (window.crypto && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          const r = Math.random() * 16 | 0;
+          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    return _submissionIdMemo;
+  }
+
   let _trackingIdMemo = '';
   function adoptarTrackingId(id) {
     if (typeof id === 'string' && /^[A-Za-z0-9-]{8,100}$/.test(id)) _trackingIdMemo = id;
@@ -3596,6 +3841,7 @@
     const draft = loadDraft();
     // Resume the draft's session (see saveDraft) before anything asks for it.
     adoptarTrackingId(draft && draft._trackingId);
+    adoptarSubmissionId(draft && draft._submissionId);
     const browserLang = (navigator.language || 'pap').toLowerCase().slice(0, 2);
     let urlLang = null;
     try { urlLang = new URLSearchParams(location.search).get('lang'); } catch (e) {}

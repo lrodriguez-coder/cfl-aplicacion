@@ -47,6 +47,20 @@
       <h2 data-i18n="step6.title">Bo Fiansa</h2>
       <p class="hint" data-i18n="step6.hint">E kuota ta inkluí kapital, interes i seguro di bida. E plan di spar ta opshonal.</p>
 
+      <!--
+        Requisitos ANTES de pedir nada (gauntlet r13, formulario#2): los mismos
+        de la cláusula 3 de los Términos. Antes se decían sólo en los T&C y la
+        edad se revisaba recién en el paso 4. Pensionados: elegibles (Leonard
+        19-nov-2026).
+      -->
+      <div class="intro-note" id="requisitosNote">
+        <p class="intro-note-title" data-i18n="intro.req_title">✅ Rekisitonan pa aplika</p>
+        <ul class="intro-note-list">
+          <li data-i18n="intro.req_age">Bo tin 18 aña òf mas.</li>
+          <li data-i18n="intro.req_employment">Bo ta traha por lo ménos 1 aña kaba ku bo empleador aktual (kontrato fijo òf temporal), òf bo tin un penshon vigente.</li>
+        </ul>
+      </div>
+
       <div class="field">
         <label for="f_monto_solicitado" data-i18n="step6.monto">Monto ku bo desea presta (XCG) *</label>
         <input type="number" id="f_monto_solicitado" name="monto_solicitado" required min="1000" max="5000" step="500" value="2000" inputmode="numeric" aria-describedby="montoHint">
@@ -138,6 +152,14 @@
           <option value="pensionado" data-i18n="step3.tipo_empleado_pensionado">Pensionado</option>
         </select>
         <p class="field-hint" data-i18n="step1.tipo_empleado_hint">Si bo ta pensionado, payslips ta opshonal i bo por usa karta di penshon en su lugar.</p>
+      </div>
+
+      <!-- Fecha de ingreso: visible y obligatoria sólo con empleador (fijo o
+           contrato). Menos de 12 meses no avanza (cláusula 3 de los Términos). -->
+      <div class="field" id="fechaIngresoField" style="display:none;">
+        <label for="f_fecha_ingreso_empleo" data-i18n="step1.fecha_ingreso">Fecha di drenta na bo trabou aktual *</label>
+        <input id="f_fecha_ingreso_empleo" type="date" name="fecha_ingreso_empleo">
+        <p class="field-hint" data-i18n="step1.fecha_ingreso_hint">E dia ku bo a kuminsá traha ku bo empleador aktual. Bo mester tin por lo ménos 1 aña ku nan.</p>
       </div>
 
       <!-- Frecuencia salario: visible solo si tipo_empleado es fijo o contrato -->
@@ -633,7 +655,7 @@
           <h3 data-i18n="done.next_title">Kiko ta sigui?</h3>
           <ol>
             <li data-i18n="done.next_1">Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.</li>
-            <li data-i18n="done.next_2">Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3–5 dia.</li>
+            <li data-i18n="done.next_2">Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia laboral.</li>
             <li data-i18n="done.next_3">Si e aplikashon wòrdu aprobá, nos ta manda bo e oferta ku e kuota definitivo i nos ta fiha un sita pa firma.</li>
           </ol>
           <p class="field-hint" data-i18n="done.next_contact">Pregunta? Yama nos na +5999 526 8480.</p>

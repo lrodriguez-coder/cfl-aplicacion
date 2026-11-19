@@ -55,7 +55,20 @@
     "menor_edad": "You must be {edad} or older to apply for a loan. Please check your date of birth.",
     "file_too_big": "{doc}: the file is {mb} MB and the limit is {max} MB per document. If it is a scanned PDF, scan it at a lower resolution or upload a photo of the document instead.",
     "total_too_big": "{doc}: with this file your documents would add up to {mb} MB and the limit per application is {max} MB. Remove an optional document or upload a lighter version (a photo instead of a scanned PDF).",
-    "total_too_big_submit": "Your documents add up to {mb} MB and the limit per application is {max} MB. Go back to steps 2 and 3 and remove an optional document or upload a lighter version."
+    "total_too_big_submit": "Your documents add up to {mb} MB and the limit per application is {max} MB. Go back to steps 2 and 3 and remove an optional document or upload a lighter version.",
+    "antiguedad": "To apply for a loan you need at least 1 year with your current employer (or a current pension). Based on the date you entered, you do not have that year yet.",
+    "menor_edad_cedula": "According to your ID card you are under {edad}. You must be {edad} or older to apply for a loan.",
+    "verify_expired": "The verification of your e-mail or mobile number has expired. Please go back to step 4 and request a new code.",
+    "code": {
+      "captcha": "The \"I am not a robot\" check has expired. Please tick it again and submit once more.",
+      "validation": "Some information is missing from your application. Please review the previous steps and submit again.",
+      "too_large": "The documents are too large to send together. Remove an optional document or upload a lighter version.",
+      "rate_limited": "We received many attempts in a row. Please wait a few minutes and submit again; your information is still saved.",
+      "timeout": "The connection took too long and we cannot tell whether your application arrived. Your information is still saved: please submit again; if it already arrived, it will not be duplicated.",
+      "network": "We could not connect. Please check your internet connection and submit again; your information is still saved and the application will not be duplicated.",
+      "unavailable": "Online applications are not available right now. Please call us on +5999 526 8480.",
+      "failed": "We could not register your application; your information is still saved. Please try again or call us on +5999 526 8480."
+    }
   },
   "intro": {
     "title": "📋 Before you start",
@@ -65,7 +78,10 @@
     "doc_payslips": "Your last 3 payslips, one per month (if you are paid every two weeks, 6: one per pay period) — if you are a pensioner, your pension letter (optional)",
     "doc_bancos": "Your last 3 bank statements, one per month, as a PDF downloaded from online banking",
     "doc_carta": "Employment letter (not needed if you are a pensioner)",
-    "doc_opcionales": "Optional: passport or driver's license, proof of address (Aqualectra, phone bill, Kranshi extract or residence permit)"
+    "doc_opcionales": "Optional: passport or driver's license, proof of address (Aqualectra, phone bill, Kranshi extract or residence permit)",
+    "req_title": "✅ Requirements to apply",
+    "req_age": "You are 18 or older.",
+    "req_employment": "You have worked at least 1 year for your current employer (permanent or temporary contract), or you receive a current pension."
   },
   "step1": {
     "title": "Identification",
@@ -76,7 +92,9 @@
     "frecuencia_salario": "How often do you get paid? *",
     "frecuencia_mensual": "Every month (monthly)",
     "frecuencia_quincenal": "Every 2 weeks (biweekly)",
-    "frecuencia_hint": "This determines how many payslips you must upload (3 if monthly, 6 if biweekly)."
+    "frecuencia_hint": "This determines how many payslips you must upload (3 if monthly, 6 if biweekly).",
+    "fecha_ingreso": "Start date at your current job *",
+    "fecha_ingreso_hint": "The day you started working for your current employer. You need at least 1 year with them."
   },
   "step2": {
     "title": "Financial Documents",
@@ -279,7 +297,7 @@
     "email_sent": "We will send a confirmation to {email}.",
     "next_title": "What happens next?",
     "next_1": "A CFL officer reviews your application and your documents.",
-    "next_2": "We will contact you by WhatsApp or phone within 3 to 5 days.",
+    "next_2": "We will contact you by WhatsApp or phone within 3 to 5 business days.",
     "next_3": "If your application is approved, we will send you the offer with the final instalment and give you an appointment to sign.",
     "next_contact": "Questions? Call us on +5999 526 8480."
   },
@@ -306,7 +324,8 @@
     "lbl_estado_civil": "Marital status",
     "lbl_pais_emisor": "Issuing country",
     "cedula_header": "ID card details (detected automatically; this is what will be saved)",
-    "auto_detected": "detected automatically"
+    "auto_detected": "detected automatically",
+    "tipo_empleo_otro": "Your employment letter shows a different type of employment. Please check the employment type you chose in step 2."
   },
   "tipo": {
     "cedula": "an ID card",

@@ -55,7 +55,20 @@
     "menor_edad": "U moet {edad} jaar of ouder zijn om een lening aan te vragen. Controleer uw geboortedatum.",
     "file_too_big": "{doc}: het bestand is {mb} MB en het maximum is {max} MB per document. Is het een gescande pdf, scan het dan met een lagere resolutie of upload een foto van het document.",
     "total_too_big": "{doc}: met dit bestand komen uw documenten op {mb} MB en het maximum per aanvraag is {max} MB. Verwijder een optioneel document of upload een lichtere versie (een foto in plaats van een gescande pdf).",
-    "total_too_big_submit": "Uw documenten komen op {mb} MB en het maximum per aanvraag is {max} MB. Ga terug naar stap 2 en 3 en verwijder een optioneel document of upload een lichtere versie."
+    "total_too_big_submit": "Uw documenten komen op {mb} MB en het maximum per aanvraag is {max} MB. Ga terug naar stap 2 en 3 en verwijder een optioneel document of upload een lichtere versie.",
+    "antiguedad": "Om een lening aan te vragen moet u ten minste 1 jaar bij uw huidige werkgever werken (of een lopend pensioen hebben). Volgens de datum die u opgaf, is dat jaar nog niet om.",
+    "menor_edad_cedula": "Volgens uw identiteitskaart bent u jonger dan {edad} jaar. U moet {edad} jaar of ouder zijn om een lening aan te vragen.",
+    "verify_expired": "De verificatie van uw e-mail of mobiele nummer is verlopen. Ga terug naar stap 4 en vraag een nieuwe code aan.",
+    "code": {
+      "captcha": "De controle \"Ik ben geen robot\" is verlopen. Vink het vakje opnieuw aan en verstuur opnieuw.",
+      "validation": "Er ontbreken gegevens in uw aanvraag. Controleer de vorige stappen en verstuur opnieuw.",
+      "too_large": "De documenten zijn te groot om samen te versturen. Verwijder een optioneel document of upload een lichtere versie.",
+      "rate_limited": "Wij ontvingen veel pogingen achter elkaar. Wacht enkele minuten en verstuur opnieuw; uw gegevens blijven bewaard.",
+      "timeout": "De verbinding duurde te lang en wij weten niet of uw aanvraag is aangekomen. Uw gegevens blijven bewaard: verstuur opnieuw; als hij al is aangekomen, wordt hij niet dubbel geregistreerd.",
+      "network": "Wij konden geen verbinding maken. Controleer uw internetverbinding en verstuur opnieuw; uw gegevens blijven bewaard en de aanvraag wordt niet dubbel geregistreerd.",
+      "unavailable": "Online aanvragen is op dit moment niet mogelijk. Bel ons op +5999 526 8480.",
+      "failed": "Wij konden uw aanvraag niet registreren; uw gegevens blijven bewaard. Probeer het opnieuw of bel ons op +5999 526 8480."
+    }
   },
   "intro": {
     "title": "📋 Voordat u begint",
@@ -65,7 +78,10 @@
     "doc_payslips": "Uw laatste 3 loonstroken, één per maand (bij uitbetaling per halve maand 6: één per periode) — als u gepensioneerd bent, uw pensioenbrief (optioneel)",
     "doc_bancos": "Uw laatste 3 bankafschriften, één per maand, als pdf gedownload via internetbankieren",
     "doc_carta": "Werkgeversverklaring (niet nodig als u gepensioneerd bent)",
-    "doc_opcionales": "Optioneel: paspoort of rijbewijs, bewijs van adres (Aqualectra, telefoonrekening, uittreksel van het Kranshi of verblijfsvergunning)"
+    "doc_opcionales": "Optioneel: paspoort of rijbewijs, bewijs van adres (Aqualectra, telefoonrekening, uittreksel van het Kranshi of verblijfsvergunning)",
+    "req_title": "✅ Voorwaarden om aan te vragen",
+    "req_age": "U bent 18 jaar of ouder.",
+    "req_employment": "U werkt ten minste 1 jaar bij uw huidige werkgever (vast of tijdelijk contract), of u ontvangt een lopend pensioen."
   },
   "step1": {
     "title": "Identificatie",
@@ -76,7 +92,9 @@
     "frecuencia_salario": "Hoe vaak ontvangt u salaris? *",
     "frecuencia_mensual": "Elke maand (maandelijks)",
     "frecuencia_quincenal": "Elke 2 weken (tweewekelijks)",
-    "frecuencia_hint": "Hiermee bepalen we hoeveel loonstroken u moet uploaden (3 bij maandelijks, 6 bij tweewekelijks)."
+    "frecuencia_hint": "Hiermee bepalen we hoeveel loonstroken u moet uploaden (3 bij maandelijks, 6 bij tweewekelijks).",
+    "fecha_ingreso": "Datum van indiensttreding bij uw huidige werkgever *",
+    "fecha_ingreso_hint": "De dag waarop u bij uw huidige werkgever bent begonnen. U moet er ten minste 1 jaar werken."
   },
   "step2": {
     "title": "Financiële documenten",
@@ -279,7 +297,7 @@
     "email_sent": "We sturen een bevestiging naar {email}.",
     "next_title": "Wat gebeurt er nu?",
     "next_1": "Een medewerker van CFL beoordeelt uw aanvraag en uw documenten.",
-    "next_2": "We nemen binnen 3 tot 5 dagen contact met u op via WhatsApp of telefoon.",
+    "next_2": "Wij nemen binnen 3 tot 5 werkdagen contact met u op via WhatsApp of telefoon.",
     "next_3": "Als uw aanvraag wordt goedgekeurd, sturen we u het aanbod met de definitieve termijn en maken we een afspraak om te tekenen.",
     "next_contact": "Vragen? Bel ons op +5999 526 8480."
   },
@@ -306,7 +324,8 @@
     "lbl_estado_civil": "Burgerlijke staat",
     "lbl_pais_emisor": "Land van afgifte",
     "cedula_header": "Gegevens van de identiteitskaart (automatisch herkend; dit wordt opgeslagen)",
-    "auto_detected": "automatisch herkend"
+    "auto_detected": "automatisch herkend",
+    "tipo_empleo_otro": "Uw werkgeversverklaring vermeldt een ander soort dienstverband. Controleer het soort dienstverband dat u in stap 2 koos."
   },
   "tipo": {
     "cedula": "een identiteitskaart",
