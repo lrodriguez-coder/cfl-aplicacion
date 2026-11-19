@@ -277,6 +277,8 @@
     "id_label": "Su número de solicitud",
     "id_hint": "Guarde este número y menciónelo cuando nos contacte.",
     "email_sent": "Le enviaremos una confirmación a {email}.",
+    "status_link": "Consulte el estado de su solicitud y envíe un documento que falte",
+    "status_link_hint": "Guarde este enlace: es personal y vale 30 días.",
     "next_title": "¿Qué sigue?",
     "next_1": "Un oficial de CFL revisa su solicitud y sus documentos.",
     "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días.",

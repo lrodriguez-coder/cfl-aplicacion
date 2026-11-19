@@ -277,6 +277,8 @@
     "id_label": "Uw aanvraagnummer",
     "id_hint": "Bewaar dit nummer en vermeld het wanneer u contact met ons opneemt.",
     "email_sent": "We sturen een bevestiging naar {email}.",
+    "status_link": "Bekijk de status van uw aanvraag en stuur een ontbrekend document",
+    "status_link_hint": "Bewaar deze link: hij is persoonlijk en 30 dagen geldig.",
     "next_title": "Wat gebeurt er nu?",
     "next_1": "Een medewerker van CFL beoordeelt uw aanvraag en uw documenten.",
     "next_2": "We nemen binnen 3 tot 5 dagen contact met u op via WhatsApp of telefoon.",

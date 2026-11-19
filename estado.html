@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pap" data-lang="pap">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Curaçao Fast Loans — Estado di bo aplikashon</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Only what styles.css does not already have. */
+  .st-card { background: var(--cfl-surface); border: 1px solid var(--cfl-border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm); margin: 16px 0; }
+  .st-stage { font-size: 1.15rem; font-weight: 700; color: var(--cfl-primary); margin: 4px 0 6px; }
+  .st-detail { color: var(--cfl-text-soft); margin: 0; }
+  .st-doc { border: 1px dashed var(--cfl-border); border-radius: var(--radius-md); padding: 14px; margin-top: 12px; }
+  .st-doc h3 { margin: 0 0 4px; font-size: 1rem; }
+  .st-doc input[type=file] { display: block; margin: 10px 0; max-width: 100%; }
+  .st-msg { margin-top: 8px; font-size: .95rem; }
+  .st-msg.ok { color: var(--cfl-success); }
+  .st-msg.err { color: var(--cfl-error); }
+  .st-steps { list-style: none; padding: 0; margin: 14px 0 0; }
+  .st-steps li { padding: 4px 0 4px 26px; position: relative; color: var(--cfl-text-soft); }
+  .st-steps li::before { content: ''; position: absolute; left: 6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--cfl-border); }
+  .st-steps li.done::before { background: var(--cfl-accent); border-color: var(--cfl-accent); }
+  .st-steps li.now { color: var(--cfl-primary); font-weight: 700; }
+  .st-steps li.now::before { border-color: var(--cfl-primary); background: var(--cfl-primary); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <img src="assets/logo.png" alt="Curaçao Fast Loans" class="logo" onerror="this.src='assets/logo-placeholder.svg'">
+    <div class="hdr-text">
+      <h1>Curaçao Fast Loans</h1>
+      <p class="tagline" id="stTagline">Estado di bo aplikashon</p>
+    </div>
+    <select id="langSwitch" class="lang-switch" aria-label="Language">
+      <option value="pap">Papiamentu</option>
+      <option value="es">Español</option>
+      <option value="en">English</option>
+      <option value="nl">Nederlands</option>
+    </select>
+  </div>
+</header>
+
+<main class="container">
+  <p id="stLoading" class="field-hint">…</p>
+
+  <!-- A link that is wrong, expired or cannot be read. -->
+  <div id="stError" class="st-card" hidden>
+    <p class="st-stage" id="stErrorTitle"></p>
+    <p class="st-detail" id="stErrorBody"></p>
+  </div>
+
+  <div id="stMain" hidden>
+    <div class="st-card">
+      <p id="stHello"></p>
+      <div class="done-id-box">
+        <p class="done-id-label" id="stNumberLabel"></p>
+        <p class="aplicacion-id" id="stNumber"></p>
+      </div>
+      <p class="st-stage" id="stStage"></p>
+      <p class="st-detail" id="stDetail"></p>
+      <ol class="st-steps" id="stSteps"></ol>
+    </div>
+
+    <div class="st-card" id="stDocs" hidden>
+      <p class="st-stage" id="stDocsTitle"></p>
+      <p class="st-detail" id="stDocsHint"></p>
+      <div id="stDocList"></div>
+    </div>
+
+    <p class="field-hint" id="stContact"></p>
+  </div>
+</main>
+
+<script src="estado.js"></script>
+</body>
+</html>
