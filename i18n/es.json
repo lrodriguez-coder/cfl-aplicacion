@@ -17,7 +17,9 @@
     "no": "No"
   },
   "upload": {
-    "remove": "Quitar"
+    "remove": "Quitar",
+    "preparing": "Preparando el documento…",
+    "restored": "Documento guardado en este dispositivo — no hace falta volver a subirlo"
   },
   "error": {
     "fill_required": "Por favor complete todos los campos requeridos.",
@@ -50,7 +52,10 @@
     "step": "debe ser múltiplo de {step}",
     "too_short": "debe tener al menos {n} caracteres",
     "detail_required": "explique brevemente (requerido)",
-    "menor_edad": "Debe tener {edad} años o más para solicitar un préstamo. Revise su fecha de nacimiento."
+    "menor_edad": "Debe tener {edad} años o más para solicitar un préstamo. Revise su fecha de nacimiento.",
+    "file_too_big": "{doc}: el archivo pesa {mb} MB y el máximo es {max} MB por documento. Si es un PDF escaneado, escanéelo con menos resolución o suba una foto del documento.",
+    "total_too_big": "{doc}: con este archivo los documentos sumarían {mb} MB y el máximo por solicitud es {max} MB. Quite algún documento opcional o suba una versión más liviana (una foto en lugar de un PDF escaneado).",
+    "total_too_big_submit": "Los documentos suman {mb} MB y el máximo por solicitud es {max} MB. Vuelva a los pasos 2 y 3 y quite algún documento opcional o súbalo en una versión más liviana."
   },
   "intro": {
     "title": "📋 Antes de empezar",

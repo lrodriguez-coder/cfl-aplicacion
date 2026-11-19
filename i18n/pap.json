@@ -17,7 +17,9 @@
     "no": "No"
   },
   "upload": {
-    "remove": "Kita"
+    "remove": "Kita",
+    "preparing": "Preparando e dokumento…",
+    "restored": "Dokumento wardá den e aparato akí — no tin mester di manda’é atrobe"
   },
   "error": {
     "fill_required": "Por fabor kompletá tur fildt rekerí.",
@@ -50,7 +52,10 @@
     "step": "mester ta múltiplo di {step}",
     "too_short": "mester tin por lo ménos {n} karakter",
     "detail_required": "splika kòrtiku (obligatorio)",
-    "menor_edad": "Bo mester tin {edad} aña òf mas pa aplika pa un fiansa. Chèk bo fecha di nasementu."
+    "menor_edad": "Bo mester tin {edad} aña òf mas pa aplika pa un fiansa. Chèk bo fecha di nasementu.",
+    "file_too_big": "{doc}: e archivo ta pisa {mb} MB i e máksimo ta {max} MB pa dokumento. Si e ta un PDF skèn, skèn’é ku ménos resolushon òf manda un potret di e dokumento.",
+    "total_too_big": "{doc}: ku e archivo akí bo dokumentonan lo pisa {mb} MB i e máksimo pa aplikashon ta {max} MB. Kita un dokumento opshonal òf manda un version mas liviano (un potret na lugá di un PDF skèn).",
+    "total_too_big_submit": "Bo dokumentonan ta pisa {mb} MB i e máksimo pa aplikashon ta {max} MB. Bai bèk na paso 2 i 3 i kita un dokumento opshonal òf manda un version mas liviano."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",

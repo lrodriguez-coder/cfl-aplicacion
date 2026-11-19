@@ -38,6 +38,40 @@
   const V2_INTAKE_URL = 'https://api.curloans.com/v1/public/intake';
   // No shared secret needed — reCAPTCHA is the anti-bot gate server-side.
   const V2_INTAKE_SECRET = '';
+  // ===== DOCUMENT WEIGHT =====
+  // Every document travels as base64 inside ONE JSON to the intake, and the
+  // API refuses that request above 32 MB (bodyLimit of /v1/public/intake).
+  // Base64 inflates by 4/3, so 32 MB on the wire is ~24 MB of files; 22 MB
+  // leaves room for the form fields and the OCR results. Without a check here
+  // the customer only learned it at the very last click, as "HTTP 413", after
+  // 20-30 minutes of work (gauntlet round 12).
+  const MB = 1024 * 1024;
+  const MAX_TOTAL_DOC_BYTES = 22 * MB;
+  // Per document: the OCR endpoint reads up to 15 MB (MAX_DECODED_BYTES in
+  // public-ocr.routes.ts) and the intake drops anything over 20 MB WITHOUT
+  // telling anyone. 15 MB keeps every document inside both.
+  const MAX_FILE_BYTES = 15 * MB;
+  // Phone photos (2-5 MB, 4000 px) are shrunk before they are kept. 1600 px
+  // on the long side still reads a cédula or a payslip, and it brings a photo
+  // down to a few hundred KB, which is what makes 10-13 documents fit.
+  const IMAGE_MAX_SIDE_PX = 1600;
+  const IMAGE_JPEG_QUALITY = 0.85;
+  // Below this an image that is already small enough is left untouched.
+  const IMAGE_COMPRESS_MIN_BYTES = 400 * 1024;
+
+  // ===== DRAFT DOCUMENTS (IndexedDB) =====
+  // The form asks for bank statements "downloaded from internet banking": on a
+  // phone that means switching apps, and iOS/Android often discard the tab in
+  // the meantime. The text answers already survived in localStorage, but the
+  // files did not, so the customer came back to Step 1 and had to attach
+  // 10-13 documents again. The files (and what the OCR said about them) now
+  // live in IndexedDB too, and a reload resumes at the same step.
+  // They stay on the device only: nothing reaches the server before Submit.
+  // Because a phone or a computer can be shared, they expire after this many
+  // hours and are erased as soon as the application is submitted.
+  const DRAFT_DB_NAME = 'cfl_aplicacion_borrador';
+  const DRAFT_DOCS_TTL_HOURS = 72;
+
   // Maps the form's file-input base names to the v2 document_type enum.
   function mapDocTypeToV2(inputName) {
     const base = String(inputName || '').replace(/_\d+$/, '');
@@ -246,6 +280,14 @@
   // como estado de banco. Se aceptan documentos DISTINTOS (aqualectra, flow,
   // uittreksel), pero no repetir el mismo archivo.
   const fileHashes = {};
+
+  // Slots whose current file already went through OCR / classification. A
+  // restored draft only re-analyses the ones that were still in flight when
+  // the tab died, so a reload does not pay the OCR again for every document.
+  const docAnalizado = {};
+  // init() restores the draft's documents once; only after that does a
+  // re-render of the dynamic slots put their files back by itself.
+  let restauracionInicialHecha = false;
 
   // ===== DOM REFS =====
   const $form = document.getElementById('appForm');
@@ -707,6 +749,13 @@
     data._step = currentStep;
     data._lang = currentLang;
     data._updated = new Date().toISOString();
+    // Which e-mail / mobile already passed their code. Without this a reload
+    // past Step 4 always sent the customer back there to ask for new codes,
+    // and "resume at the same step" would only work up to Step 4. It is the
+    // same value that is already in the draft, plus the fact that it was
+    // confirmed; isEmailVerified still compares it with the field.
+    data._emailVerifiedFor = emailVerifiedFor || undefined;
+    data._phoneVerifiedFor = phoneVerifiedFor || undefined;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) { /* localStorage full or disabled */ }
@@ -749,6 +798,214 @@
 
   function clearDraft() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    // The documents go with the answers: after Submit nothing of the
+    // application should be left on the device.
+    borradorCerrado = true;
+    return limpiarBorradorDocs();
+  }
+
+  // ===== DRAFT DOCUMENTS (IndexedDB) =====
+  // Two stores: `files` keeps the File objects of each slot (key = input
+  // name) and `meta` keeps what the form learnt about them (OCR, checks,
+  // hashes) under the key 'estado'. Every call degrades to "no draft" when
+  // IndexedDB is missing or refuses (private mode, quota): the form must keep
+  // working exactly as before, only without the resume.
+  let borradorDbPromise = null;
+  // Set once the application is submitted: a late write from an OCR that was
+  // still running must not put the documents back on the device.
+  let borradorCerrado = false;
+  function abrirBorradorDb() {
+    if (borradorDbPromise) return borradorDbPromise;
+    borradorDbPromise = new Promise(resolve => {
+      try {
+        if (!window.indexedDB) return resolve(null);
+        const req = indexedDB.open(DRAFT_DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+          if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta');
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+        req.onblocked = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+    return borradorDbPromise;
+  }
+  // One request in one transaction; resolves with its result, or null on any
+  // failure (never rejects: the draft is a convenience, not a requirement).
+  async function idb(store, mode, fn) {
+    const db = await abrirBorradorDb();
+    if (!db) return null;
+    return new Promise(resolve => {
+      try {
+        const tx = db.transaction(store, mode);
+        const req = fn(tx.objectStore(store));
+        let out = null;
+        if (req) req.onsuccess = () => { out = req.result; };
+        tx.oncomplete = () => resolve(out);
+        tx.onerror = () => resolve(null);
+        tx.onabort = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  // The slot's expected period travels with its files: dynamic slots are
+  // renumbered when the month turns or the salary frequency changes, and a
+  // payslip restored into a slot for ANOTHER month would carry a period check
+  // that no longer applies.
+  function periodoDeSlot(input) {
+    const d = input.dataset || {};
+    return [d.expectedYear || '', d.expectedMonth || '', d.expectedQ || ''].join('-');
+  }
+
+  function guardarArchivosBorrador(input) {
+    if (borradorCerrado || !input || !input.name) return Promise.resolve(null);
+    const files = Array.from(input.files || []);
+    if (files.length === 0) return idb('files', 'readwrite', s => s.delete(input.name));
+    const rec = {
+      savedAt: Date.now(),
+      periodo: periodoDeSlot(input),
+      files: files.map(f => ({ blob: f, name: f.name, type: f.type, lastModified: f.lastModified }))
+    };
+    return idb('files', 'readwrite', s => s.put(rec, input.name));
+  }
+
+  let estadoDocsTimer = null;
+  function guardarEstadoDocs() {
+    if (borradorCerrado) return;
+    clearTimeout(estadoDocsTimer);
+    estadoDocsTimer = setTimeout(() => {
+      if (borradorCerrado) return;
+      let estado;
+      try {
+        // A JSON round-trip keeps it to plain data (no DOM, no functions), so
+        // the structured clone of IndexedDB can never throw on it.
+        estado = JSON.parse(JSON.stringify({
+          savedAt: Date.now(),
+          ocrResults: ocrResults,
+          docCheck: docCheck,
+          bancoRangos: bancoRangos,
+          fileHashes: fileHashes,
+          docAnalizado: docAnalizado
+        }));
+      } catch (e) { return; }
+      void idb('meta', 'readwrite', s => s.put(estado, 'estado'));
+    }, 300);
+  }
+
+  function limpiarBorradorDocs() {
+    clearTimeout(estadoDocsTimer);
+    return Promise.all([
+      idb('files', 'readwrite', s => s.clear()),
+      idb('meta', 'readwrite', s => s.clear())
+    ]);
+  }
+
+  // Puts a list of File objects into an <input type=file>. The browser only
+  // allows it through a DataTransfer; where that is missing (very old
+  // Safari) the caller keeps what the input already had.
+  function ponerArchivos(input, files) {
+    try {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      input.files = dt.files;
+      return input.files && input.files.length === files.length;
+    } catch (e) { return false; }
+  }
+
+  // Brings back the documents of the draft. With `bases`, only the slots of
+  // those base names (the dynamic payslip / bank slots after a re-render).
+  // Slots that are restored but were never analysed go through the normal
+  // change handler again; the rest are painted from the saved state.
+  async function restaurarDocumentos(bases) {
+    const estado = await idb('meta', 'readonly', s => s.get('estado'));
+    const ttlMs = DRAFT_DOCS_TTL_HOURS * 3600 * 1000;
+    if (!estado || !estado.savedAt || Date.now() - estado.savedAt > ttlMs) {
+      if (!bases) await limpiarBorradorDocs();
+      return;
+    }
+    const claves = await idb('files', 'readonly', s => s.getAllKeys());
+    const registros = await idb('files', 'readonly', s => s.getAll());
+    if (!claves || !registros) return;
+    if (!bases) {
+      // First restore of the page: the in-memory state starts from the
+      // saved one. (After a re-render the in-memory state is the newer one.)
+      [[ocrResults, estado.ocrResults], [docCheck, estado.docCheck], [bancoRangos, estado.bancoRangos],
+        [fileHashes, estado.fileHashes], [docAnalizado, estado.docAnalizado]].forEach(([dst, src]) => {
+        Object.keys(src || {}).forEach(k => { dst[k] = src[k]; });
+      });
+    }
+    const restaurados = {};
+    claves.forEach((nombre, i) => {
+      const rec = registros[i];
+      if (bases && bases.indexOf(baseDocName(nombre)) === -1) return;
+      const input = $('input[type="file"][name="' + nombre + '"]');
+      const vigente = rec && rec.savedAt && Date.now() - rec.savedAt <= ttlMs;
+      if (!input || !vigente || rec.periodo !== periodoDeSlot(input) || !Array.isArray(rec.files)) {
+        void idb('files', 'readwrite', s => s.delete(nombre));
+        return;
+      }
+      if (input.files && input.files.length > 0) return; // the customer already chose another one
+      const files = rec.files.map(f => new File([f.blob], f.name, { type: f.type, lastModified: f.lastModified }));
+      if (!ponerArchivos(input, files)) return;
+      restaurados[nombre] = true;
+      if (docAnalizado[nombre]) pintarRestaurado(input);
+      else input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    // Whatever the saved state says about a slot that came back empty is
+    // stale (file dropped, slot renumbered): forget it, as "Quitar" does.
+    $$('input[type="file"]').forEach(input => {
+      if (bases && bases.indexOf(baseDocName(input.name)) === -1) return;
+      if (!restaurados[input.name] && !(input.files && input.files.length)) limpiarEstadoDe(input);
+    });
+    if (!bases) {
+      if (restaurados.doc_cedula) renderCedulaPreview(ocrResults.doc_cedula);
+      if (restaurados.doc_id_adicional) renderIdAdicionalPreview(ocrResults.doc_id_adicional);
+    }
+    updateUploadCounter();
+    guardarEstadoDocs();
+  }
+
+  // The preview of a slot whose file came back from the draft: the same
+  // thumbnail / name and "Quitar" button as when it was attached, and a badge
+  // that repeats what the analysis had found, so a reload does not hide a
+  // wrong or expired document behind a green tick.
+  function pintarRestaurado(input) {
+    const preview = $('[data-preview-for="' + input.name + '"]');
+    if (!preview) return;
+    preview.innerHTML = '';
+    const label = input.closest('.upload-label');
+    if (label) label.classList.add('has-file');
+    pintarArchivos(preview, Array.from(input.files || []));
+    preview.appendChild(botonQuitar(input));
+    const c = docCheck[input.name] || {};
+    if (c.tipo === 'mismatch') {
+      setOcrStatus(preview, '⚠️ ' + (t('ocr.tipo_mismatch', { detected: tipoLabel(c.detected), expected: expectedTipoLabel(input.name) })
+        || 'Tipo de documento incorrecto'), 'warn');
+    } else if (c.expired) {
+      setOcrStatus(preview, '⚠️ ' + (t('ocr.expired', { date: c.vence }) || 'Documento vencido'), 'warn');
+    } else {
+      setOcrStatus(preview, '✓ ' + (t('upload.restored') || 'Documento guardado en este dispositivo — no hace falta volver a subirlo'), 'ok');
+    }
+    if (c.periodMatch === false) showPeriodMismatchWarning(preview, input.name, c.periodDetail);
+    const cedula = ocrResults.doc_cedula;
+    if (c.nameMatch === false && c.docHolderName && cedula && cedula.nombre_completo) {
+      pintarAvisoNombre(preview, c.docHolderName, cedula.nombre_completo);
+    }
+  }
+
+  // Where to resume after a reload: the saved step, unless an earlier step no
+  // longer passes (health answers are never stored, a code expired, a document
+  // was dropped). Then the customer lands on that step, with the reason on
+  // screen, instead of on a later step whose Submit would fail.
+  function pasoParaRetomar(guardado) {
+    const n = Number(guardado);
+    if (!Number.isInteger(n) || n < 2 || n > TOTAL_STEPS) return 1;
+    for (let i = 1; i < n; i++) {
+      if (!validateStep(i)) return i;
+    }
+    return n;
   }
 
   // ===== CONDITIONAL FIELDS (e.g., detalle dolencia si dolencia_salud=true) =====
@@ -1010,6 +1267,12 @@
       .map((p, i) => buildSlotHTML('doc_bancos', i + 1, p, true))
       .join('');
 
+    // Re-rendering replaces the <input>s, and with them the files the
+    // customer had attached (a language switch did exactly that). The draft
+    // puts back every file whose slot still asks for the same period. Before
+    // the first restore of the page this is left to init().
+    if (restauracionInicialHecha) void restaurarDocumentos(['doc_payslips', 'doc_bancos']);
+
     updateUploadCounter();
   }
 
@@ -1269,6 +1532,7 @@
     if (files.length === 0) { delete fileHashes[input.name]; return; }
     try {
       fileHashes[input.name] = await Promise.all(files.map(sha256Hex));
+      guardarEstadoDocs();
     } catch (_) { /* si falla, validateStep simplemente no bloquea por dup */ }
   }
 
@@ -1308,10 +1572,13 @@
     return m ? Number(m[1]) - 1 : fallback;
   }
 
-  function quitarArchivo(input) {
-    input.value = '';
+  // What the form remembers about a slot's file (checks, hash, bank range,
+  // OCR). Shared by "Quitar", a refused selection and a draft slot that did
+  // not come back, so all three forget exactly the same things.
+  function limpiarEstadoDe(input) {
     docCheck[input.name] = undefined;
     delete fileHashes[input.name];
+    delete docAnalizado[input.name];
     // El rango del extracto se guarda por nombre de casillero y alimenta la
     // cobertura de meses. Sin borrarlo, la solicitud sigue creyendo que un mes
     // esta cubierto por un documento que el cliente ya quito.
@@ -1325,6 +1592,16 @@
     } else if (base in ocrResults) {
       ocrResults[base] = null;
     }
+  }
+
+  function quitarArchivo(input) {
+    input.value = '';
+    // An OCR still running for the removed file must not mark the empty slot
+    // as analysed (see marcarAnalizado).
+    input._cflSelSeq = (input._cflSelSeq || 0) + 1;
+    limpiarEstadoDe(input);
+    void guardarArchivosBorrador(input);
+    guardarEstadoDocs();
     const preview = $('[data-preview-for="' + input.name + '"]');
     if (preview) preview.innerHTML = '';
     const label = input.closest('.upload-label');
@@ -1355,34 +1632,141 @@
     return btn;
   }
 
+  // Thumbnail for an image, name + size for anything else.
+  function pintarArchivos(preview, files) {
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        preview.appendChild(img);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'file-name';
+        div.textContent = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+        preview.appendChild(div);
+      }
+    });
+  }
+
+  // ===== DOCUMENT WEIGHT (compress + limits) =====
+  // Re-encodes a photo as JPEG with its long side at IMAGE_MAX_SIDE_PX. The
+  // browser applies the EXIF orientation when it decodes into an <img>, so
+  // the result is upright. Anything it cannot decode (HEIC on a desktop, a
+  // broken file) and any result that is not smaller is left as it was: this
+  // only ever makes the upload lighter, never refuses it.
+  async function comprimirImagen(file) {
+    if (!file || !/^image\//i.test(file.type) || /svg/i.test(file.type)) return file;
+    let url = null;
+    try {
+      url = URL.createObjectURL(file);
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = () => reject(new Error('decode'));
+        i.src = url;
+      });
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return file;
+      const scale = Math.min(1, IMAGE_MAX_SIDE_PX / Math.max(w, h));
+      // Already within size: a JPEG is left alone (re-encoding would only
+      // lose detail), and so is any small file.
+      if (scale === 1 && (/jpe?g/i.test(file.type) || file.size <= IMAGE_COMPRESS_MIN_BYTES)) return file;
+      const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      const g = canvas.getContext('2d');
+      // JPEG has no transparency: a PNG screenshot would turn black behind
+      // the text without a white background.
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, cw, ch);
+      g.drawImage(img, 0, 0, cw, ch);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', IMAGE_JPEG_QUALITY));
+      if (!blob || blob.size >= file.size) return file;
+      const name = String(file.name || 'foto').replace(/\.[^.]*$/, '') + '.jpg';
+      return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() });
+    } catch (e) {
+      return file;
+    } finally {
+      if (url) URL.revokeObjectURL(url);
+    }
+  }
+
+  // Bytes of every attached document, optionally leaving one slot out (the
+  // one whose selection is being replaced).
+  function totalDocBytes(exceptName) {
+    let total = 0;
+    $$('input[type="file"]').forEach(inp => {
+      if (inp.name === exceptName) return;
+      Array.from(inp.files || []).forEach(f => { total += f.size || 0; });
+    });
+    return total;
+  }
+
+  function fmtMb(bytes) {
+    return (Math.round(bytes / MB * 10) / 10).toFixed(1);
+  }
+
+  // Runs first on every new selection: shrinks the photos, then refuses the
+  // selection if one file or the whole application would not fit through the
+  // intake. Refusing HERE, with the document's name and the numbers, is the
+  // point: the customer can still pick a lighter file, instead of losing the
+  // application to a 413 at Submit. Returns the files to go on with, or null
+  // when the selection was refused or replaced by a newer one meanwhile.
+  async function prepararSeleccion(input, preview) {
+    const seq = (input._cflSelSeq = (input._cflSelSeq || 0) + 1);
+    const original = Array.from(input.files || []);
+    if (original.length === 0) { void guardarArchivosBorrador(input); return []; }
+    setOcrStatus(preview, '⏳ ' + (t('upload.preparing') || 'Preparando el documento…'), 'loading');
+    const listos = [];
+    for (const f of original) listos.push(await comprimirImagen(f));
+    if (seq !== input._cflSelSeq) return null;
+    if (listos.some((f, i) => f !== original[i])) ponerArchivos(input, listos);
+    const files = Array.from(input.files || []);
+    const doc = docLabelFor(input);
+    const grande = files.find(f => f.size > MAX_FILE_BYTES);
+    let msg = null;
+    if (grande) {
+      msg = t('error.file_too_big', { doc: doc, mb: fmtMb(grande.size), max: fmtMb(MAX_FILE_BYTES) }) ||
+        (doc + ': el archivo pesa ' + fmtMb(grande.size) + ' MB y el máximo es ' + fmtMb(MAX_FILE_BYTES) + ' MB por documento.');
+    } else {
+      const total = totalDocBytes(input.name) + files.reduce((a, f) => a + (f.size || 0), 0);
+      if (total > MAX_TOTAL_DOC_BYTES) {
+        msg = t('error.total_too_big', { doc: doc, mb: fmtMb(total), max: fmtMb(MAX_TOTAL_DOC_BYTES) }) ||
+          (doc + ': con este archivo los documentos sumarían ' + fmtMb(total) + ' MB y el máximo por solicitud es ' + fmtMb(MAX_TOTAL_DOC_BYTES) + ' MB.');
+      }
+    }
+    if (msg) {
+      quitarArchivo(input);
+      const label = input.closest('.upload-label');
+      if (label) label.classList.add('invalid');
+      showErrors([msg]);
+      return null;
+    }
+    preview.innerHTML = '';
+    void guardarArchivosBorrador(input);
+    return files;
+  }
+
   function setupUploads() {
     $$('input[type="file"]').forEach(input => {
-      input.addEventListener('change', e => {
+      input.addEventListener('change', async e => {
         const preview = $('[data-preview-for="' + input.name + '"]');
         if (!preview) return;
         preview.innerHTML = '';
-        const files = Array.from(input.files || []);
         docCheck[input.name] = undefined; // re-validar tipo/vigencia en cada nueva selección
-        void registerFileHashes(input);   // recomputar hash para detectar doc repetido
+        delete docAnalizado[input.name];
+        const files = await prepararSeleccion(input, preview);
+        if (!files) return;
+        const seq = input._cflSelSeq;
+        void registerFileHashes(input);   // recomputar hash para detectar doc repetido (sobre el archivo ya comprimido)
         if (files.length === 0) return;
         const label = input.closest('.upload-label');
         if (label) label.classList.add('has-file');
-        files.forEach((file, fidx) => {
-          // Sube cada documento a S3 al adjuntarlo (en paralelo con el OCR).
-          // Aplica a TODOS los tipos, incluidos los estados de banco.
-          uploadDoc(file, input.name, fidx);
-          if (file.type.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.alt = file.name;
-            preview.appendChild(img);
-          } else {
-            const div = document.createElement('div');
-            div.className = 'file-name';
-            div.textContent = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
-            preview.appendChild(div);
-          }
-        });
+        // Sube cada documento a S3 al adjuntarlo (en paralelo con el OCR).
+        // Aplica a TODOS los tipos, incluidos los estados de banco.
+        files.forEach((file, fidx) => uploadDoc(file, input.name, fidx));
+        pintarArchivos(preview, files);
 
         // Siempre una salida: cualquier casillero con archivo se puede vaciar.
         preview.appendChild(botonQuitar(input));
@@ -1414,6 +1798,7 @@
             if (c && c.periodMatch === false) {
               showPeriodMismatchWarning(preview, input.name, c.periodDetail);
             }
+            marcarAnalizado(input, seq);
           })();
           return;
         }
@@ -1437,7 +1822,10 @@
             for (let i = 0; i < files.length; i++) {
               await runOcr(files[i], ocrType, preview, input.name, i);
             }
+            marcarAnalizado(input, seq);
           })();
+        } else {
+          marcarAnalizado(input, seq);
         }
       });
     });
@@ -1445,7 +1833,7 @@
     // Event delegation para slots dinámicos generados después de init.
     // Replicamos un subset mínimo del listener directo de arriba:
     // preview + uploadDoc + (clasificación o OCR según base name).
-    document.addEventListener('change', e => {
+    document.addEventListener('change', async e => {
       const input = e.target;
       if (!input || input.type !== 'file') return;
       if (!input.name) return;
@@ -1455,29 +1843,20 @@
       const preview = $('[data-preview-for="' + input.name + '"]');
       if (!preview) return;
       preview.innerHTML = '';
-      const files = Array.from(input.files || []);
       docCheck[input.name] = undefined;
-      void registerFileHashes(input);   // recomputar hash para detectar doc repetido
+      delete docAnalizado[input.name];
+      const files = await prepararSeleccion(input, preview);
+      if (!files) return;
+      const seq = input._cflSelSeq;
+      void registerFileHashes(input);   // recomputar hash para detectar doc repetido (sobre el archivo ya comprimido)
       if (files.length === 0) {
         updateUploadCounter();
         return;
       }
       const label = input.closest('.upload-label');
       if (label) label.classList.add('has-file');
-      files.forEach((file, fidx) => {
-        uploadDoc(file, input.name, fidx);
-        if (file.type.startsWith('image/')) {
-          const img = document.createElement('img');
-          img.src = URL.createObjectURL(file);
-          img.alt = file.name;
-          preview.appendChild(img);
-        } else {
-          const div = document.createElement('div');
-          div.className = 'file-name';
-          div.textContent = '📎 ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
-          preview.appendChild(div);
-        }
-      });
+      files.forEach((file, fidx) => uploadDoc(file, input.name, fidx));
+      pintarArchivos(preview, files);
 
       // Siempre una salida, igual que en los casilleros fijos. Estos son los
       // de "Payslip 2" / "Extracto 3": los crea el JS despues de cargar la
@@ -1505,6 +1884,7 @@
           if (c && c.periodMatch === false) {
             showPeriodMismatchWarning(preview, input.name, c.periodDetail);
           }
+          marcarAnalizado(input, seq);
           updateUploadCounter();
         })();
         return;
@@ -1515,12 +1895,23 @@
           for (let i = 0; i < files.length; i++) {
             await runOcr(files[i], ocrType, preview, input.name, i);
           }
+          marcarAnalizado(input, seq);
           updateUploadCounter();
         })();
       } else {
+        marcarAnalizado(input, seq);
         updateUploadCounter();
       }
     });
+  }
+
+  // The analysis of a selection finished: remember it (so a reload paints the
+  // result instead of paying the OCR again) unless a newer selection replaced
+  // it in the meantime.
+  function marcarAnalizado(input, seq) {
+    if (input._cflSelSeq !== seq) return;
+    docAnalizado[input.name] = true;
+    guardarEstadoDocs();
   }
 
   // ===== OCR =====
@@ -1931,8 +2322,17 @@
     docCheck[inputName] = Object.assign(docCheck[inputName] || {}, {
       nameMatch: res.ok, docHolderName: docName,
     });
+    if (res.ok) {
+      var ok = container.querySelector('.name-mismatch-warn');
+      if (ok) ok.remove();
+      return;
+    }
+    pintarAvisoNombre(container, docName, cedulaName);
+  }
+
+  // Shared with the restored draft, which has the two names but not the OCR.
+  function pintarAvisoNombre(container, docName, cedulaName) {
     var warn = container.querySelector('.name-mismatch-warn');
-    if (res.ok) { if (warn) warn.remove(); return; }
     if (!warn) {
       warn = document.createElement('div');
       warn.className = 'name-mismatch-warn period-mismatch-warn';  // reusa el estilo amber
@@ -2402,6 +2802,15 @@
       return;
     }
 
+    // Last guard on the weight (each selection is already checked when it is
+    // attached; this covers anything that slipped past, e.g. an old draft).
+    const pesoTotal = totalDocBytes();
+    if (pesoTotal > MAX_TOTAL_DOC_BYTES) {
+      showErrors([t('error.total_too_big_submit', { mb: fmtMb(pesoTotal), max: fmtMb(MAX_TOTAL_DOC_BYTES) }) ||
+        ('Los documentos suman ' + fmtMb(pesoTotal) + ' MB y el máximo por solicitud es ' + fmtMb(MAX_TOTAL_DOC_BYTES) + ' MB.')]);
+      return;
+    }
+
     $btnSubmit.disabled = true;
     $btnSubmit.textContent = t('nav.submitting') || 'Mandando...';
     clearErrors();
@@ -2725,16 +3134,8 @@
       });
       const data = await res.json().catch(() => ({}));
       if (data.ok && data.verified) {
-        emailVerifiedFor = email;
-        const panel = $('#emailVerifyPanel');
-        const success = $('#emailVerifySuccess');
-        const verifyBtn = $('#emailVerifyBtn');
-        if (panel) panel.hidden = true;
-        if (success) success.hidden = false;
-        if (verifyBtn) verifyBtn.hidden = true;
-        emailInput.readOnly = true;
-        setVerifyStatus('', '');
-        clearInterval(resendCooldownTimer);
+        marcarEmailVerificado(email);
+        saveDraft();
       } else if (data.reason === 'wrong_code') {
         setVerifyStatus(
           (t('step3.email_verify_wrong', { left: data.attempts_left }) ||
@@ -2754,6 +3155,20 @@
     } finally {
       if (confirmBtn) confirmBtn.disabled = false;
     }
+  }
+
+  function marcarEmailVerificado(email) {
+    emailVerifiedFor = email;
+    const panel = $('#emailVerifyPanel');
+    const success = $('#emailVerifySuccess');
+    const verifyBtn = $('#emailVerifyBtn');
+    const emailInput = $('[name="email"]');
+    if (panel) panel.hidden = true;
+    if (success) success.hidden = false;
+    if (verifyBtn) verifyBtn.hidden = true;
+    if (emailInput) emailInput.readOnly = true;
+    setVerifyStatus('', '');
+    clearInterval(resendCooldownTimer);
   }
 
   function resetEmailVerification() {
@@ -2908,16 +3323,8 @@
       });
       const data = await res.json().catch(() => ({}));
       if (data.ok && data.verified) {
-        phoneVerifiedFor = phone;
-        const panel = $('#phoneVerifyPanel');
-        const success = $('#phoneVerifySuccess');
-        const verifyBtn = $('#phoneVerifyBtn');
-        if (panel) panel.hidden = true;
-        if (success) success.hidden = false;
-        if (verifyBtn) verifyBtn.hidden = true;
-        phoneInput.readOnly = true;
-        setPhoneStatus('', '');
-        clearInterval(phoneResendTimer);
+        marcarTelefonoVerificado(phone);
+        saveDraft();
       } else if (data.reason === 'wrong_code') {
         setPhoneStatus(
           (t('step3.phone_verify_wrong', { left: data.attempts_left }) ||
@@ -2936,6 +3343,36 @@
       setPhoneStatus(t('step3.phone_verify_error') || 'No pudimos verificar el código.', 'warn');
     } finally {
       if (confirmBtn) confirmBtn.disabled = false;
+    }
+  }
+
+  function marcarTelefonoVerificado(phone) {
+    phoneVerifiedFor = phone;
+    const panel = $('#phoneVerifyPanel');
+    const success = $('#phoneVerifySuccess');
+    const verifyBtn = $('#phoneVerifyBtn');
+    const phoneInput = $('[name="telefono_movil"]');
+    if (panel) panel.hidden = true;
+    if (success) success.hidden = false;
+    if (verifyBtn) verifyBtn.hidden = true;
+    if (phoneInput) phoneInput.readOnly = true;
+    setPhoneStatus('', '');
+    clearInterval(phoneResendTimer);
+  }
+
+  // A reload keeps a confirmed e-mail / mobile confirmed, but only while the
+  // field still holds that same value (the same rule isEmailVerified and
+  // isPhoneVerified apply on every check).
+  function restaurarVerificaciones(draft) {
+    if (!draft) return;
+    const emailInput = $('[name="email"]');
+    if (draft._emailVerifiedFor && emailInput &&
+        emailInput.value.trim().toLowerCase() === draft._emailVerifiedFor) {
+      marcarEmailVerificado(draft._emailVerifiedFor);
+    }
+    const phoneInput = $('[name="telefono_movil"]');
+    if (draft._phoneVerifiedFor && phoneInput && phoneInput.value.trim() === draft._phoneVerifiedFor) {
+      marcarTelefonoVerificado(draft._phoneVerifiedFor);
     }
   }
 
@@ -3080,12 +3517,15 @@
       if (currentStep < TOTAL_STEPS) {
         const next = currentStep + 1;
         showStep(next);
+        // Saved AFTER moving: the saveDraft above still recorded the step
+        // being left, so a reload brought the customer one step back.
+        saveDraft();
         track(next, 'paso');
       }
     });
 
     $btnPrev.addEventListener('click', () => {
-      if (currentStep > 1) showStep(currentStep - 1);
+      if (currentStep > 1) { showStep(currentStep - 1); saveDraft(); }
     });
 
     $form.addEventListener('submit', submitForm);
@@ -3154,11 +3594,18 @@
     renderDynamicSlots();
     markRequiredLabels();
 
-    // Siempre arrancar en Step 1 después de refresh — los file inputs no se pueden
-    // restaurar (restricción del navegador) y el usuario debe re-subir documentos.
-    // Los campos de texto sí se preservan via localStorage.
-    showStep(1);
-    track(1, 'inicio');
+    // Retomar donde quedó. Los campos de texto vuelven del localStorage y los
+    // documentos de IndexedDB (ver DRAFT DOCUMENTS); antes se arrancaba
+    // siempre en el Paso 1 porque los archivos no se podían restaurar, y en
+    // el celular eso pasaba cada vez que el cliente iba a la app del banco a
+    // bajar un extracto.
+    restaurarVerificaciones(draft);
+    await restaurarDocumentos();
+    restauracionInicialHecha = true;
+    const paso = pasoParaRetomar(draft && draft._step);
+    if (paso === TOTAL_STEPS) buildSummary();
+    showStep(paso);
+    track(paso, 'inicio');
     wireInhouden();
     wireConyuge();
   }

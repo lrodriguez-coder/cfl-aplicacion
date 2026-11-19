@@ -17,7 +17,9 @@
     "no": "Nee"
   },
   "upload": {
-    "remove": "Verwijderen"
+    "remove": "Verwijderen",
+    "preparing": "Document wordt voorbereid…",
+    "restored": "Document op dit apparaat bewaard — u hoeft het niet opnieuw te uploaden"
   },
   "error": {
     "fill_required": "Vul alstublieft alle verplichte velden in.",
@@ -50,7 +52,10 @@
     "step": "moet een veelvoud van {step} zijn",
     "too_short": "moet minstens {n} tekens hebben",
     "detail_required": "licht kort toe (verplicht)",
-    "menor_edad": "U moet {edad} jaar of ouder zijn om een lening aan te vragen. Controleer uw geboortedatum."
+    "menor_edad": "U moet {edad} jaar of ouder zijn om een lening aan te vragen. Controleer uw geboortedatum.",
+    "file_too_big": "{doc}: het bestand is {mb} MB en het maximum is {max} MB per document. Is het een gescande pdf, scan het dan met een lagere resolutie of upload een foto van het document.",
+    "total_too_big": "{doc}: met dit bestand komen uw documenten op {mb} MB en het maximum per aanvraag is {max} MB. Verwijder een optioneel document of upload een lichtere versie (een foto in plaats van een gescande pdf).",
+    "total_too_big_submit": "Uw documenten komen op {mb} MB en het maximum per aanvraag is {max} MB. Ga terug naar stap 2 en 3 en verwijder een optioneel document of upload een lichtere versie."
   },
   "intro": {
     "title": "📋 Voordat u begint",
