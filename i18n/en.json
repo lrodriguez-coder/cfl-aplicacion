@@ -17,7 +17,9 @@
     "no": "No"
   },
   "upload": {
-    "remove": "Remove"
+    "remove": "Remove",
+    "preparing": "Preparing the document…",
+    "restored": "Document saved on this device — no need to upload it again"
   },
   "error": {
     "fill_required": "Please complete all required fields.",
@@ -50,7 +52,10 @@
     "step": "must be a multiple of {step}",
     "too_short": "must be at least {n} characters",
     "detail_required": "please explain briefly (required)",
-    "menor_edad": "You must be {edad} or older to apply for a loan. Please check your date of birth."
+    "menor_edad": "You must be {edad} or older to apply for a loan. Please check your date of birth.",
+    "file_too_big": "{doc}: the file is {mb} MB and the limit is {max} MB per document. If it is a scanned PDF, scan it at a lower resolution or upload a photo of the document instead.",
+    "total_too_big": "{doc}: with this file your documents would add up to {mb} MB and the limit per application is {max} MB. Remove an optional document or upload a lighter version (a photo instead of a scanned PDF).",
+    "total_too_big_submit": "Your documents add up to {mb} MB and the limit per application is {max} MB. Go back to steps 2 and 3 and remove an optional document or upload a lighter version."
   },
   "intro": {
     "title": "📋 Before you start",
