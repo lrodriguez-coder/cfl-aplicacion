@@ -139,7 +139,12 @@
     const res = await fetch(V2_INTAKE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-intake-secret': V2_INTAKE_SECRET },
-      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, captchaToken: captchaToken })
+      // trackingId: the same session id the e-mail and mobile codes were
+      // confirmed under (/email-verify, /phone-verify). The server only mails
+      // the acknowledgement to, and only marks as verified, a contact whose
+      // code was confirmed in THIS session; without it any confirmed code for
+      // that address counted (Leonard 18-nov-2026).
+      body: JSON.stringify({ form: form, ocr: ocrResults, documents: documents, captchaToken: captchaToken, trackingId: getTrackingId() })
     });
     const result = await res.json().catch(function () { return {}; });
     if (!res.ok || !result.ok) {
@@ -756,6 +761,11 @@
     // confirmed; isEmailVerified still compares it with the field.
     data._emailVerifiedFor = emailVerifiedFor || undefined;
     data._phoneVerifiedFor = phoneVerifiedFor || undefined;
+    // The session id goes with the draft: the codes above were confirmed under
+    // it, and the intake now checks that the verification belongs to the
+    // session that submits. A reload that drew a fresh id would keep the
+    // contacts "verified" on screen while the server refused them.
+    data._trackingId = getTrackingId();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) { /* localStorage full or disabled */ }
@@ -798,6 +808,8 @@
 
   function clearDraft() {
     try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    // A new application on this device is a new session.
+    _trackingIdMemo = '';
     // The documents go with the answers: after Submit nothing of the
     // application should be left on the device.
     borradorCerrado = true;
@@ -3365,6 +3377,10 @@
   // isPhoneVerified apply on every check).
   function restaurarVerificaciones(draft) {
     if (!draft) return;
+    // A draft saved before the session id was kept (18-nov-2026) cannot say
+    // under which session its codes were confirmed: the customer confirms
+    // them again rather than submit contacts the server will not accept.
+    if (!draft._trackingId) return;
     const emailInput = $('[name="email"]');
     if (draft._emailVerifiedFor && emailInput &&
         emailInput.value.trim().toLowerCase() === draft._emailVerifiedFor) {
@@ -3410,6 +3426,9 @@
   // ===== EVENT WIRING =====
   // ===== TRACKING (progreso del formulario, para el dashboard de aplicaciones) =====
   let _trackingIdMemo = '';
+  function adoptarTrackingId(id) {
+    if (typeof id === 'string' && /^[A-Za-z0-9-]{8,100}$/.test(id)) _trackingIdMemo = id;
+  }
   function getTrackingId() {
     if (_trackingIdMemo) return _trackingIdMemo;
     try { localStorage.removeItem('cfl_tracking_id'); } catch (e) {}
@@ -3575,6 +3594,8 @@
 
     // Detect preferred language: ?lang= > localStorage > browser > pap
     const draft = loadDraft();
+    // Resume the draft's session (see saveDraft) before anything asks for it.
+    adoptarTrackingId(draft && draft._trackingId);
     const browserLang = (navigator.language || 'pap').toLowerCase().slice(0, 2);
     let urlLang = null;
     try { urlLang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
