@@ -200,6 +200,8 @@
     CAPTCHA_EXPIRED: 'error.code.captcha',
     CAPTCHA_FAILED: 'error.code.captcha',
     UNDERAGE: 'error.menor_edad',
+    AMOUNT_OUT_OF_RANGE: 'error.code.monto_fuera',
+    TERM_OUT_OF_RANGE: 'error.code.plazo_fuera',
     VALIDATION_FAILED: 'error.code.validation',
     TOO_LARGE: 'error.code.too_large',
     RATE_LIMITED: 'error.code.rate_limited',
@@ -2157,13 +2159,18 @@
       // Mismo patron que doc_id_adicional ("un paspoort of rijbewijs").
       doc_aqualectra: 'comprobante_domicilio',
     };
-    return tipoLabel(KEY[inputName]);
+    return tipoLabel(KEY[baseDocName(inputName)]);
   }
 
   // Evalúa un resultado OCR/clasificación de UN archivo: detecta tipo y vigencia,
   // y actualiza el agregado docCheck[inputName]. Devuelve el detalle de este archivo.
   function evaluateDoc(inputName, data, idx) {
-    const expected = EXPECTED_TIPO[inputName];
+    // Por el nombre BASE: los recibos y extractos viven en casilleros
+    // numerados (doc_payslips_1…) y la tabla usa doc_payslips. Con el nombre
+    // completo no encontraba nada, el tipo quedaba «desconocido» y un extracto
+    // en el casillero de recibos (o al revés) pasaba sin aviso — caso
+    // CFL-10127, 18-nov-2026 (Leonard: «eso no lo debería aceptar»).
+    const expected = EXPECTED_TIPO[baseDocName(inputName)];
     const cur = docCheck[inputName] || { tipo: 'unknown', expired: false };
     let detected = (data && data.tipo_detectado) ? String(data.tipo_detectado).toLowerCase() : null;
     // banco/aqualectra devuelven un error explícito cuando el doc no es del tipo

@@ -67,7 +67,9 @@
       "timeout": "The connection took too long and we cannot tell whether your application arrived. Your information is still saved: please submit again; if it already arrived, it will not be duplicated.",
       "network": "We could not connect. Please check your internet connection and submit again; your information is still saved and the application will not be duplicated.",
       "unavailable": "Online applications are not available right now. Please call us on +5999 526 8480.",
-      "failed": "We could not register your application; your information is still saved. Please try again or call us on +5999 526 8480."
+      "failed": "We could not register your application; your information is still saved. Please try again or call us on +5999 526 8480.",
+      "monto_fuera": "The amount is outside what we accept online. Please choose an amount within the range shown in the first step.",
+      "plazo_fuera": "The term is outside what we accept online. Please choose a term from the list in the first step."
     }
   },
   "intro": {

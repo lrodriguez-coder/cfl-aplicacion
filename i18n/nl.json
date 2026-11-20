@@ -67,7 +67,9 @@
       "timeout": "De verbinding duurde te lang en wij weten niet of uw aanvraag is aangekomen. Uw gegevens blijven bewaard: verstuur opnieuw; als hij al is aangekomen, wordt hij niet dubbel geregistreerd.",
       "network": "Wij konden geen verbinding maken. Controleer uw internetverbinding en verstuur opnieuw; uw gegevens blijven bewaard en de aanvraag wordt niet dubbel geregistreerd.",
       "unavailable": "Online aanvragen is op dit moment niet mogelijk. Bel ons op +5999 526 8480.",
-      "failed": "Wij konden uw aanvraag niet registreren; uw gegevens blijven bewaard. Probeer het opnieuw of bel ons op +5999 526 8480."
+      "failed": "Wij konden uw aanvraag niet registreren; uw gegevens blijven bewaard. Probeer het opnieuw of bel ons op +5999 526 8480.",
+      "monto_fuera": "Het bedrag valt buiten wat wij online accepteren. Kies een bedrag binnen het bereik dat in de eerste stap wordt getoond.",
+      "plazo_fuera": "De looptijd valt buiten wat wij online accepteren. Kies een looptijd uit de lijst in de eerste stap."
     }
   },
   "intro": {
