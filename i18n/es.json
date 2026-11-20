@@ -67,7 +67,9 @@
       "timeout": "La conexión tardó demasiado y no sabemos si su solicitud llegó. Sus datos siguen guardados: vuelva a enviar; si ya llegó, no se duplicará.",
       "network": "No pudimos conectarnos. Revise su conexión a internet y vuelva a enviar; sus datos siguen guardados y la solicitud no se duplicará.",
       "unavailable": "La recepción de solicitudes en línea no está disponible en este momento. Llámenos al +5999 526 8480.",
-      "failed": "No pudimos registrar su solicitud; sus datos siguen guardados. Intente de nuevo o llámenos al +5999 526 8480."
+      "failed": "No pudimos registrar su solicitud; sus datos siguen guardados. Intente de nuevo o llámenos al +5999 526 8480.",
+      "monto_fuera": "El monto está fuera de lo que aceptamos en línea. Elija un monto dentro del rango que se muestra en el primer paso.",
+      "plazo_fuera": "El plazo está fuera de lo que aceptamos en línea. Elija un plazo de la lista del primer paso."
     }
   },
   "intro": {

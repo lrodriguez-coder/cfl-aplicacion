@@ -67,7 +67,9 @@
       "timeout": "E konekshon a tarda muchu i nos no sa si bo aplikashon a yega. Bo datos ta keda warda: manda bèk; si e la yega kaba, e no ta dobla.",
       "network": "Nos no por a konektá. Chèk bo konekshon di internet i manda bèk; bo datos ta keda warda i e aplikashon no ta dobla.",
       "unavailable": "Aplikashon na internet no ta disponibel awor. Yama nos na +5999 526 8480.",
-      "failed": "Nos no por a registrá bo aplikashon; bo datos ta keda warda. Purba atrobe òf yama nos na +5999 526 8480."
+      "failed": "Nos no por a registrá bo aplikashon; bo datos ta keda warda. Purba atrobe òf yama nos na +5999 526 8480.",
+      "monto_fuera": "E monto ta pafó di loke nos ta aseptá online. Skohe un monto den e rango ku ta aparesé den e promé paso.",
+      "plazo_fuera": "E plaso ta pafó di loke nos ta aseptá online. Skohe un plaso for di e lista den e promé paso."
     }
   },
   "intro": {
