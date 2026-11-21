@@ -795,6 +795,20 @@
           'Verifique su celular antes de continuar (clic en "Verificar").');
       }
     }
+    // Celular igual a la cédula: el caso típico de pegar la cédula en el campo
+    // del celular. Este control vivía en el envío por n8n, después del
+    // `return` del camino v2 (USE_V2_INTAKE = true), así que nunca corría
+    // (gauntlet r14, formulario#9). Acá corre en el Paso 4, junto al campo.
+    if (n === 4) {
+      const telEl = step.querySelector('[name="telefono_movil"]');
+      const idEl = step.querySelector('[name="numero_id"]');
+      const telVal = telEl ? String(telEl.value || '').replace(/[\s\-+]/g, '') : '';
+      const idVal = idEl ? String(idEl.value || '').replace(/[\s\-]/g, '') : '';
+      if (telVal && idVal && telVal === idVal) {
+        fail(telEl, t('error.tel_eq_id') ||
+          'El número celular no puede ser igual a su número de cédula. Revise el campo del número celular.');
+      }
+    }
     // Antigüedad: menos de 12 meses con el empleador actual no avanza.
     const ingresoEl = step.querySelector('[name="fecha_ingreso_empleo"]');
     if (ingresoEl) {
@@ -3150,18 +3164,7 @@
         }
       }
 
-      // Rechazar submit si el telefono_movil es idéntico a numero_id (típico caso
-      // usuario pega su cédula en el campo teléfono — Access no valida, importa mal).
-      const telVal = fGet('telefono_movil').replace(/[\s\-+]/g, '');
-      const idVal  = fGet('numero_id').replace(/[\s\-]/g, '');
-      if (telVal && idVal && telVal === idVal) {
-        showErrors([
-          (t('error.tel_eq_id') || 'El teléfono móvil no puede ser igual a su número de cédula. Revise el campo del número celular.')
-        ]);
-        $btnSubmit.disabled = false;
-        $btnSubmit.textContent = t('nav.submit') || 'Entregá aplikashon';
-        return;
-      }
+      // (El control "celular igual a la cédula" corre ahora en validateStep(4).)
 
       // Resultados OCR (para que el backend los use igual que pipeline WhatsApp)
       fd.append('_ocr_results', JSON.stringify(ocrResults));
