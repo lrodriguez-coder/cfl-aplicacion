@@ -69,8 +69,11 @@
       "unavailable": "Online applications are not available right now. Please call us on +5999 526 8480.",
       "failed": "We could not register your application; your information is still saved. Please try again or call us on +5999 526 8480.",
       "monto_fuera": "The amount is outside what we accept online. Please choose an amount within the range shown in the first step.",
-      "plazo_fuera": "The term is outside what we accept online. Please choose a term from the list in the first step."
-    }
+      "plazo_fuera": "The term is outside what we accept online. Please choose a term from the list in the first step.",
+      "consent": "The consent boxes (health information for Aska and the credit bureau check) are missing. Please tick them on the last step and submit again."
+    },
+    "consent_health": "Please tick the box for the health information for Aska Insurance: without it we cannot register your application.",
+    "consent_buro": "Please tick the box for the credit bureau check: without it we cannot register your application."
   },
   "intro": {
     "title": "📋 Before you start",
@@ -119,7 +122,9 @@
     "counter_label": "documents uploaded",
     "choose_tipo_first": "First choose employment type and (if applicable) salary frequency in Step 2.",
     "slot_payslip": "Payslip",
-    "slot_banco": "Bank statement"
+    "slot_banco": "Bank statement",
+    "bancos_pendientes": "I will send my bank statements later.",
+    "bancos_pendientes_hint": "Your application will be on hold until we receive them. After you submit it you will get a link to send them, one for each month. All other documents are still required."
   },
   "step3": {
     "title": "Personal Information",
@@ -273,11 +278,10 @@
     "title": "Confirm Your Application",
     "hint": "Review all the information below. When you click \"Submit application\", your application is registered.",
     "legal_notes_title": "Declarations",
-    "legal_health": "By submitting this application I declare that I have answered the previous questions fully and truthfully, and I acknowledge that any incorrect or incomplete health declaration may lead to refusal or modification of the rights under the insurance contract.",
-    "legal_aska": "By submitting this application I also declare that I have no objection to the medical adviser of Aska Insurance requesting medical information from my doctor or specialist.",
-    "legal_credit_check": "By submitting this application I authorise CFL to check my credit history with third-party providers and to verify my information with my employer.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. participates in a credit registration system and may carry out credit checks as part of its acceptance and monitoring procedures for loans.",
-    "terms": "I confirm all information is correct and I accept CFL's <a href='terminos.html?lang=en' target='_blank' rel='noopener'>Terms and Conditions</a> and <a href='privacidad.html?lang=en' target='_blank' rel='noopener'>Privacy Policy</a>."
+    "terms": "I confirm all information is correct and I accept CFL's <a href='terminos.html?lang=en' target='_blank' rel='noopener'>Terms and Conditions</a> and <a href='privacidad.html?lang=en' target='_blank' rel='noopener'>Privacy Policy</a>.",
+    "consent_health": "I declare that I have answered the health questions fully and truthfully, and I acknowledge that any incorrect or incomplete health declaration may lead to refusal or modification of the rights under the insurance contract. I have no objection to the medical adviser of Aska Insurance requesting medical information from my doctor or specialist.",
+    "consent_buro": "I authorise Curaçao Fast Loans N.V. to check my credit history with third-party providers (including the credit bureau) and to verify my information with my employer."
   },
   "summary": {
     "personal": "Personal Information",
@@ -288,7 +292,8 @@
     "medico": "Family doctor",
     "aqua_titular": "Aqualectra account holder",
     "aqua_cliente": "Aqualectra customer no.",
-    "comprobante": "Proof of address"
+    "comprobante": "Proof of address",
+    "bancos_pendientes": "pending: to be sent later"
   },
   "done": {
     "title": "Application submitted!",
@@ -303,7 +308,9 @@
     "next_1": "A CFL officer reviews your application and your documents.",
     "next_2": "We will contact you by WhatsApp or phone within 3 to 5 business days.",
     "next_3": "If your application is approved, we will send you the offer with the final instalment and give you an appointment to sign.",
-    "next_contact": "Questions? Call us on +5999 526 8480."
+    "next_contact": "Questions? Call us on +5999 526 8480.",
+    "bancos_pendientes": "Your bank statements are still pending. Your application is on hold until we receive them: please send one for each month through the link below.",
+    "bancos_pendientes_sin_enlace": "Your bank statements are still pending. Your application is on hold until we receive them. Please call us on +5999 526 8480 and we will tell you how to send them."
   },
   "ocr": {
     "analyzing": "Analyzing document…",

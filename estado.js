@@ -37,6 +37,10 @@
       steps: ['Risibí', 'Dokumentonan', 'Análisis', 'Oferta'],
       docsTitle: 'Dokumento ku nos mester',
       docsHint: 'Skohe un PDF òf un potret kla (JPG/PNG). Màksimo 20 MB.',
+      // DECISION 2 (21-nov-2026): one row per month asked for.
+      periodOne: 'Esun di {month}, kompleto i kla.',
+      stmtPdf: 'Estado di kuenta: e PDF di bo banko na internet.',
+      sentMonths: 'Nos a risibí: {months}. Nos ta lesa nan awor.',
       reason: {
         missing: 'Nos no a risibí e dokumento akí.',
         expired: 'E dokumento ku nos tin a vense. Manda un ku ta bálido.',
@@ -83,6 +87,10 @@
       steps: ['Recibida', 'Documentos', 'Análisis', 'Oferta'],
       docsTitle: 'Documento que necesitamos',
       docsHint: 'Elija un PDF o una foto nítida (JPG/PNG). Máximo 20 MB.',
+      // DECISION 2 (21-nov-2026): one row per month asked for.
+      periodOne: 'El de {month}, completo y nítido.',
+      stmtPdf: 'Estado de cuenta: el PDF de la banca por internet de su banco.',
+      sentMonths: 'Recibimos: {months}. Los estamos leyendo.',
       reason: {
         missing: 'No recibimos este documento.',
         expired: 'El documento que tenemos está vencido. Envíe uno vigente.',
@@ -129,6 +137,10 @@
       steps: ['Received', 'Documents', 'Analysis', 'Offer'],
       docsTitle: 'Document we need',
       docsHint: 'Choose a PDF or a sharp photo (JPG/PNG). Maximum 20 MB.',
+      // DECISION 2 (21-nov-2026): one row per month asked for.
+      periodOne: 'The one for {month}, complete and sharp.',
+      stmtPdf: 'Bank statement: the PDF from your internet banking.',
+      sentMonths: 'Received: {months}. We are reading them now.',
       reason: {
         missing: 'We did not receive this document.',
         expired: 'The document we have has expired. Please send a valid one.',
@@ -175,6 +187,10 @@
       steps: ['Ontvangen', 'Documenten', 'Analyse', 'Aanbod'],
       docsTitle: 'Document dat wij nodig hebben',
       docsHint: 'Kies een pdf of een scherpe foto (JPG/PNG). Maximaal 20 MB.',
+      // DECISION 2 (21-nov-2026): one row per month asked for.
+      periodOne: 'Dat van {month}, volledig en scherp.',
+      stmtPdf: 'Bankafschrift: de pdf uit uw internetbankieren.',
+      sentMonths: 'Ontvangen: {months}. Wij lezen ze nu.',
       reason: {
         missing: 'Wij hebben dit document niet ontvangen.',
         expired: 'Het document dat wij hebben is verlopen. Stuur een geldig exemplaar.',
@@ -224,7 +240,8 @@
   var lang = 'pap';
   var status = null;     // last answer of the API
   var errorKey = null;   // LINK_INVALID / LINK_EXPIRED / NETWORK
-  var notes = {};        // per document type: { cls, text }
+  var notes = {};        // per document type (or type|month): { cls, text }
+  var sentMonths = [];   // months sent from this page, still being read
 
   function savedLang() { try { return localStorage.getItem('cfl_estado_lang'); } catch (e) { return null; } }
   function saveLang(l) { try { localStorage.setItem('cfl_estado_lang', l); } catch (e) { /* private mode */ } }
@@ -279,7 +296,26 @@
     $('stDocsHint').textContent = L.docsHint;
     var list = $('stDocList');
     list.textContent = '';
-    docs.forEach(function (d) { list.appendChild(docBlock(d, L)); });
+    docs.forEach(function (d) {
+      // Leonard, 21-nov-2026 (DECISION 2): the statements that came "later"
+      // are asked for month by month — one row, one file, one button each —
+      // and a month sent is not asked again while it is being read.
+      if (Array.isArray(d.periods) && d.periods.length && (d.documentType === 'bank_statement' || d.documentType === 'payslip')) {
+        d.periods.forEach(function (p) { list.appendChild(docBlock(d, L, p)); });
+      } else {
+        list.appendChild(docBlock(d, L));
+      }
+    });
+    var stillAsked = {};
+    docs.forEach(function (d) { (d.periods || []).forEach(function (p) { stillAsked[d.documentType + '|' + p] = true; }); });
+    sentMonths = sentMonths.filter(function (k) { return !stillAsked[k]; });
+    var $sent = $('stSentMonths');
+    if ($sent) {
+      $sent.hidden = sentMonths.length === 0;
+      $sent.textContent = sentMonths.length
+        ? fill(L.sentMonths, { months: monthsText(sentMonths.map(function (k) { return k.split('|')[1]; })) })
+        : '';
+    }
     $('stContact').textContent = fill(L.contact, { phone: PHONE });
   }
 
@@ -306,15 +342,18 @@
     return L.reason[d.reason] || L.reason.missing;
   }
 
-  function docBlock(d, L) {
+  function docBlock(d, L, period) {
     var box = document.createElement('div');
     box.className = 'st-doc';
     box.setAttribute('data-doc', d.documentType);
+    if (period) box.setAttribute('data-period', period);
     var h = document.createElement('h3');
-    h.textContent = L.doc[d.documentType] || L.doc.other;
+    h.textContent = (L.doc[d.documentType] || L.doc.other) + (period ? ' — ' + monthsText([period]) : '');
     var p = document.createElement('p');
     p.className = 'field-hint';
-    p.textContent = reasonText(d, L);
+    p.textContent = period
+      ? fill(L.periodOne, { month: monthsText([period]) }) + (d.documentType === 'bank_statement' ? ' ' + L.stmtPdf : '')
+      : reasonText(d, L);
     // No `capture`: the phone offers files (PDF) as well as the camera.
     var input = document.createElement('input');
     input.type = 'file';
@@ -325,9 +364,10 @@
     btn.textContent = L.send;
     var msg = document.createElement('p');
     msg.className = 'st-msg';
-    var n = notes[d.documentType];
+    var noteKey = period ? d.documentType + '|' + period : d.documentType;
+    var n = notes[noteKey];
     if (n) { msg.className = 'st-msg ' + n.cls; msg.textContent = n.text; }
-    btn.addEventListener('click', function () { upload(d.documentType, input, btn, msg); });
+    btn.addEventListener('click', function () { upload(d.documentType, input, btn, msg, period); });
     box.appendChild(h); box.appendChild(p); box.appendChild(input); box.appendChild(btn); box.appendChild(msg);
     return box;
   }
@@ -358,10 +398,11 @@
     });
   }
 
-  function upload(docType, input, btn, msg) {
+  function upload(docType, input, btn, msg, period) {
     var L = T[lang];
     var file = input.files && input.files[0];
-    function say(cls, text) { notes[docType] = { cls: cls, text: text }; msg.className = 'st-msg ' + cls; msg.textContent = text; }
+    var noteKey = period ? docType + '|' + period : docType;
+    function say(cls, text) { notes[noteKey] = { cls: cls, text: text }; msg.className = 'st-msg ' + cls; msg.textContent = text; }
     if (!file) { say('err', L.pick); return; }
     btn.disabled = true;
     btn.textContent = L.sending;
@@ -373,7 +414,9 @@
       return fetch(API + encodeURIComponent(token) + '/documents', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ documentType: docType, filename: name.slice(0, 200), fileBase64: b64 })
+        body: JSON.stringify(period
+          ? { documentType: docType, filename: name.slice(0, 200), fileBase64: b64, period: period }
+          : { documentType: docType, filename: name.slice(0, 200), fileBase64: b64 })
       });
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (j) {
@@ -384,6 +427,7 @@
       });
     }).then(function () {
       say('ok', L.sent);
+      if (period && sentMonths.indexOf(noteKey) < 0) sentMonths.push(noteKey);
       input.value = '';
       setTimeout(load, 800);
     }).catch(function (e) {

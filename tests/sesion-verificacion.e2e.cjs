@@ -98,6 +98,9 @@ async function submit(page) {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.querySelector('.step[data-step="7"]').classList.add('active');
     document.querySelector('[name="acepta_terminos"]').checked = true;
+    // The two consent boxes of their own (r14, Leonard 21-nov-2026): without them the form does not send.
+    document.querySelector('[name="consentimiento_salud_aska"]').checked = true;
+    document.querySelector('[name="consentimiento_buro"]').checked = true;
     const ta = document.createElement('textarea');
     ta.name = 'g-recaptcha-response'; ta.value = 'token-ficticio'; ta.style.display = 'none';
     document.body.appendChild(ta);

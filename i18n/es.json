@@ -69,8 +69,11 @@
       "unavailable": "La recepción de solicitudes en línea no está disponible en este momento. Llámenos al +5999 526 8480.",
       "failed": "No pudimos registrar su solicitud; sus datos siguen guardados. Intente de nuevo o llámenos al +5999 526 8480.",
       "monto_fuera": "El monto está fuera de lo que aceptamos en línea. Elija un monto dentro del rango que se muestra en el primer paso.",
-      "plazo_fuera": "El plazo está fuera de lo que aceptamos en línea. Elija un plazo de la lista del primer paso."
-    }
+      "plazo_fuera": "El plazo está fuera de lo que aceptamos en línea. Elija un plazo de la lista del primer paso.",
+      "consent": "Faltan las casillas de consentimiento (información de salud para Aska y consulta al buró de crédito). Márquelas en el último paso y vuelva a enviar."
+    },
+    "consent_health": "Marque la casilla de la información de salud para Aska Insurance: sin ella no podemos registrar su solicitud.",
+    "consent_buro": "Marque la casilla de la consulta al buró de crédito: sin ella no podemos registrar su solicitud."
   },
   "intro": {
     "title": "📋 Antes de empezar",
@@ -119,7 +122,9 @@
     "counter_label": "documentos cargados",
     "choose_tipo_first": "Primero elija el tipo de empleo y (si aplica) la frecuencia de salario en el Paso 2.",
     "slot_payslip": "Recibo de salario",
-    "slot_banco": "Estado de cuenta"
+    "slot_banco": "Estado de cuenta",
+    "bancos_pendientes": "Enviaré mis estados de cuenta bancarios después.",
+    "bancos_pendientes_hint": "Su solicitud queda en espera hasta que los recibamos. Al enviarla recibirá un enlace para mandarlos, uno por cada mes. Los demás documentos siguen siendo obligatorios."
   },
   "step3": {
     "title": "Datos Personales",
@@ -273,11 +278,10 @@
     "title": "Confirme su Solicitud",
     "hint": "Revise toda la información abajo. Al hacer clic en «Enviar solicitud», su solicitud queda registrada.",
     "legal_notes_title": "Declaraciones",
-    "legal_health": "Al enviar esta solicitud declaro haber respondido las preguntas anteriores de manera completa y veraz, y reconozco que cualquier declaración de salud incorrecta o incompleta puede llevar al rechazo o modificación de los derechos bajo el contrato de seguro.",
-    "legal_aska": "Al enviar la solicitud, declaro además que no tengo objeción a que el asesor médico de Aska Insurance solicite información médica a mi doctor o especialista.",
-    "legal_credit_check": "Al enviar esta solicitud, autorizo a verificar mi historial crediticio con proveedores externos, así como a verificar mi información con mi empleador.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. participa en un sistema de registro de créditos y puede realizar verificaciones crediticias como parte del procedimiento de aceptación y monitoreo de créditos.",
-    "terms": "Confirmo que toda la información es correcta y acepto los <a href='terminos.html?lang=es' target='_blank' rel='noopener'>Términos y Condiciones</a> y la <a href='privacidad.html?lang=es' target='_blank' rel='noopener'>Política de Privacidad</a> de CFL."
+    "terms": "Confirmo que toda la información es correcta y acepto los <a href='terminos.html?lang=es' target='_blank' rel='noopener'>Términos y Condiciones</a> y la <a href='privacidad.html?lang=es' target='_blank' rel='noopener'>Política de Privacidad</a> de CFL.",
+    "consent_health": "Declaro haber respondido las preguntas de salud de manera completa y veraz, y reconozco que cualquier declaración de salud incorrecta o incompleta puede llevar al rechazo o a la modificación de los derechos bajo el contrato de seguro. No tengo objeción a que el asesor médico de Aska Insurance solicite información médica a mi médico o especialista.",
+    "consent_buro": "Autorizo a Curaçao Fast Loans N.V. a verificar mi historial crediticio con proveedores externos (incluido el buró de crédito) y a verificar mi información con mi empleador."
   },
   "summary": {
     "personal": "Datos Personales",
@@ -288,7 +292,8 @@
     "medico": "Médico de cabecera",
     "aqua_titular": "Titular Aqualectra",
     "aqua_cliente": "N.º de cliente Aqualectra",
-    "comprobante": "Comprobante de domicilio"
+    "comprobante": "Comprobante de domicilio",
+    "bancos_pendientes": "pendientes: los enviará después"
   },
   "done": {
     "title": "¡Solicitud enviada!",
@@ -303,7 +308,9 @@
     "next_1": "Un oficial de CFL revisa su solicitud y sus documentos.",
     "next_2": "Le contactaremos por WhatsApp o por teléfono en un plazo de 3 a 5 días hábiles.",
     "next_3": "Si su solicitud se aprueba, le enviaremos la oferta con la cuota definitiva y le daremos una cita para firmar.",
-    "next_contact": "¿Preguntas? Llámenos al +5999 526 8480."
+    "next_contact": "¿Preguntas? Llámenos al +5999 526 8480.",
+    "bancos_pendientes": "Sus estados de cuenta bancarios están pendientes. Su solicitud queda en espera hasta que los recibamos: envíe uno por cada mes desde el enlace de abajo.",
+    "bancos_pendientes_sin_enlace": "Sus estados de cuenta bancarios están pendientes. Su solicitud queda en espera hasta que los recibamos. Llámenos al +5999 526 8480 y le indicaremos cómo enviarlos."
   },
   "ocr": {
     "analyzing": "Analizando documento…",

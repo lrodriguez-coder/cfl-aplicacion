@@ -69,8 +69,11 @@
       "unavailable": "Aplikashon na internet no ta disponibel awor. Yama nos na +5999 526 8480.",
       "failed": "Nos no por a registrá bo aplikashon; bo datos ta keda warda. Purba atrobe òf yama nos na +5999 526 8480.",
       "monto_fuera": "E monto ta pafó di loke nos ta aseptá online. Skohe un monto den e rango ku ta aparesé den e promé paso.",
-      "plazo_fuera": "E plaso ta pafó di loke nos ta aseptá online. Skohe un plaso for di e lista den e promé paso."
-    }
+      "plazo_fuera": "E plaso ta pafó di loke nos ta aseptá online. Skohe un plaso for di e lista den e promé paso.",
+      "consent": "E kahanan di konsentimentu (informashon di salud pa Aska i chèk serka e buró di krédito) ta falta. Marka nan den e último paso i entregá atrobe."
+    },
+    "consent_health": "Marka e kaha di e informashon di salud pa Aska Insurance: sin esei nos no por registrá bo aplikashon.",
+    "consent_buro": "Marka e kaha di e chèk serka e buró di krédito: sin esei nos no por registrá bo aplikashon."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -119,7 +122,9 @@
     "counter_label": "dokumento kargá",
     "choose_tipo_first": "Promé skohe tipo di empleo i (si aplika) frekuensia di salario na Paso 2.",
     "slot_payslip": "Payslip",
-    "slot_banco": "Estado di banko"
+    "slot_banco": "Estado di banko",
+    "bancos_pendientes": "Mi ta manda mi estado di kuenta di banko despues.",
+    "bancos_pendientes_hint": "Bo aplikashon ta keda warda te ora nos risibí nan. Despues di entregá, bo ta haña un link pa manda nan, un pa kada luna. E otro dokumentonan ta keda obligatorio."
   },
   "step3": {
     "title": "Bo Datos Pèrsonal",
@@ -273,11 +278,10 @@
     "title": "Konfirmá bo Aplikashon",
     "hint": "Revisá tur informashon abou. Ora bo dal \"Entregá aplikashon\", bo aplikashon ta registrá.",
     "legal_notes_title": "Deklarashon",
-    "legal_health": "Ku entrega di e aplikashon aki, mi ta deklará ku mi a kontestá tur e pregunta anterior kompletu i ku berdat, i mi sa ku kualkier deklarashon di salud no korekto of inkompleto por hiba na refusal of modifikashon di e derechinan bao di e kontrato di seguro.",
-    "legal_aska": "Ku entrega di e aplikashon, mi ta deklará tambe ku mi no tin obheshon ku e konsehero médiko di Aska Insurance buska informashon médiko serka mi dòkter of spesialista.",
-    "legal_credit_check": "Ku entrega di e aplikashon, ami ta outorisá bo pa chèk mi historial di krédito ku tersero proveedornan, i tambe pa chèk mi informashon serka mi empleador.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. ta partisipá den un sistema di registrashon di krédito i por hasi chèk di krédito komo parti di e prosedura di akseptashon i monitoreo di kréditonan.",
-    "terms": "Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href='terminos.html?lang=pap' target='_blank' rel='noopener'>Términos i Kondishon</a> i e <a href='privacidad.html?lang=pap' target='_blank' rel='noopener'>Polítika di Privasidat</a> di CFL."
+    "terms": "Mi ta konfirmá ku tur informashon ta korekto i mi ta aseptá e <a href='terminos.html?lang=pap' target='_blank' rel='noopener'>Términos i Kondishon</a> i e <a href='privacidad.html?lang=pap' target='_blank' rel='noopener'>Polítika di Privasidat</a> di CFL.",
+    "consent_health": "Mi ta deklará ku mi a kontestá e preguntanan di salud kompletu i ku berdat, i mi sa ku un deklarashon di salud no korekto òf inkompleto por hiba na refusal òf modifikashon di e derechonan bou di e kontrato di seguro. Mi no tin obheshon ku e konsehero médiko di Aska Insurance buska informashon médiko serka mi dòkter òf spesialista.",
+    "consent_buro": "Mi ta outorisá Curaçao Fast Loans N.V. pa chèk mi historial di krédito ku tersero proveedornan (inkluso e buró di krédito) i pa chèk mi informashon serka mi empleador."
   },
   "summary": {
     "personal": "Datos Pèrsonal",
@@ -288,7 +292,8 @@
     "medico": "Dòkter di kas",
     "aqua_titular": "Titular Aqualectra",
     "aqua_cliente": "Number di kliente Aqualectra",
-    "comprobante": "Komprobante di adres"
+    "comprobante": "Komprobante di adres",
+    "bancos_pendientes": "pendiente: bo ta manda nan despues"
   },
   "done": {
     "title": "Aplikashon entregá!",
@@ -303,7 +308,9 @@
     "next_1": "Un ofisial di CFL ta revisá bo aplikashon i bo dokumentonan.",
     "next_2": "Nos ta tuma kontakto ku bo pa WhatsApp òf telefòn den 3 te 5 dia laboral.",
     "next_3": "Si bo aplikashon wòrdu aprobá, nos ta manda bo e oferta ku e kuota definitivo i nos ta duna bo un sita pa firma.",
-    "next_contact": "Pregunta? Yama nos na +5999 526 8480."
+    "next_contact": "Pregunta? Yama nos na +5999 526 8480.",
+    "bancos_pendientes": "Bo estado di kuenta di banko ta pendiente. Bo aplikashon ta keda warda te ora nos risibí nan: manda un pa kada luna via e link akí bou.",
+    "bancos_pendientes_sin_enlace": "Bo estado di kuenta di banko ta pendiente. Bo aplikashon ta keda warda te ora nos risibí nan. Yama nos na +5999 526 8480 pa sa kon pa manda nan."
   },
   "ocr": {
     "analyzing": "Ta analisá dokumento…",

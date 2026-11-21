@@ -102,6 +102,45 @@
       r.readAsDataURL(file);
     });
   }
+  // ===== CONSENTIMIENTOS (salud para Aska, consulta al buro) =====
+  // Leonard, 21-nov-2026 (DECISION 4): "two separate consent checkboxes in the
+  // form — health information for the insurer (Aska) and the credit bureau
+  // consultation — each recorded on the application with timestamp and text
+  // version; the intake refuses (clear message in the form language) if either
+  // is missing; T&C text unchanged". Before, both were paragraphs read on the
+  // way to the Terms box. The version names the wording: change the text ->
+  // new version, added to the API (intake-consents.ts) BEFORE this page.
+  const CONSENT_VERSIONS = { salud_aska: 'salud-aska-2026-11-21', buro: 'buro-2026-11-21' };
+  const consentCheckedAt = {};
+  function consentBox(key) { return $('[name="consentimiento_' + key + '"]'); }
+  function consentPayload() {
+    const out = {};
+    Object.keys(CONSENT_VERSIONS).forEach(function (key) {
+      const cb = consentBox(key);
+      if (!cb || !cb.checked) return;
+      const label = cb.closest('label');
+      const span = label && label.querySelector('span');
+      out[key] = {
+        accepted: true,
+        version: CONSENT_VERSIONS[key],
+        lang: currentLang,
+        text: span ? span.textContent.trim() : '',
+        checkedAt: consentCheckedAt[key] || new Date().toISOString()
+      };
+    });
+    return out;
+  }
+  function missingConsentMessages() {
+    const msgs = [];
+    if (!(consentBox('salud_aska') || {}).checked) {
+      msgs.push(t('error.consent_health') || 'Marque la casilla de la información de salud para Aska Insurance para poder enviar la solicitud.');
+    }
+    if (!(consentBox('buro') || {}).checked) {
+      msgs.push(t('error.consent_buro') || 'Marque la casilla de la consulta al buró de crédito para poder enviar la solicitud.');
+    }
+    return msgs;
+  }
+
   // Gather + POST the full application to the v2 intake endpoint.
   async function submitToV2() {
     const form = {};
@@ -110,6 +149,10 @@
     });
     form._lang = currentLang;
     form._submitted_at = new Date().toISOString();
+    // What the applicant agreed to, box by box, in the words shown to them
+    // (DECISION 4, 21-nov-2026). The API records it on the application with
+    // its own timestamp and refuses the send without both.
+    form._consents = consentPayload();
 
     const documents = [];
     const fileInputs = $$('input[type="file"]');
@@ -210,6 +253,9 @@
     INTAKE_DISABLED: 'error.code.unavailable',
     UNAUTHORIZED: 'error.code.unavailable',
     INTAKE_FAILED: 'error.code.failed',
+    // The two consents of their own (DECISION 4, 21-nov-2026): the server
+    // refuses without them. The form checks first; this covers an old page.
+    CONSENT_REQUIRED: 'error.code.consent',
   };
   function intakeErrorMessage(err) {
     const code = err && err.intakeCode;
@@ -733,7 +779,9 @@
         // Quitar a la vista. Los obligatorios —cedula, payslips, bancos,
         // carta— siguen bloqueando: ahi el control existe por el caso
         // Raylian, que fue real (Leonard, 2026-09-18).
-        if (!f.required) return;
+        // A statement slot made optional by "send them later" is still a
+        // statement slot: a payslip in it is refused as before (DECISION 2).
+        if (!f.required && !/^doc_bancos_/.test(f.name)) return;
         if (lbl) lbl.classList.add('invalid');
         fail(f, t('error.doc_tipo_incorrecto', { doc: docLabelFor(f), detected: tipoLabel(c.detected) })
           || (docLabelFor(f) + ': documento incorrecto'));
@@ -1428,7 +1476,7 @@
       bancos.map(p => p.key).join(',')
     ].join('|');
     if (sig === lastDynamicSlotsSignature) {
-      updateUploadCounter();
+      applyBancosPendientes();
       return;
     }
     lastDynamicSlotsSignature = sig;
@@ -1452,6 +1500,32 @@
     // the first restore of the page this is left to init().
     if (restauracionInicialHecha) void restaurarDocumentos(['doc_payslips', 'doc_bancos']);
 
+    applyBancosPendientes();
+  }
+
+  // ===== EXTRACTOS PENDIENTES =====
+  // Leonard, 21-nov-2026 (DECISION 2): "keep asking for all documents, but the
+  // applicant can SEND the application with the 3 bank statements PENDING
+  // (all other required documents still required); the application is
+  // created, the gate holds it for the statements, and the status page asks
+  // for them month by month". The statements are the one document that means
+  // leaving the form for the bank's website on a phone; with this box ticked
+  // their slots stop being required (a file attached anyway still goes, and
+  // still has to BE a statement). Everything else stays required.
+  function bancosPendientes() {
+    const cb = $('[name="extractos_pendientes"]');
+    return !!(cb && cb.checked);
+  }
+  function applyBancosPendientes() {
+    const pendientes = bancosPendientes();
+    $$('input[type="file"][name^="doc_bancos_"]').forEach(function (inp) {
+      inp.required = !pendientes;
+      const lbl = inp.closest('.upload-label');
+      const title = lbl && lbl.querySelector('.upload-title');
+      if (title) title.textContent = title.textContent.replace(/ \*$/, '') + (pendientes ? '' : ' *');
+    });
+    const aviso = $('#bancosPendientesAviso');
+    if (aviso) aviso.hidden = !pendientes;
     updateUploadCounter();
   }
 
@@ -2919,7 +2993,7 @@
         rowAlways(L('step1.cedula', 'Cédula'), fileCount('doc_cedula') > 0 ? '✓' : '—') +
         rowAlways(L('step1.id_adicional', 'ID adicional'), fileCount('doc_id_adicional') > 0 ? '✓' : '—') +
         rowAlways(L('step2.payslips_header', 'Payslips'), slotCount('doc_payslips')) +
-        rowAlways(L('step2.bancos_header', 'Estados de cuenta'), slotCount('doc_bancos')) +
+        rowAlways(L('step2.bancos_header', 'Estados de cuenta'), slotCount('doc_bancos') + (bancosPendientes() ? ' — ' + (t('summary.bancos_pendientes') || 'pendientes: los enviará después') : '')) +
         rowAlways(L('step2.carta', 'Carta de trabajo'), fileCount('doc_carta_trabajo') > 0 ? '✓' : '—') +
         rowAlways(L('summary.comprobante', 'Comprobante de domicilio'), fileCount('doc_aqualectra') > 0 ? '✓' : '—') +
         aquaRows +
@@ -3010,6 +3084,16 @@
   }
 
   // ===== SUBMIT =====
+  // When each consent box was ticked (sent as checkedAt), and the statement
+  // slots following the "send them later" box.
+  document.addEventListener('change', function (ev) {
+    const el = ev.target;
+    if (!el || !el.name) return;
+    const m = /^consentimiento_(.+)$/.exec(el.name);
+    if (m) consentCheckedAt[m[1]] = el.checked ? new Date().toISOString() : undefined;
+    if (el.name === 'extractos_pendientes') applyBancosPendientes();
+  });
+
   async function submitForm(e) {
     e.preventDefault();
     if (!validateStep(7)) return;
@@ -3021,6 +3105,11 @@
     }
     if (!$('[name="acepta_terminos"]').checked) {
       showErrors([t('error.terms') || 'Debes aseptá e términos i kondishon.']);
+      return;
+    }
+    const faltanConsentimientos = missingConsentMessages();
+    if (faltanConsentimientos.length) {
+      showErrors(faltanConsentimientos);
       return;
     }
     // A verification that aged out while the page stayed open: ask for a new
@@ -3056,6 +3145,9 @@
       try {
         const result = await submitToV2();
         track(7, 'enviado');
+        // Read before the draft goes: the last screen says plainly that the
+        // statements are pending and how they are sent (DECISION 2).
+        const conExtractosPendientes = bancosPendientes() || result.bankStatementsPending === true;
         clearDraft();
         // El número que conoce la persona (CFL-…); el UUID sólo si el API no
         // lo devolviera.
@@ -3080,6 +3172,14 @@
         // Ronda 13: el enlace firmado para ver el estado y mandar el documento que falte (estado.html).
         const $st = $('#doneStatusBox'), $stA = $('#doneStatusLink');
         if ($st && $stA && /^https:\/\//.test(result.statusUrl || '')) { $stA.href = result.statusUrl; $st.hidden = false; }
+        const $pend = $('#donePendingMsg');
+        if ($pend) {
+          const conEnlace = $st && !$st.hidden;
+          $pend.textContent = conEnlace
+            ? (t('done.bancos_pendientes') || 'Sus estados de cuenta bancarios están pendientes. Su solicitud queda en espera hasta que los recibamos: envíe uno por cada mes desde el enlace de abajo.')
+            : (t('done.bancos_pendientes_sin_enlace') || 'Sus estados de cuenta bancarios están pendientes. Su solicitud queda en espera hasta que los recibamos. Llámenos al +5999 526 8480 y le indicaremos cómo enviarlos.');
+          $pend.hidden = !conExtractosPendientes;
+        }
         showStep('done');
       } catch (err) {
         console.error('v2 intake error:', err);

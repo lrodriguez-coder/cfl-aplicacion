@@ -967,3 +967,17 @@ select.ocr-filled {
 .quote-box[data-state="loading"] #qAhorro { opacity: 0.55; }
 .quote-box .quote-row { gap: 0.75rem; }
 .quote-box .quote-row strong { white-space: nowrap; }
+
+/* Ronda 14 (21-nov-2026): extractos pendientes al final y casillas de consentimiento. */
+.done-pending {
+  border-left: 4px solid var(--cfl-warning);
+  background: var(--cfl-surface);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin: 1rem auto;
+  max-width: 420px;
+  text-align: left;
+  font-weight: 600;
+}
+.consent-box { margin-top: 0.75rem; }
+#bancosPendientesBox { margin-top: 0.5rem; }

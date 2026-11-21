@@ -112,13 +112,15 @@ async function main() {
       const seen = {};
       for (const l of ['pap', 'es', 'en', 'nl']) {
         await page.selectOption('#langSwitch', l);
-        seen[l] = await page.textContent('.st-doc .field-hint');
+        // Since r14 (DECISION 2, 21-nov-2026) a statement asked for by month is
+        // one row per month: read every row.
+        seen[l] = (await page.$$eval('.st-doc', els => els.map(e => e.textContent))).join(' | ');
       }
       if (variant === 'periods') {
-        check('#7 es: nombra los meses', /octubre 2026, septiembre 2026/.test(seen.es), seen.es);
-        check('#7 en: nombra los meses', /October 2026, September 2026/.test(seen.en), seen.en);
-        check('#7 nl: nombra los meses', /oktober 2026, september 2026/.test(seen.nl), seen.nl);
-        check('#7 pap: nombra los meses', /òktober 2026, sèptèmber 2026/.test(seen.pap), seen.pap);
+        check('#7 es: nombra los meses', /octubre 2026[\s\S]*septiembre 2026/.test(seen.es), seen.es);
+        check('#7 en: nombra los meses', /October 2026[\s\S]*September 2026/.test(seen.en), seen.en);
+        check('#7 nl: nombra los meses', /oktober 2026[\s\S]*september 2026/.test(seen.nl), seen.nl);
+        check('#7 pap: nombra los meses', /òktober 2026[\s\S]*sèptèmber 2026/.test(seen.pap), seen.pap);
         check('#7 los 4 idiomas distintos', new Set(Object.values(seen)).size === 4, JSON.stringify(seen));
       } else {
         check('#7 sin meses: sigue diciendo "el más reciente"', /el más reciente/.test(seen.es), seen.es);
