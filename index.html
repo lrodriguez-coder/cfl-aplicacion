@@ -209,6 +209,14 @@
       <h3 class="section-subheader" data-i18n="step2.bancos_header">Estado di Banko</h3>
       <p class="hint" data-i18n="step2.bancos_explain">Karga un estado di banko pa kada luna — solamente PDF di e internet banking di bo banko.</p>
       <div id="bancosSlots" class="dynamic-slots"></div>
+      <!-- Leonard, 21-nov-2026 (DECISION 2): se puede enviar con los 3 extractos
+           pendientes; la solicitud queda retenida y la página de estado los pide
+           mes por mes. Todo lo demás sigue obligatorio. -->
+      <label class="terms" id="bancosPendientesBox">
+        <input type="checkbox" name="extractos_pendientes" value="si" id="f_extractos_pendientes">
+        <span data-i18n="step2.bancos_pendientes">Mi ta manda mi estado di kuenta di banko despues.</span>
+      </label>
+      <p class="field-hint" id="bancosPendientesAviso" hidden data-i18n="step2.bancos_pendientes_hint">Bo aplikashon ta keda warda te ora nos risibí nan. Despues di entregá, bo ta haña un link pa manda nan, un pa kada luna.</p>
 
       <!-- CARTA DI TRABOU + AQUALECTRA quedan fijos -->
       <div class="upload-block">
@@ -622,11 +630,21 @@
 
       <div class="legal-notes">
         <h3 data-i18n="step7.legal_notes_title">Declarations</h3>
-        <p data-i18n="step7.legal_health">Submitting this application declares have fully and truthfully answered the previous questions and is aware that afterward any incorrect or incomplete health declaration may lead to decline or modification of the rights under the insurance contract.</p>
-        <p data-i18n="step7.legal_aska">Submitting the application, also declares that he/she has no objection to the medical advisor of Aska Insurance seeks medical information from his/her doctor or specialist.</p>
-        <p data-i18n="step7.legal_credit_check">Submitting this application, we have been authorized to check your credit background with third party provider and this also allow to check your information with your employer.</p>
         <p data-i18n="step7.legal_credit_registration">Curacao Fast Loans N.V. participates in a system of credit registration and may perform credit checks as part of the acceptance and monitoring procedure relating to credits.</p>
       </div>
+
+      <!-- Leonard, 21-nov-2026 (DECISION 4): dos casillas propias, aparte de los
+           Términos (que no cambian). Cada una viaja con su versión y su texto, y
+           el API no registra la solicitud sin las dos. No se guardan en el
+           borrador: se marcan de nuevo al retomar. -->
+      <label class="terms consent-box" data-no-draft>
+        <input type="checkbox" name="consentimiento_salud_aska" value="salud-aska-2026-11-21">
+        <span data-i18n="step7.consent_health">Mi ta deklará ku mi a kontestá e preguntanan di salud kompletu i ku berdat, i mi sa ku un deklarashon di salud no korekto òf inkompleto por hiba na refusal òf modifikashon di e derechonan bou di e kontrato di seguro. Mi no tin obheshon ku e konsehero médiko di Aska Insurance buska informashon médiko serka mi dòkter òf spesialista.</span>
+      </label>
+      <label class="terms consent-box" data-no-draft>
+        <input type="checkbox" name="consentimiento_buro" value="buro-2026-11-21">
+        <span data-i18n="step7.consent_buro">Mi ta outorisá Curaçao Fast Loans N.V. pa chèk mi historial di krédito ku tersero proveedornan (inkluso e buró di krédito) i pa chèk mi informashon serka mi empleador.</span>
+      </label>
 
       <label class="terms">
         <input type="checkbox" name="acepta_terminos" required>
@@ -643,6 +661,7 @@
         <div class="done-icon" aria-hidden="true">✓</div>
         <h2 data-i18n="done.title">Aplikashon entregá!</h2>
         <p data-i18n="done.body">Nos a risibí bo aplikashon.</p>
+        <p class="done-pending" id="donePendingMsg" hidden></p>
         <div class="done-id-box" id="doneIdBox" hidden>
           <p class="done-id-label" data-i18n="done.id_label">Bo number di aplikashon</p>
           <p class="aplicacion-id" id="aplicacionIdMsg"></p>

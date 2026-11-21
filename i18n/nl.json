@@ -69,8 +69,11 @@
       "unavailable": "Online aanvragen is op dit moment niet mogelijk. Bel ons op +5999 526 8480.",
       "failed": "Wij konden uw aanvraag niet registreren; uw gegevens blijven bewaard. Probeer het opnieuw of bel ons op +5999 526 8480.",
       "monto_fuera": "Het bedrag valt buiten wat wij online accepteren. Kies een bedrag binnen het bereik dat in de eerste stap wordt getoond.",
-      "plazo_fuera": "De looptijd valt buiten wat wij online accepteren. Kies een looptijd uit de lijst in de eerste stap."
-    }
+      "plazo_fuera": "De looptijd valt buiten wat wij online accepteren. Kies een looptijd uit de lijst in de eerste stap.",
+      "consent": "De vakjes voor toestemming (gezondheidsinformatie voor Aska en controle bij het kredietbureau) ontbreken. Vink ze aan bij de laatste stap en verstuur opnieuw."
+    },
+    "consent_health": "Vink het vakje voor de gezondheidsinformatie voor Aska Insurance aan: zonder dat kunnen wij uw aanvraag niet registreren.",
+    "consent_buro": "Vink het vakje voor de controle bij het kredietbureau aan: zonder dat kunnen wij uw aanvraag niet registreren."
   },
   "intro": {
     "title": "📋 Voordat u begint",
@@ -119,7 +122,9 @@
     "counter_label": "documenten geüpload",
     "choose_tipo_first": "Kies eerst het soort dienstverband en (indien van toepassing) hoe vaak u salaris ontvangt in Stap 2.",
     "slot_payslip": "Loonstrook",
-    "slot_banco": "Bankafschrift"
+    "slot_banco": "Bankafschrift",
+    "bancos_pendientes": "Ik stuur mijn bankafschriften later.",
+    "bancos_pendientes_hint": "Uw aanvraag wacht tot wij ze hebben ontvangen. Na het versturen krijgt u een link om ze te sturen, één per maand. Alle andere documenten blijven verplicht."
   },
   "step3": {
     "title": "Persoonlijke gegevens",
@@ -273,11 +278,10 @@
     "title": "Bevestig uw aanvraag",
     "hint": "Controleer hieronder alle gegevens. Wanneer u op „Aanvraag versturen” klikt, wordt uw aanvraag geregistreerd.",
     "legal_notes_title": "Verklaringen",
-    "legal_health": "Door deze aanvraag te versturen verklaar ik dat ik de voorgaande vragen volledig en naar waarheid heb beantwoord, en ik ben mij ervan bewust dat een onjuiste of onvolledige gezondheidsverklaring kan leiden tot weigering of wijziging van de rechten onder de verzekeringsovereenkomst.",
-    "legal_aska": "Door deze aanvraag te versturen verklaar ik bovendien dat ik er geen bezwaar tegen heb dat de medisch adviseur van Aska Insurance medische informatie opvraagt bij mijn huisarts of specialist.",
-    "legal_credit_check": "Door deze aanvraag te versturen machtig ik CFL om mijn kredietverleden bij externe aanbieders te controleren en mijn gegevens bij mijn werkgever te verifiëren.",
     "legal_credit_registration": "Curaçao Fast Loans N.V. neemt deel aan een systeem van kredietregistratie en kan kredietcontroles uitvoeren als onderdeel van de acceptatie- en controleprocedure voor kredieten.",
-    "terms": "Ik bevestig dat alle gegevens juist zijn en ik ga akkoord met de <a href='terminos.html?lang=nl' target='_blank' rel='noopener'>Algemene Voorwaarden</a> en het <a href='privacidad.html?lang=nl' target='_blank' rel='noopener'>Privacybeleid</a> van CFL."
+    "terms": "Ik bevestig dat alle gegevens juist zijn en ik ga akkoord met de <a href='terminos.html?lang=nl' target='_blank' rel='noopener'>Algemene Voorwaarden</a> en het <a href='privacidad.html?lang=nl' target='_blank' rel='noopener'>Privacybeleid</a> van CFL.",
+    "consent_health": "Ik verklaar dat ik de gezondheidsvragen volledig en naar waarheid heb beantwoord, en ik ben mij ervan bewust dat een onjuiste of onvolledige gezondheidsverklaring kan leiden tot weigering of wijziging van de rechten onder de verzekeringsovereenkomst. Ik heb er geen bezwaar tegen dat de medisch adviseur van Aska Insurance medische informatie opvraagt bij mijn huisarts of specialist.",
+    "consent_buro": "Ik machtig Curaçao Fast Loans N.V. om mijn kredietverleden bij externe aanbieders (waaronder het kredietbureau) te controleren en mijn gegevens bij mijn werkgever te verifiëren."
   },
   "summary": {
     "personal": "Persoonlijke gegevens",
@@ -288,7 +292,8 @@
     "medico": "Huisarts",
     "aqua_titular": "Rekeninghouder Aqualectra",
     "aqua_cliente": "Klantnummer Aqualectra",
-    "comprobante": "Bewijs van adres"
+    "comprobante": "Bewijs van adres",
+    "bancos_pendientes": "ontbreken nog: u stuurt ze later"
   },
   "done": {
     "title": "Aanvraag verstuurd!",
@@ -303,7 +308,9 @@
     "next_1": "Een medewerker van CFL beoordeelt uw aanvraag en uw documenten.",
     "next_2": "Wij nemen binnen 3 tot 5 werkdagen contact met u op via WhatsApp of telefoon.",
     "next_3": "Als uw aanvraag wordt goedgekeurd, sturen we u het aanbod met de definitieve termijn en maken we een afspraak om te tekenen.",
-    "next_contact": "Vragen? Bel ons op +5999 526 8480."
+    "next_contact": "Vragen? Bel ons op +5999 526 8480.",
+    "bancos_pendientes": "Uw bankafschriften ontbreken nog. Uw aanvraag wacht tot wij ze hebben ontvangen: stuur er één per maand via de link hieronder.",
+    "bancos_pendientes_sin_enlace": "Uw bankafschriften ontbreken nog. Uw aanvraag wacht tot wij ze hebben ontvangen. Bel ons op +5999 526 8480, dan vertellen wij u hoe u ze kunt sturen."
   },
   "ocr": {
     "analyzing": "Document wordt geanalyseerd…",
