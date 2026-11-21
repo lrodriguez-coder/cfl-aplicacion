@@ -41,6 +41,7 @@
         missing: 'Nos no a risibí e dokumento akí.',
         expired: 'E dokumento ku nos tin a vense. Manda un ku ta bálido.',
         recent_needed: 'Nos mester e mas resien (e último lunanan), kla i kompleto.',
+        periods: 'Nos mester esun di: {months}. Kla i kompleto.',
         unreadable: 'Nos no por a lesa e dokumento bon. Manda un kopia mas kla.'
       },
       doc: {
@@ -86,6 +87,7 @@
         missing: 'No recibimos este documento.',
         expired: 'El documento que tenemos está vencido. Envíe uno vigente.',
         recent_needed: 'Necesitamos el más reciente (los últimos meses), nítido y completo.',
+        periods: 'Necesitamos el de: {months}. Nítido y completo.',
         unreadable: 'No pudimos leer bien el documento. Envíe una copia más nítida.'
       },
       doc: {
@@ -131,6 +133,7 @@
         missing: 'We did not receive this document.',
         expired: 'The document we have has expired. Please send a valid one.',
         recent_needed: 'We need the most recent one (the last months), sharp and complete.',
+        periods: 'We need the one for: {months}. Sharp and complete.',
         unreadable: 'We could not read the document well. Please send a sharper copy.'
       },
       doc: {
@@ -176,6 +179,7 @@
         missing: 'Wij hebben dit document niet ontvangen.',
         expired: 'Het document dat wij hebben is verlopen. Stuur een geldig exemplaar.',
         recent_needed: 'Wij hebben het meest recente nodig (de laatste maanden), scherp en volledig.',
+        periods: 'Wij hebben dat van {months} nodig. Scherp en volledig.',
         unreadable: 'Wij konden het document niet goed lezen. Stuur een scherpere kopie.'
       },
       doc: {
@@ -279,6 +283,29 @@
     $('stContact').textContent = fill(L.contact, { phone: PHONE });
   }
 
+  // Month names per language, for the months the status asks for (gauntlet
+  // r14, formulario#7: "we need October 2026", not "the most recent one").
+  var MONTHS = {
+    pap: ['yanüari', 'febrüari', 'mart', 'aprel', 'mei', 'yüni', 'yüli', 'ougùstùs', 'sèptèmber', 'òktober', 'novèmber', 'desèmber'],
+    es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    nl: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+  };
+  function monthsText(periods) {
+    var names = MONTHS[lang] || MONTHS.es;
+    return periods.map(function (p) {
+      var m = /^(\d{4})-(\d{2})$/.exec(String(p));
+      var name = m ? names[Number(m[2]) - 1] : null;
+      return name ? name + ' ' + m[1] : String(p);
+    }).join(', ');
+  }
+  function reasonText(d, L) {
+    if (Array.isArray(d.periods) && d.periods.length && L.reason.periods) {
+      return fill(L.reason.periods, { months: monthsText(d.periods) });
+    }
+    return L.reason[d.reason] || L.reason.missing;
+  }
+
   function docBlock(d, L) {
     var box = document.createElement('div');
     box.className = 'st-doc';
@@ -287,7 +314,7 @@
     h.textContent = L.doc[d.documentType] || L.doc.other;
     var p = document.createElement('p');
     p.className = 'field-hint';
-    p.textContent = L.reason[d.reason] || L.reason.missing;
+    p.textContent = reasonText(d, L);
     // No `capture`: the phone offers files (PDF) as well as the camera.
     var input = document.createElement('input');
     input.type = 'file';
