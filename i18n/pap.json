@@ -73,7 +73,8 @@
       "consent": "E kahanan di konsentimentu (informashon di salud pa Aska i chèk serka e buró di krédito) ta falta. Marka nan den e último paso i entregá atrobe."
     },
     "consent_health": "Marka e kaha di e informashon di salud pa Aska Insurance: sin esei nos no por registrá bo aplikashon.",
-    "consent_buro": "Marka e kaha di e chèk serka e buró di krédito: sin esei nos no por registrá bo aplikashon."
+    "consent_buro": "Marka e kaha di e chèk serka e buró di krédito: sin esei nos no por registrá bo aplikashon.",
+    "conyuge_mismo_telefono": "E telefòn di bo kasá no por ta e mesun ku esun di bo: nos ta manda bo kasá un link pa konfirmá, na su mes telefòn."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",

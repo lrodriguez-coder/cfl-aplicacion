@@ -253,6 +253,9 @@
     INTAKE_DISABLED: 'error.code.unavailable',
     UNAUTHORIZED: 'error.code.unavailable',
     INTAKE_FAILED: 'error.code.failed',
+    // The spouse's phone is the applicant's (decision 2, 22-nov-2026): the
+    // API's guard, said in the applicant's language.
+    SPOUSE_PHONE_IS_APPLICANT: 'error.conyuge_mismo_telefono',
     // The two consents of their own (DECISION 4, 21-nov-2026): the server
     // refuses without them. The form checks first; this covers an old page.
     CONSENT_REQUIRED: 'error.code.consent',
@@ -626,6 +629,32 @@
       'Para solicitar un préstamo necesita al menos 1 año con su empleador actual (o una pensión vigente). Revise la fecha de ingreso a su empleo.';
   }
 
+  // Leonard, 22-nov-2026 (decision 2): the spouse's phone is the spouse's own.
+  // The confirmation link goes there; the applicant's own mobile confirms
+  // nothing (a shared home landline is fine). Same rule as the API
+  // (spouse-verification-rules.ts samePhone): a Curaçao number by its national
+  // part (+599 / 00599 / the local trunk 0 removed); the old 7-digit form
+  // matches the 8-digit one only between Curaçao numbers.
+  function canonTelefono(raw) {
+    var d = String(raw || '').replace(/\D/g, '');
+    if (d.length < 7) return null;
+    if (d.indexOf('00') === 0) d = d.slice(2);
+    else if (d.charAt(0) === '0' && d.length >= 8 && d.length <= 9) d = d.slice(1);
+    if (d.indexOf('5999') === 0 && d.length === 11) return { cw: true, n: d.slice(3) };
+    if ((d.length === 8 && d.charAt(0) === '9') || d.length === 7) return { cw: true, n: d };
+    return { cw: false, n: d };
+  }
+  function mismoTelefono(a, b) {
+    var x = canonTelefono(a);
+    var y = canonTelefono(b);
+    if (!x || !y) return false;
+    if (x.n === y.n) return true;
+    if (!x.cw || !y.cw) return false;
+    var short = x.n.length <= y.n.length ? x.n : y.n;
+    var long = x.n.length <= y.n.length ? y.n : x.n;
+    return short.length === 7 && long.length === 8 && long.slice(-7) === short;
+  }
+
   function validateStep(n) {
     // TEMPORAL: bypass total mientras Leonard revisa el form.
     if (BYPASS_STEP_VALIDATION) {
@@ -691,6 +720,18 @@
         fail(f, formatMsg(f));
       }
     });
+    // The spouse's phone may not be one of the applicant's (decision 2). The
+    // API refuses it too (SPOUSE_PHONE_IS_APPLICANT); this says it here, on
+    // the field, before the applicant reaches the end.
+    const conyugeTel = step.querySelector('[name="conyuge_telefono"]');
+    if (conyugeTel && conyugeTel.required && conyugeTel.value.trim()) {
+      const propios = ['telefono_movil']
+        .map((name) => (($('[name="' + name + '"]') || {}).value || ''));
+      if (propios.some((v) => mismoTelefono(v, conyugeTel.value))) {
+        fail(conyugeTel, t('error.conyuge_mismo_telefono')
+          || 'El teléfono del cónyuge no puede ser el mismo que el suyo.');
+      }
+    }
     // Documentos obligatorios: no dejar avanzar si falta alguno (respeta modo pensionado)
     $$('input[type="file"][required]', step).forEach(f => {
       const lbl = f.closest('.upload-label');

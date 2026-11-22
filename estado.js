@@ -69,6 +69,25 @@
         RATE: 'Muchu purba. Warda algun minüt i purba atrobe.',
         GENERIC: 'E archivo no a manda. Purba atrobe.'
       },
+      // Leonard, 22-nov-2026: the spouse's confirmation before the offer.
+      // ⏳ Papiamentu pending native review.
+      spouse: {
+        waitTitle: 'Warda e konfirmashon di bo kasá',
+        waitBody: 'Nos a manda bo kasá un link na su telefòn pa e konfirmá. Ora e konfirmá, nos ta sigui ku bo oferta.',
+        needTitle: 'Nos mester e datos di bo kasá',
+        needBody: 'Bo sédula ta indiká ku bo ta kasá. Pa sigui, duna nos e nòmber i e telefòn di bo kasá. Nos ta manda e un link pa konfirmá.',
+        needBodyDeclared: 'Bo a indiká ku bo ta kasá. Pa sigui, duna nos e nòmber i e telefòn di bo kasá. Nos ta manda e un link pa konfirmá.',
+        reviewTitle: 'Nos ta revisando e konfirmashon di bo kasá',
+        reviewBody: 'No mester hasi nada awor. Si nos mester algu, nos ta tuma kontakto ku bo.',
+        name: 'Nòmber kompleto di bo kasá', phone: 'Telefòn di bo kasá (no esun di bo)', id: 'Number di sédula di bo kasá (opshonal)',
+        send: 'Manda', sending: 'Mandando…', sent: 'Risibí. Nos ta manda bo kasá un link pa konfirmá.',
+        err: {
+          SPOUSE_PHONE_IS_APPLICANT: 'E telefòn di bo kasá no por ta e mesun ku esun di bo.',
+          VALIDATION_FAILED: 'Skirbi e nòmber kompleto i un telefòn bálido.',
+          NOT_ASKED: 'Nos no ta warda e datos akí mas. Rekargá e página.',
+          GENERIC: 'No a manda. Purba atrobe.'
+        }
+      },
       contact: 'Pregunta? Yama nos na {phone}.'
     },
     es: {
@@ -118,6 +137,24 @@
         TOO_MANY_UPLOADS: 'Ya envió el máximo de archivos para esta solicitud. Contáctenos.',
         RATE: 'Demasiados intentos. Espere unos minutos y vuelva a intentarlo.',
         GENERIC: 'No se pudo enviar el archivo. Inténtelo de nuevo.'
+      },
+      // Leonard, 22-nov-2026: the spouse's confirmation before the offer.
+      spouse: {
+        waitTitle: 'Esperando la confirmación de su cónyuge',
+        waitBody: 'Le enviamos a su cónyuge un enlace a su teléfono para que confirme. Cuando confirme, seguimos con su oferta.',
+        needTitle: 'Necesitamos los datos de su cónyuge',
+        needBody: 'Su cédula indica que usted es casado/a. Para continuar, indíquenos el nombre y el teléfono de su cónyuge. Le enviaremos un enlace para confirmar.',
+        needBodyDeclared: 'Usted indicó que es casado/a. Para continuar, indíquenos el nombre y el teléfono de su cónyuge. Le enviaremos un enlace para confirmar.',
+        reviewTitle: 'Estamos revisando la confirmación de su cónyuge',
+        reviewBody: 'Por ahora no necesita hacer nada. Si necesitamos algo, nos comunicaremos con usted.',
+        name: 'Nombre completo de su cónyuge', phone: 'Teléfono de su cónyuge (no el suyo)', id: 'Número de cédula de su cónyuge (opcional)',
+        send: 'Enviar', sending: 'Enviando…', sent: 'Recibido. Le enviaremos a su cónyuge un enlace para confirmar.',
+        err: {
+          SPOUSE_PHONE_IS_APPLICANT: 'El teléfono de su cónyuge no puede ser el mismo que el suyo.',
+          VALIDATION_FAILED: 'Escriba el nombre completo y un teléfono válido.',
+          NOT_ASKED: 'Ya no estamos esperando estos datos. Vuelva a cargar la página.',
+          GENERIC: 'No se pudo enviar. Inténtelo de nuevo.'
+        }
       },
       contact: '¿Preguntas? Llámenos al {phone}.'
     },
@@ -169,6 +206,24 @@
         RATE: 'Too many attempts. Please wait a few minutes and try again.',
         GENERIC: 'The file could not be sent. Please try again.'
       },
+      // Leonard, 22-nov-2026: the spouse's confirmation before the offer.
+      spouse: {
+        waitTitle: "Waiting for your spouse's confirmation",
+        waitBody: 'We sent your spouse a link to their phone to confirm. Once they confirm, we will continue with your offer.',
+        needTitle: "We need your spouse's details",
+        needBody: "Your ID card shows that you are married. To continue, please give us your spouse's name and phone number. We will send them a link to confirm.",
+        needBodyDeclared: "You told us you are married. To continue, please give us your spouse's name and phone number. We will send them a link to confirm.",
+        reviewTitle: "We are reviewing your spouse's confirmation",
+        reviewBody: 'There is nothing you need to do right now. If we need anything, we will contact you.',
+        name: "Your spouse's full name", phone: "Your spouse's phone (not yours)", id: "Your spouse's ID number (optional)",
+        send: 'Send', sending: 'Sending…', sent: 'Received. We will send your spouse a link to confirm.',
+        err: {
+          SPOUSE_PHONE_IS_APPLICANT: "Your spouse's phone cannot be the same as yours.",
+          VALIDATION_FAILED: 'Please enter the full name and a valid phone number.',
+          NOT_ASKED: 'We are no longer waiting for these details. Please reload the page.',
+          GENERIC: 'Could not send. Please try again.'
+        }
+      },
       contact: 'Questions? Call us at {phone}.'
     },
     nl: {
@@ -218,6 +273,24 @@
         TOO_MANY_UPLOADS: 'U heeft het maximale aantal bestanden voor deze aanvraag verstuurd. Neem contact met ons op.',
         RATE: 'Te veel pogingen. Wacht enkele minuten en probeer het opnieuw.',
         GENERIC: 'Het bestand kon niet worden verstuurd. Probeer het opnieuw.'
+      },
+      // Leonard, 22-nov-2026: the spouse's confirmation before the offer.
+      spouse: {
+        waitTitle: 'Wachten op de bevestiging van uw echtgeno(o)t(e)',
+        waitBody: 'Wij hebben uw echtgeno(o)t(e) een link gestuurd om te bevestigen. Zodra die bevestigt, gaan wij verder met uw aanbod.',
+        needTitle: 'Wij hebben de gegevens van uw echtgeno(o)t(e) nodig',
+        needBody: 'Uw identiteitskaart vermeldt dat u gehuwd bent. Geef ons om verder te gaan de naam en het telefoonnummer van uw echtgeno(o)t(e). Wij sturen een link om te bevestigen.',
+        needBodyDeclared: 'U heeft aangegeven dat u gehuwd bent. Geef ons om verder te gaan de naam en het telefoonnummer van uw echtgeno(o)t(e). Wij sturen een link om te bevestigen.',
+        reviewTitle: 'Wij controleren de bevestiging van uw echtgeno(o)t(e)',
+        reviewBody: 'U hoeft nu niets te doen. Als wij iets nodig hebben, nemen wij contact met u op.',
+        name: 'Volledige naam van uw echtgeno(o)t(e)', phone: 'Telefoon van uw echtgeno(o)t(e) (niet de uwe)', id: 'Identiteitsnummer van uw echtgeno(o)t(e) (optioneel)',
+        send: 'Versturen', sending: 'Bezig met versturen…', sent: 'Ontvangen. Wij sturen uw echtgeno(o)t(e) een link om te bevestigen.',
+        err: {
+          SPOUSE_PHONE_IS_APPLICANT: 'Het telefoonnummer van uw echtgeno(o)t(e) mag niet hetzelfde zijn als het uwe.',
+          VALIDATION_FAILED: 'Vul de volledige naam en een geldig telefoonnummer in.',
+          NOT_ASKED: 'Wij wachten niet meer op deze gegevens. Laad de pagina opnieuw.',
+          GENERIC: 'Versturen is niet gelukt. Probeer het opnieuw.'
+        }
       },
       contact: 'Vragen? Bel ons op {phone}.'
     }
@@ -316,7 +389,93 @@
         ? fill(L.sentMonths, { months: monthsText(sentMonths.map(function (k) { return k.split('|')[1]; })) })
         : '';
     }
+    renderSpouse(L);
     $('stContact').textContent = fill(L.contact, { phone: PHONE });
+  }
+
+  // The spouse's confirmation (Leonard, 22-nov-2026). The API says
+  // 'data_needed' (ask for the spouse's name and phone) or
+  // 'awaiting_confirmation' (the link is with the spouse). Anything else, or
+  // nothing, shows nothing.
+  var spouseNote = null;
+  function renderSpouse(L) {
+    var box = $('stSpouse');
+    if (!box) return;
+    var S = L.spouse;
+    var state = status && status.spouse;
+    box.textContent = '';
+    box.hidden = !(S && (state === 'data_needed' || state === 'awaiting_confirmation' || state === 'in_review'));
+    if (box.hidden) return;
+    var title = document.createElement('p');
+    title.className = 'st-stage';
+    var body = document.createElement('p');
+    body.className = 'st-detail';
+    box.appendChild(title); box.appendChild(body);
+    // "We sent your spouse a link" ONLY when a link really went out and lives;
+    // otherwise (not sent yet, or expired) words that claim no send.
+    if (state === 'awaiting_confirmation') {
+      title.textContent = S.waitTitle;
+      body.textContent = S.waitBody;
+      return;
+    }
+    if (state === 'in_review') {
+      title.textContent = S.reviewTitle;
+      body.textContent = S.reviewBody;
+      return;
+    }
+    title.textContent = S.needTitle;
+    // Why we ask: the ID card, or the applicant's own answer.
+    body.textContent = status.spouseNeed === 'declared' ? S.needBodyDeclared : S.needBody;
+    function field(name, label, type) {
+      var wrap = document.createElement('div');
+      wrap.className = 'field';
+      var lab = document.createElement('label');
+      lab.textContent = label;
+      var input = document.createElement('input');
+      input.type = type; input.name = name;
+      input.maxLength = name === 'fullName' ? 120 : 30;
+      lab.appendChild(input);
+      wrap.appendChild(lab);
+      box.appendChild(wrap);
+      return input;
+    }
+    var nameIn = field('fullName', S.name, 'text');
+    var phoneIn = field('phone', S.phone, 'tel');
+    var idIn = field('validId', S.id, 'text');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-primary';
+    btn.textContent = S.send;
+    var msg = document.createElement('p');
+    msg.className = 'st-msg' + (spouseNote ? ' ' + spouseNote.cls : '');
+    msg.textContent = spouseNote ? spouseNote.text : '';
+    box.appendChild(btn); box.appendChild(msg);
+    btn.addEventListener('click', function () {
+      function say(cls, text) { spouseNote = { cls: cls, text: text }; msg.className = 'st-msg ' + cls; msg.textContent = text; }
+      var body = { fullName: nameIn.value.trim(), phone: phoneIn.value.trim() };
+      if (idIn.value.trim()) body.validId = idIn.value.trim();
+      if (body.fullName.length < 3 || body.phone.replace(/\D/g, '').length < 7) { say('err', S.err.VALIDATION_FAILED); return; }
+      btn.disabled = true; btn.textContent = S.sending;
+      fetch(API + encodeURIComponent(token) + '/spouse', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (j) {
+          if (res.ok) return;
+          throw { code: (j && j.error && j.error.code) || 'GENERIC' };
+        });
+      }).then(function () {
+        say('ok', S.sent);
+        setTimeout(load, 800);
+      }).catch(function (e) {
+        var code = e && e.code;
+        if (code === 'LINK_INVALID' || code === 'LINK_EXPIRED') { errorKey = code; render(); return; }
+        say('err', S.err[code] || S.err.GENERIC);
+      }).then(function () {
+        btn.disabled = false; btn.textContent = T[lang].spouse.send;
+      });
+    });
   }
 
   // Month names per language, for the months the status asks for (gauntlet

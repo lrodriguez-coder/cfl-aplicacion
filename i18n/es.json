@@ -73,7 +73,8 @@
       "consent": "Faltan las casillas de consentimiento (información de salud para Aska y consulta al buró de crédito). Márquelas en el último paso y vuelva a enviar."
     },
     "consent_health": "Marque la casilla de la información de salud para Aska Insurance: sin ella no podemos registrar su solicitud.",
-    "consent_buro": "Marque la casilla de la consulta al buró de crédito: sin ella no podemos registrar su solicitud."
+    "consent_buro": "Marque la casilla de la consulta al buró de crédito: sin ella no podemos registrar su solicitud.",
+    "conyuge_mismo_telefono": "El teléfono de su cónyuge no puede ser el mismo que el suyo: le enviaremos a su cónyuge un enlace para confirmar, a su propio teléfono."
   },
   "intro": {
     "title": "📋 Antes de empezar",
