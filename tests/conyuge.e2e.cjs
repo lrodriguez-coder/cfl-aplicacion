@@ -7,7 +7,8 @@
         el token correcto;
      2. el API responde SPOUSE_PHONE_IS_APPLICANT: se dice en la página;
      3. spouse = 'awaiting_confirmation': "Esperando la confirmación de su
-        cónyuge", sin formulario;
+        cónyuge", sin formulario; 'in_review' no dice que se envió nada;
+        data_needed por lo declarado no dice "su cédula";
      4. sin `spouse` (respuesta de siempre): nada nuevo en la página;
      5. index.html: el paso 4 no deja seguir con el teléfono del cónyuge igual
         al del solicitante (decisión 2), y sí con otro número.
@@ -122,6 +123,23 @@ async function statusPage(browser, base, status, postAnswer) {
       check('awaiting: sin formulario', (await page.$$('#stSpouse input')).length === 0);
       await ctx.close();
     }
+    // 3b. in_review (link not sent / expired): no claim that a link went out
+    {
+      const { page, ctx } = await statusPage(browser, base, { ...BASE_STATUS, spouse: 'in_review' });
+      await page.selectOption('#langSwitch', 'es');
+      const txt = await page.textContent('#stSpouse');
+      check('in_review: "Estamos revisando la confirmación de su cónyuge"', /Estamos revisando la confirmación de su cónyuge/.test(txt), txt);
+      check('in_review: NO dice que se envió un enlace', !/enviamos/i.test(txt), txt);
+      await ctx.close();
+    }
+    // 3c. data_needed because the applicant declared married: no "su cédula indica"
+    {
+      const { page, ctx } = await statusPage(browser, base, { ...BASE_STATUS, spouse: 'data_needed', spouseNeed: 'declared' });
+      await page.selectOption('#langSwitch', 'es');
+      const txt = await page.textContent('#stSpouse');
+      check('data_needed por lo declarado: "Usted indicó que es casado/a"', /Usted indicó que es casado/.test(txt) && !/Su cédula/.test(txt), txt.slice(0, 120));
+      await ctx.close();
+    }
     // 4. No spouse key
     {
       const { page, ctx } = await statusPage(browser, base, BASE_STATUS);
@@ -161,6 +179,19 @@ async function statusPage(browser, base, status, postAnswer) {
       await page.waitForTimeout(300);
       const errs2 = await page.evaluate(() => document.getElementById('errors').textContent);
       check('otro número: ese aviso ya no aparece', !/no puede ser el mismo que el suyo/.test(errs2), errs2.slice(0, 200));
+      // Local trunk 0: "09 5123456" is the applicant's +599 9 512-3456.
+      await page.fill('[name="conyuge_telefono"]', '09 5123456');
+      await page.click('#btnNext');
+      await page.waitForTimeout(300);
+      const errs3 = await page.evaluate(() => document.getElementById('errors').textContent);
+      check('0 de troncal: "09 5123456" es el mismo número', /no puede ser el mismo que el suyo/.test(errs3), errs3.slice(0, 120));
+      // A shared home landline is fine.
+      await page.fill('[name="telefono_casa"]', '7 654 3210');
+      await page.fill('[name="conyuge_telefono"]', '7 654 3210');
+      await page.click('#btnNext');
+      await page.waitForTimeout(300);
+      const errs4 = await page.evaluate(() => document.getElementById('errors').textContent);
+      check('el fijo de la casa compartido no choca', !/no puede ser el mismo que el suyo/.test(errs4), errs4.slice(0, 120));
       await ctx.close();
     }
   } finally {
