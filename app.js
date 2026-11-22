@@ -626,6 +626,19 @@
       'Para solicitar un préstamo necesita al menos 1 año con su empleador actual (o una pensión vigente). Revise la fecha de ingreso a su empleo.';
   }
 
+  // Leonard, 22-nov-2026 (decision 2): the spouse's phone is the spouse's own.
+  // The confirmation link goes there; the applicant's own number confirms
+  // nothing. Same rule as the API (spouse-verification-rules.ts samePhone):
+  // digits only, without 00, and the longer one ending in the shorter (7+).
+  function mismoTelefono(a, b) {
+    var x = String(a || '').replace(/\D/g, '').replace(/^00/, '');
+    var y = String(b || '').replace(/\D/g, '').replace(/^00/, '');
+    if (x.length < 7 || y.length < 7) return false;
+    var short = x.length <= y.length ? x : y;
+    var long = x.length <= y.length ? y : x;
+    return long.slice(-short.length) === short;
+  }
+
   function validateStep(n) {
     // TEMPORAL: bypass total mientras Leonard revisa el form.
     if (BYPASS_STEP_VALIDATION) {
@@ -691,6 +704,18 @@
         fail(f, formatMsg(f));
       }
     });
+    // The spouse's phone may not be one of the applicant's (decision 2). The
+    // API refuses it too (SPOUSE_PHONE_IS_APPLICANT); this says it here, on
+    // the field, before the applicant reaches the end.
+    const conyugeTel = step.querySelector('[name="conyuge_telefono"]');
+    if (conyugeTel && conyugeTel.required && conyugeTel.value.trim()) {
+      const propios = ['telefono_movil', 'telefono_casa']
+        .map((name) => (($('[name="' + name + '"]') || {}).value || ''));
+      if (propios.some((v) => mismoTelefono(v, conyugeTel.value))) {
+        fail(conyugeTel, t('error.conyuge_mismo_telefono')
+          || 'El teléfono del cónyuge no puede ser el mismo que el suyo.');
+      }
+    }
     // Documentos obligatorios: no dejar avanzar si falta alguno (respeta modo pensionado)
     $$('input[type="file"][required]', step).forEach(f => {
       const lbl = f.closest('.upload-label');

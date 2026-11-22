@@ -73,7 +73,8 @@
       "consent": "De vakjes voor toestemming (gezondheidsinformatie voor Aska en controle bij het kredietbureau) ontbreken. Vink ze aan bij de laatste stap en verstuur opnieuw."
     },
     "consent_health": "Vink het vakje voor de gezondheidsinformatie voor Aska Insurance aan: zonder dat kunnen wij uw aanvraag niet registreren.",
-    "consent_buro": "Vink het vakje voor de controle bij het kredietbureau aan: zonder dat kunnen wij uw aanvraag niet registreren."
+    "consent_buro": "Vink het vakje voor de controle bij het kredietbureau aan: zonder dat kunnen wij uw aanvraag niet registreren.",
+    "conyuge_mismo_telefono": "Het telefoonnummer van uw echtgeno(o)t(e) mag niet hetzelfde zijn als het uwe: wij sturen uw echtgeno(o)t(e) een link om te bevestigen, op het eigen telefoonnummer."
   },
   "intro": {
     "title": "📋 Voordat u begint",

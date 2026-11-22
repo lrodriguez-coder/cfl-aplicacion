@@ -73,7 +73,8 @@
       "consent": "The consent boxes (health information for Aska and the credit bureau check) are missing. Please tick them on the last step and submit again."
     },
     "consent_health": "Please tick the box for the health information for Aska Insurance: without it we cannot register your application.",
-    "consent_buro": "Please tick the box for the credit bureau check: without it we cannot register your application."
+    "consent_buro": "Please tick the box for the credit bureau check: without it we cannot register your application.",
+    "conyuge_mismo_telefono": "Your spouse's phone cannot be the same as yours: we will send your spouse a link to confirm, to their own phone."
   },
   "intro": {
     "title": "📋 Before you start",
