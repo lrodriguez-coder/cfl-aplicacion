@@ -74,7 +74,9 @@
     },
     "consent_health": "Vink het vakje voor de gezondheidsinformatie voor Aska Insurance aan: zonder dat kunnen wij uw aanvraag niet registreren.",
     "consent_buro": "Vink het vakje voor de controle bij het kredietbureau aan: zonder dat kunnen wij uw aanvraag niet registreren.",
-    "conyuge_mismo_telefono": "Het telefoonnummer van uw echtgeno(o)t(e) mag niet hetzelfde zijn als het uwe: wij sturen uw echtgeno(o)t(e) een link om te bevestigen, op het eigen telefoonnummer."
+    "conyuge_mismo_telefono": "Het telefoonnummer van uw echtgeno(o)t(e) mag niet hetzelfde zijn als het uwe: wij sturen uw echtgeno(o)t(e) een link om te bevestigen, op het eigen telefoonnummer.",
+    "conyuge_cedula_propia": "De identiteitskaart die u als die van uw echtgeno(o)t(e) heeft geüpload, is uw eigen kaart. Upload de identiteitskaart van uw echtgeno(o)t(e).",
+    "conyuge_email_propio": "Het e-mailadres van uw echtgeno(o)t(e) mag niet hetzelfde zijn als het uwe."
   },
   "intro": {
     "title": "📋 Voordat u begint",
@@ -160,7 +162,7 @@
     "conyuge_apellido": "Achternaam echtgeno(o)t(e) *",
     "conyuge_telefono": "Telefoon echtgeno(o)t(e) *",
     "conyuge_sedula": "Identiteitsnummer echtgeno(o)t(e)",
-    "conyuge_sedula_hint": "Optioneel. Heeft u het niet bij de hand, dan vullen we het op kantoor aan.",
+    "conyuge_sedula_hint": "We lezen het van de identiteitskaart van uw echtgeno(o)t(e). Lukt dat niet, vul het dan in.",
     "cuenta_bancaria": "Bankrekeningnummer",
     "email": "E-mail",
     "email_verify_btn": "Verifiëren",
@@ -212,7 +214,13 @@
     "civil_viudo": "Weduwe / weduwnaar",
     "nacionalidad": "Nationaliteit *",
     "pais_nacimiento": "Geboorteland *",
-    "tipo_id_sedula": "Identiteitskaart (sédula)"
+    "tipo_id_sedula": "Identiteitskaart (sédula)",
+    "conyuge_cedula": "📷 Identiteitskaart van uw echtgeno(o)t(e) *",
+    "conyuge_cedula_hint": "Daarvan lezen we de naam, het identiteitsnummer en de geboortedatum van uw echtgeno(o)t(e). Het adres is het uwe: dat hoeft u niet in te vullen.",
+    "conyuge_email": "E-mail van uw echtgeno(o)t(e)",
+    "conyuge_email_hint": "Optioneel. We sturen een code naar dat adres; uw echtgeno(o)t(e) geeft die aan u en u vult hem hier in.",
+    "conyuge_email_done": "✓ E-mail van uw echtgeno(o)t(e) geverifieerd",
+    "conyuge_email_pendiente": "Niet geverifieerd: we sturen niets naar dat adres."
   },
   "step4": {
     "title": "Gezondheidsverklaring",
@@ -337,7 +345,8 @@
     "lbl_pais_emisor": "Land van afgifte",
     "cedula_header": "Gegevens van de identiteitskaart (automatisch herkend; dit wordt opgeslagen)",
     "auto_detected": "automatisch herkend",
-    "tipo_empleo_otro": "Uw werkgeversverklaring vermeldt een ander soort dienstverband. Controleer het soort dienstverband dat u in stap 2 koos."
+    "tipo_empleo_otro": "Uw werkgeversverklaring vermeldt een ander soort dienstverband. Controleer het soort dienstverband dat u in stap 2 koos.",
+    "conyuge_leida": "Identiteitskaart van uw echtgeno(o)t(e) gelezen: {name}"
   },
   "tipo": {
     "cedula": "een identiteitskaart",
