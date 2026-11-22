@@ -74,7 +74,9 @@
     },
     "consent_health": "Please tick the box for the health information for Aska Insurance: without it we cannot register your application.",
     "consent_buro": "Please tick the box for the credit bureau check: without it we cannot register your application.",
-    "conyuge_mismo_telefono": "Your spouse's phone cannot be the same as yours: we will send your spouse a link to confirm, to their own phone."
+    "conyuge_mismo_telefono": "Your spouse's phone cannot be the same as yours: we will send your spouse a link to confirm, to their own phone.",
+    "conyuge_cedula_propia": "The ID card you uploaded as your spouse's is your own. Please upload your spouse's ID card.",
+    "conyuge_email_propio": "Your spouse's e-mail cannot be the same as yours."
   },
   "intro": {
     "title": "📋 Before you start",
@@ -160,7 +162,7 @@
     "conyuge_apellido": "Spouse's surname *",
     "conyuge_telefono": "Spouse's phone *",
     "conyuge_sedula": "Spouse's ID number",
-    "conyuge_sedula_hint": "Optional. If you do not have it to hand, we complete it at the office.",
+    "conyuge_sedula_hint": "We read it from your spouse's ID card. If it cannot be read, type it in.",
     "cuenta_bancaria": "Bank account number",
     "email": "Email",
     "email_verify_btn": "Verify",
@@ -212,7 +214,13 @@
     "civil_viudo": "Widowed",
     "nacionalidad": "Nationality *",
     "pais_nacimiento": "Country of birth *",
-    "tipo_id_sedula": "ID card (sédula)"
+    "tipo_id_sedula": "ID card (sédula)",
+    "conyuge_cedula": "📷 Your spouse's ID card *",
+    "conyuge_cedula_hint": "From it we read your spouse's name, ID number and date of birth. The address is yours: no need to type it.",
+    "conyuge_email": "Your spouse's e-mail",
+    "conyuge_email_hint": "Optional. We send a code to that address; your spouse gives it to you and you type it here.",
+    "conyuge_email_done": "✓ Your spouse's e-mail is verified",
+    "conyuge_email_pendiente": "Not verified: we will send nothing to that address."
   },
   "step4": {
     "title": "Health Declaration",
@@ -337,7 +345,8 @@
     "lbl_pais_emisor": "Issuing country",
     "cedula_header": "ID card details (detected automatically; this is what will be saved)",
     "auto_detected": "detected automatically",
-    "tipo_empleo_otro": "Your employment letter shows a different type of employment. Please check the employment type you chose in step 2."
+    "tipo_empleo_otro": "Your employment letter shows a different type of employment. Please check the employment type you chose in step 2.",
+    "conyuge_leida": "Your spouse's ID card was read: {name}"
   },
   "tipo": {
     "cedula": "an ID card",

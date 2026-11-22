@@ -86,6 +86,9 @@
       // insurer takes it as the second photo ID and nothing could tell it
       // apart from any other stray upload.
       case 'doc_id_adicional': return 'id_secondary';
+      // The SPOUSE's cedula (Leonard, 22-nov-2026). Its own type: the server
+      // takes every `cedula_front` as the applicant's identity.
+      case 'doc_cedula_conyuge': return 'spouse_cedula';
       default: return 'other';
     }
   }
@@ -290,6 +293,8 @@
   // la extracción completa cuando se abra la aplicación.
   const OCR_TYPES = {
     doc_cedula: 'cedula',
+    // Same reader, same prompt; runOcr fills the SPOUSE fields with it.
+    doc_cedula_conyuge: 'cedula',
     doc_id_adicional: 'id_adicional',
     doc_payslips: 'payslip',
     doc_carta_trabajo: 'carta',
@@ -351,6 +356,7 @@
   // (qué documento ve Claude realmente); si no coincide, se bloquea el avance.
   const EXPECTED_TIPO = {
     doc_cedula: ['cedula'],
+    doc_cedula_conyuge: ['cedula'],
     doc_id_adicional: ['paspoort', 'rijbewijs'],
     doc_payslips: ['payslip'],
     doc_bancos: ['bank_statement'],
@@ -363,7 +369,10 @@
     doc_aqualectra: ['aqualectra', 'verblijfsvergunning'],
   };
   // Slots cuya vigencia se verifica (el OCR devuelve fecha_vencimiento).
-  const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional'];
+  // The spouse's card too, but only as a warning (see validateStep): the
+  // spouse shows a valid ID at the signing, and an expired one is no reason
+  // to lose the application.
+  const EXPIRY_DOCS = ['doc_cedula', 'doc_id_adicional', 'doc_cedula_conyuge'];
   // La carta de trabajo confirma empleo ACTUAL: debe ser reciente. Si la fecha
   // de emisión tiene más de estos días, se rechaza (Leonard 2026-08-01, caso
   // Raylian: carta de feb-2026 usada en ago-2026 = ~6 meses).
@@ -380,6 +389,10 @@
   // Para payslips/bancos guardamos array (1 por archivo subido)
   const ocrResults = {
     doc_cedula: null,
+    // What the cedula reader saw on the SPOUSE's card. Sent as
+    // ocr.doc_cedula_conyuge; the server takes the name / ID / date of birth
+    // from it.
+    doc_cedula_conyuge: null,
     doc_id_adicional: null,
     doc_payslips: [],
     doc_bancos: [],
@@ -466,6 +479,7 @@
   // Etiqueta legible de cada documento, para los mensajes de validación.
   const DOC_LABEL_I18N = {
     doc_cedula: 'step1.cedula',
+    doc_cedula_conyuge: 'step3.conyuge_cedula',
     doc_id_adicional: 'step1.id_adicional',
     doc_payslips: 'step2.payslips',
     doc_bancos: 'step2.bancos',
@@ -720,6 +734,21 @@
         fail(f, formatMsg(f));
       }
     });
+    // The spouse's card may not be the applicant's own card a second time
+    // (the server would take nothing from it), nor the spouse's e-mail the
+    // applicant's own (22-nov-2026).
+    const conyugeCed = step.querySelector('input[type="file"][name="doc_cedula_conyuge"]');
+    if (conyugeCed && conyugeCed.required && conyugeCed.files && conyugeCed.files.length > 0 && cedulaConyugeEsPropia()) {
+      fail(conyugeCed, t('error.conyuge_cedula_propia')
+        || 'La cédula que subió como la de su cónyuge es la suya. Suba la cédula de su cónyuge.');
+    }
+    const conyugeMail = step.querySelector('[name="conyuge_email"]');
+    const propioMail = $('[name="email"]');
+    if (conyugeMail && conyugeMail.value.trim() && propioMail &&
+        conyugeMail.value.trim().toLowerCase() === propioMail.value.trim().toLowerCase()) {
+      fail(conyugeMail, t('error.conyuge_email_propio')
+        || 'El correo de su cónyuge no puede ser el mismo que el suyo.');
+    }
     // The spouse's phone may not be one of the applicant's (decision 2). The
     // API refuses it too (SPOUSE_PHONE_IS_APPLICANT); this says it here, on
     // the field, before the applicant reaches the end.
@@ -826,7 +855,7 @@
         if (lbl) lbl.classList.add('invalid');
         fail(f, t('error.doc_tipo_incorrecto', { doc: docLabelFor(f), detected: tipoLabel(c.detected) })
           || (docLabelFor(f) + ': documento incorrecto'));
-      } else if (c.expired) {
+      } else if (c.expired && f.name !== 'doc_cedula_conyuge') {
         if (lbl) lbl.classList.add('invalid');
         fail(f, t('error.doc_vencido', { doc: docLabelFor(f), date: c.vence })
           || (docLabelFor(f) + ': documento vencido'));
@@ -999,6 +1028,8 @@
     // (VERIFICATION_VALID_HOURS), so a draft resumed after that must ask for
     // a new code instead of showing "verified" (gauntlet r13, formulario#4).
     data._emailVerifiedAt = emailVerifiedFor && emailVerifiedAt ? emailVerifiedAt : undefined;
+    data._conyugeEmailVerifiedFor = conyugeEmailVerifiedFor || undefined;
+    data._conyugeEmailVerifiedAt = conyugeEmailVerifiedFor && conyugeEmailVerifiedAt ? conyugeEmailVerifiedAt : undefined;
     data._phoneVerifiedAt = phoneVerifiedFor && phoneVerifiedAt ? phoneVerifiedAt : undefined;
     // Kept only once a send was attempted (getSubmissionId): see submitToV2.
     data._submissionId = _submissionIdMemo || undefined;
@@ -2280,6 +2311,7 @@
   function expectedTipoLabel(inputName) {
     const KEY = {
       doc_cedula: 'cedula',
+      doc_cedula_conyuge: 'cedula',
       doc_id_adicional: 'id_adicional',
       doc_payslips: 'payslip',
       doc_bancos: 'bank_statement',
@@ -2683,7 +2715,10 @@
       }
       // Validar que el titular del doc coincida con el nombre de la cédula.
       // Solo advierte, no bloquea.
-      checkNameMatch(container, inputName, result.data);
+      // The spouse's card is not the applicant's: comparing its name with
+      // the applicant's would warn on every married applicant.
+      const esConyuge = baseDocName(inputName) === 'doc_cedula_conyuge';
+      if (!esConyuge) checkNameMatch(container, inputName, result.data);
       if (chk.tipoStatus === 'mismatch') {
         // No auto-rellenar desde un documento del tipo equivocado.
         setOcrStatus(
@@ -2695,9 +2730,17 @@
         return;
       }
       // Auto-fill solo desde el PRIMER archivo (los demás se mandan al backend)
-      const filled = (idx === 0) ? applyOcrAutoFill(docType, result.data) : [];
+      const filled = (idx === 0)
+        ? (esConyuge ? aplicarCedulaConyuge(container, result.data) : applyOcrAutoFill(docType, result.data))
+        : [];
+      // The applicant's own card in the spouse slot: its warning stays (the
+      // "document read" line below would replace it).
+      if (esConyuge && idx === 0 && cedulaConyugeEsPropia()) {
+        saveDraft();
+        return;
+      }
       // Cédula de un menor: se dice YA, no en el paso 4 (formulario#2).
-      if (docType === 'cedula' && idx === 0) {
+      if (docType === 'cedula' && idx === 0 && !esConyuge) {
         const nacCed = fechaNacimientoCedula();
         if (nacCed && esMenorDeEdad(nacCed)) {
           setOcrStatus(container, '⚠️ ' + msgMenorSegunCedula(), 'warn');
@@ -2738,6 +2781,54 @@
       storeOcrResult(inputName, idx, null);
       setOcrStatus(container, '⚠️ ' + (t('ocr.error') || 'No fue posible analizar el documento'), 'warn');
     }
+  }
+
+  // The spouse's own cedula (Leonard, 22-nov-2026). Fills the spouse's
+  // fields that are still empty (what the applicant typed is not overwritten
+  // here; the server takes the card's name and number anyway), and says so
+  // when the card is the applicant's own. Returns the field names it filled.
+  function mismoNumeroId(a, b) {
+    const n = function (v) { return String(v || '').replace(/[^0-9a-z]/gi, '').toLowerCase(); };
+    return !!n(a) && n(a) === n(b);
+  }
+  function cedulaConyugeEsPropia() {
+    const c = ocrResults.doc_cedula_conyuge;
+    const propia = ocrResults.doc_cedula;
+    return !!(c && propia && mismoNumeroId(c.numero_id, propia.numero_id));
+  }
+  function aplicarCedulaConyuge(container, data) {
+    if (cedulaConyugeEsPropia()) {
+      setOcrStatus(container, '⚠️ ' + (t('error.conyuge_cedula_propia') ||
+        'La cédula que subió como la de su cónyuge es la suya.'), 'warn');
+      return [];
+    }
+    const filled = [];
+    const poner = function (name, value) {
+      const el = $('[name="' + name + '"]');
+      if (!el || !value || el.value.trim()) return;
+      el.value = String(value).trim().slice(0, el.maxLength > 0 ? el.maxLength : 120);
+      // Referencia 1 is copied from these fields on `input`.
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      filled.push(name);
+    };
+    const nombre = String(data.nombre_completo || '').trim().replace(/\s+/g, ' ');
+    if (nombre && !$('[name="conyuge_nombre"]').value.trim() && !$('[name="conyuge_apellido"]').value.trim()) {
+      // The card prints given names first. The first word as the name and
+      // the rest as the surname is only a guess for the screen; the server
+      // stores the card's full name as it is.
+      const partes = nombre.split(' ');
+      poner('conyuge_nombre', partes[0]);
+      poner('conyuge_apellido', partes.slice(1).join(' '));
+    }
+    poner('conyuge_numero_id', data.numero_id);
+    if (nombre) {
+      const info = container.querySelector('.conyuge-leida') || document.createElement('div');
+      info.className = 'conyuge-leida field-hint';
+      info.textContent = '✓ ' + (t('ocr.conyuge_leida', { name: nombre }) || ('Cédula de su cónyuge leída: ' + nombre));
+      if (!info.parentNode) container.appendChild(info);
+    }
+    saveDraft();
+    return filled;
   }
 
   // La carta dijo un tipo de empleo que el formulario no ofrece
@@ -2983,7 +3074,9 @@
               t('step3.conyuge') || 'Kasá',
               [get('conyuge_nombre'), get('conyuge_apellido')].filter(Boolean).join(' ') +
               (get('conyuge_telefono') ? ' — ' + get('conyuge_telefono') : '') +
-              (get('conyuge_numero_id') ? ' — ' + get('conyuge_numero_id') : ''))
+              (get('conyuge_numero_id') ? ' — ' + get('conyuge_numero_id') : '') +
+              (get('conyuge_email') ? ' — ' + get('conyuge_email') +
+                (conyugeEmailVerifiedFor ? ' ✓' : '') : ''))
           : '') +
         rowAlways(t('step3.cuenta_bancaria') || 'Number di kuenta', get('cuenta_bancaria_debito')) +
         rowAlways(t('step3.email') || 'Email', get('email')) +
@@ -3032,6 +3125,9 @@
       '<h4>' + (t('summary.docs') || 'Dokumentonan') + '</h4>' +
       '<dl>' +
         rowAlways(L('step1.cedula', 'Cédula'), fileCount('doc_cedula') > 0 ? '✓' : '—') +
+        (get('estado_civil') === 'kasá'
+          ? rowAlways(L('step3.conyuge_cedula', 'Cédula del cónyuge'), fileCount('doc_cedula_conyuge') > 0 ? '✓' : '—')
+          : '') +
         rowAlways(L('step1.id_adicional', 'ID adicional'), fileCount('doc_id_adicional') > 0 ? '✓' : '—') +
         rowAlways(L('step2.payslips_header', 'Payslips'), slotCount('doc_payslips')) +
         rowAlways(L('step2.bancos_header', 'Estados de cuenta'), slotCount('doc_bancos') + (bancosPendientes() ? ' — ' + (t('summary.bancos_pendientes') || 'pendientes: los enviará después') : '')) +
@@ -3562,6 +3658,152 @@
     clearInterval(resendCooldownTimer);
   }
 
+  // ===== SPOUSE E-MAIL VERIFICATION (22-nov-2026) =====
+  // The same one-time code as the applicant's own e-mail (/email-verify, same
+  // session id), sent to the spouse's inbox with a text that says why
+  // (`para: 'conyuge'`). The spouse gives the code to the applicant. Optional:
+  // an e-mail that is not verified does not stop the application; the server
+  // keeps it as not verified and sends nothing to it.
+  let conyugeEmailVerifiedFor = null;
+  let conyugeEmailVerifiedAt = null;
+
+  function conyugeEmailStatus(msg, kind) {
+    const el = $('#conyugeEmailVerifyStatus');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.dataset.kind = kind || '';
+  }
+
+  function marcarConyugeEmail(email, at) {
+    conyugeEmailVerifiedFor = email;
+    conyugeEmailVerifiedAt = at || new Date().toISOString();
+    const panel = $('#conyugeEmailVerifyPanel');
+    const ok = $('#conyugeEmailVerifySuccess');
+    const btn = $('#conyugeEmailVerifyBtn');
+    const input = $('[name="conyuge_email"]');
+    if (panel) panel.hidden = true;
+    if (ok) ok.hidden = false;
+    if (btn) btn.hidden = true;
+    if (input) input.readOnly = true;
+    conyugeEmailStatus('', '');
+  }
+
+  function resetConyugeEmail() {
+    conyugeEmailVerifiedFor = null;
+    conyugeEmailVerifiedAt = null;
+    const panel = $('#conyugeEmailVerifyPanel');
+    const ok = $('#conyugeEmailVerifySuccess');
+    const btn = $('#conyugeEmailVerifyBtn');
+    const input = $('[name="conyuge_email"]');
+    if (panel) panel.hidden = true;
+    if (ok) ok.hidden = true;
+    if (btn) btn.hidden = false;
+    if (input) input.readOnly = false;
+    conyugeEmailStatus('', '');
+  }
+
+  async function enviarCodigoConyuge() {
+    const input = $('[name="conyuge_email"]');
+    if (!input) return;
+    const email = input.value.trim().toLowerCase();
+    if (!email || !input.checkValidity()) {
+      conyugeEmailStatus(t('step3.email_verify_invalid') || 'Email inválido', 'warn');
+      return;
+    }
+    const propio = $('[name="email"]');
+    if (propio && propio.value.trim().toLowerCase() === email) {
+      conyugeEmailStatus(t('error.conyuge_email_propio') || 'El correo de su cónyuge no puede ser el mismo que el suyo.', 'warn');
+      return;
+    }
+    const btn = $('#conyugeEmailVerifyBtn');
+    if (btn) btn.disabled = true;
+    conyugeEmailStatus(t('step3.email_verify_sending') || 'Enviando código...', 'loading');
+    try {
+      const res = await fetch(EMAIL_VERIFY_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, tracking_id: getTrackingId(), lang: currentLang, para: 'conyuge' })
+      });
+      const data = await res.json().catch(() => ({}));
+      const panel = $('#conyugeEmailVerifyPanel');
+      if (data.ok) {
+        if (panel) panel.hidden = false;
+        conyugeEmailStatus(t('step3.email_verify_sent') || 'Código enviado.', 'ok');
+        const code = $('#conyugeEmailVerifyCode');
+        if (code) code.focus();
+      } else if (data.reason === 'cooldown') {
+        if (panel) panel.hidden = false;
+        conyugeEmailStatus(t('step3.email_verify_cooldown') || 'Espere unos segundos antes de pedir otro código.', 'warn');
+      } else {
+        conyugeEmailStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
+      }
+    } catch (e) {
+      console.warn('spouse email verify send failed', e);
+      conyugeEmailStatus(t('step3.email_verify_error') || 'No pudimos enviar el código. Intente de nuevo.', 'warn');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function confirmarCodigoConyuge() {
+    const input = $('[name="conyuge_email"]');
+    const codeInput = $('#conyugeEmailVerifyCode');
+    if (!input || !codeInput) return;
+    const email = input.value.trim().toLowerCase();
+    const code = codeInput.value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      conyugeEmailStatus(t('step3.email_verify_code_format') || 'El código son 6 dígitos.', 'warn');
+      return;
+    }
+    const btn = $('#conyugeEmailVerifyConfirmBtn');
+    if (btn) btn.disabled = true;
+    conyugeEmailStatus(t('step3.email_verify_checking') || 'Verificando...', 'loading');
+    try {
+      const res = await fetch(EMAIL_VERIFY_CONFIRM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, code: code, tracking_id: getTrackingId() })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok && data.verified) {
+        marcarConyugeEmail(email);
+        saveDraft();
+      } else if (data.reason === 'wrong_code') {
+        conyugeEmailStatus(t('step3.email_verify_wrong', { left: data.attempts_left }) ||
+          ('Código incorrecto. Le quedan ' + data.attempts_left + ' intentos.'), 'warn');
+      } else if (data.reason === 'exhausted') {
+        conyugeEmailStatus(t('step3.email_verify_exhausted') || 'Demasiados intentos. Pida un código nuevo.', 'warn');
+      } else if (data.reason === 'no_active_code') {
+        conyugeEmailStatus(t('step3.email_verify_no_active') || 'No hay código activo. Pida uno nuevo.', 'warn');
+      } else {
+        conyugeEmailStatus(t('step3.email_verify_error') || 'No pudimos verificar el código.', 'warn');
+      }
+    } catch (e) {
+      console.warn('spouse email verify confirm failed', e);
+      conyugeEmailStatus(t('step3.email_verify_error') || 'No pudimos verificar el código.', 'warn');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function wireConyugeEmailVerification() {
+    const input = $('[name="conyuge_email"]');
+    const btn = $('#conyugeEmailVerifyBtn');
+    const confirm = $('#conyugeEmailVerifyConfirmBtn');
+    if (btn) btn.addEventListener('click', enviarCodigoConyuge);
+    if (confirm) confirm.addEventListener('click', confirmarCodigoConyuge);
+    if (input) {
+      input.addEventListener('input', () => {
+        if (conyugeEmailVerifiedFor && input.value.trim().toLowerCase() !== conyugeEmailVerifiedFor) {
+          resetConyugeEmail();
+        }
+        conyugeEmailStatus(input.value.trim() && !conyugeEmailVerifiedFor
+          ? (t('step3.conyuge_email_pendiente') || 'Sin verificar: no le enviaremos nada a ese correo.')
+          : '', '');
+      });
+    }
+  }
+
   function wireEmailVerification() {
     const emailInput = $('[name="email"]');
     const verifyBtn = $('#emailVerifyBtn');
@@ -3766,6 +4008,11 @@
     if (draft._emailVerifiedFor && emailInput && verificacionVigente(draft._emailVerifiedAt) &&
         emailInput.value.trim().toLowerCase() === draft._emailVerifiedFor) {
       marcarEmailVerificado(draft._emailVerifiedFor, draft._emailVerifiedAt);
+    }
+    const conyugeMailInput = $('[name="conyuge_email"]');
+    if (draft._conyugeEmailVerifiedFor && conyugeMailInput && verificacionVigente(draft._conyugeEmailVerifiedAt) &&
+        conyugeMailInput.value.trim().toLowerCase() === draft._conyugeEmailVerifiedFor) {
+      marcarConyugeEmail(draft._conyugeEmailVerifiedFor, draft._conyugeEmailVerifiedAt);
     }
     const phoneInput = $('[name="telefono_movil"]');
     if (draft._phoneVerifiedFor && phoneInput && verificacionVigente(draft._phoneVerifiedAt) &&
@@ -3989,6 +4236,7 @@
     syncSliders();
     wireEvents();
     wireEmailVerification();
+    wireConyugeEmailVerification();
     wirePhoneVerification();
 
     // Detect preferred language: ?lang= > localStorage > browser > pap
@@ -4086,8 +4334,12 @@
     const apellido = f('conyuge_apellido');
     const telefono = f('conyuge_telefono');
     const sedula = f('conyuge_numero_id');
-    // E sédula no ta drenta akinan: e ta keda opshonal.
-    const obligatorio = [nombre, apellido, telefono].filter(Boolean);
+    const correo = f('conyuge_email');
+    // E foto di e sédula di e kasá ta obligatorio (22-nov-2026): for di dje
+    // nos ta lesa nòmber, number i fecha di nasementu. E number skirbí ta
+    // keda opshonal (e ta sali di e foto). E email ta opshonal.
+    const fotoCedula = document.querySelector('input[type="file"][name="doc_cedula_conyuge"]');
+    const obligatorio = [nombre, apellido, telefono, fotoCedula].filter(Boolean);
 
     const refNombre = f('ref1_nombre');
     const refTelefono = f('ref1_telefono');
@@ -4122,9 +4374,12 @@
       if (!si) {
         // Ken ku kambia di "Kasá" pa otro kos no mester manda datos di un
         // kasá ku e no tin.
-        [nombre, apellido, telefono, sedula].forEach((el) => {
+        [nombre, apellido, telefono, sedula, correo].forEach((el) => {
           if (el) el.value = '';
         });
+        if (correo) resetConyugeEmail();
+        if (fotoCedula && fotoCedula.files && fotoCedula.files.length > 0) quitarArchivo(fotoCedula);
+        ocrResults.doc_cedula_conyuge = null;
         if (refRelacion && refRelacion.value === 'kasá' && !refTocadaAMano) {
           refRelacion.value = '';
           if (refNombre) refNombre.value = '';

@@ -338,8 +338,41 @@
           <div class="field flex-1">
             <label for="f_conyuge_numero_id" data-i18n="step3.conyuge_sedula">Number di sédula di bo kasá</label>
             <input id="f_conyuge_numero_id" type="text" name="conyuge_numero_id" maxlength="30" pattern="[0-9A-Za-z\s\-]{5,30}" autocomplete="off" data-i18n-title="step3.conyuge_sedula_hint" title="Opshonal — si bo no tin e na man, nos ta kompletá e na oficina.">
-            <p class="field-hint" data-i18n="step3.conyuge_sedula_hint">Opshonal. Si bo no tin e na man, nos ta kompletá e na oficina.</p>
+            <p class="field-hint" data-i18n="step3.conyuge_sedula_hint">Nos ta lesa e for di e sédula di bo kasá. Si e no por lesa, skirbi e.</p>
           </div>
+        </div>
+        <!--
+          E sédula di e kasá (Leonard, 22-nov-2026): obligatorio si e kliente
+          ta kasá. Nos ta lesa e ku e mesun lector di sédula i e ta yena nòmber,
+          number i fecha di nasementu. E direkshon NO ta puntra: nan ta kasá,
+          e ta esun di e kliente. Server: document type `spouse_cedula`,
+          ocr.doc_cedula_conyuge.
+        -->
+        <div class="upload-block" id="conyugeCedulaBlock">
+          <label class="upload-label">
+            <span class="upload-title" data-i18n="step3.conyuge_cedula">📷 Sédula di bo kasá *</span>
+            <input type="file" name="doc_cedula_conyuge" accept="image/*,application/pdf">
+            <div class="upload-preview" data-preview-for="doc_cedula_conyuge"></div>
+          </label>
+          <p class="field-hint" data-i18n="step3.conyuge_cedula_hint">For di dje nos ta lesa e nòmber, e number i e fecha di nasementu di bo kasá. E direkshon ta esun di bo: no tin nesesidat di skirbi e.</p>
+        </div>
+        <div class="field" id="conyugeEmailField">
+          <label for="f_conyuge_email" data-i18n="step3.conyuge_email">Email di bo kasá</label>
+          <div class="email-verify-row">
+            <input id="f_conyuge_email" type="email" name="conyuge_email" maxlength="200" pattern="[^@\s]+@[^@\s]+\.[^@\s]{2,}" data-i18n-placeholder="ph.email" placeholder="nombre@email.com" autocomplete="off">
+            <button type="button" id="conyugeEmailVerifyBtn" class="btn-verify" data-i18n="step3.email_verify_btn">Verifiká</button>
+          </div>
+          <p class="field-hint" data-i18n="step3.conyuge_email_hint">Opshonal. Nos ta manda un kódigo na e email ei; bo kasá ta dunabo e kódigo i bo ta skirbi e akinan.</p>
+          <div id="conyugeEmailVerifyPanel" class="email-verify-panel" hidden>
+            <div class="email-verify-row">
+              <input type="text" id="conyugeEmailVerifyCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" autocomplete="one-time-code" data-no-draft>
+              <button type="button" id="conyugeEmailVerifyConfirmBtn" class="btn-verify" data-i18n="step3.email_verify_confirm_btn">Konfirmá</button>
+            </div>
+          </div>
+          <p class="field-hint email-verify-status" id="conyugeEmailVerifyStatus"></p>
+          <p class="email-verify-success" id="conyugeEmailVerifySuccess" hidden>
+            <span data-i18n="step3.conyuge_email_done">✓ Email di bo kasá verifiká</span>
+          </p>
         </div>
       </fieldset>
 

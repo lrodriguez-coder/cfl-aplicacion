@@ -74,7 +74,9 @@
     },
     "consent_health": "Marka e kaha di e informashon di salud pa Aska Insurance: sin esei nos no por registrá bo aplikashon.",
     "consent_buro": "Marka e kaha di e chèk serka e buró di krédito: sin esei nos no por registrá bo aplikashon.",
-    "conyuge_mismo_telefono": "E telefòn di bo kasá no por ta e mesun ku esun di bo: nos ta manda bo kasá un link pa konfirmá, na su mes telefòn."
+    "conyuge_mismo_telefono": "E telefòn di bo kasá no por ta e mesun ku esun di bo: nos ta manda bo kasá un link pa konfirmá, na su mes telefòn.",
+    "conyuge_cedula_propia": "E sédula ku bo a karga komo esun di bo kasá ta bo mes sédula. Karga e sédula di bo kasá.",
+    "conyuge_email_propio": "E email di bo kasá no por ta e mesun ku esun di bo."
   },
   "intro": {
     "title": "📋 Promé ku bo kuminsá",
@@ -160,7 +162,7 @@
     "conyuge_apellido": "Fam di bo kasá *",
     "conyuge_telefono": "Telefòn di bo kasá *",
     "conyuge_sedula": "Number di sédula di bo kasá",
-    "conyuge_sedula_hint": "Opshonal. Si bo no tin e na man, nos ta kompletá e na oficina.",
+    "conyuge_sedula_hint": "Nos ta lesa e for di e sédula di bo kasá. Si e no por lesa, skirbi e.",
     "cuenta_bancaria": "Number di kuenta di banko",
     "email": "Email",
     "email_verify_btn": "Verifiká",
@@ -212,7 +214,13 @@
     "civil_viudo": "Biuda",
     "nacionalidad": "Nashonalidat *",
     "pais_nacimiento": "Pais di nasementu *",
-    "tipo_id_sedula": "Sédula"
+    "tipo_id_sedula": "Sédula",
+    "conyuge_cedula": "📷 Sédula di bo kasá *",
+    "conyuge_cedula_hint": "For di dje nos ta lesa e nòmber, e number i e fecha di nasementu di bo kasá. E direkshon ta esun di bo: no tin nesesidat di skirbi e.",
+    "conyuge_email": "Email di bo kasá",
+    "conyuge_email_hint": "Opshonal. Nos ta manda un kódigo na e email ei; bo kasá ta dunabo e kódigo i bo ta skirbi e akinan.",
+    "conyuge_email_done": "✓ Email di bo kasá verifiká",
+    "conyuge_email_pendiente": "No verifiká: nos no ta manda nada na e email ei."
   },
   "step4": {
     "title": "Deklarashon di Salud",
@@ -337,7 +345,8 @@
     "lbl_pais_emisor": "Pais emisor",
     "cedula_header": "Datos di sédula (detektá outomátikamente; esaki ta loke ta wòrdu wardá)",
     "auto_detected": "detektá outomátikamente",
-    "tipo_empleo_otro": "Bo karta di trabou ta indiká otro tipo di empleo. Chèk e tipo di empleo ku bo a skohe na paso 2."
+    "tipo_empleo_otro": "Bo karta di trabou ta indiká otro tipo di empleo. Chèk e tipo di empleo ku bo a skohe na paso 2.",
+    "conyuge_leida": "Sédula di bo kasá lesá: {name}"
   },
   "tipo": {
     "cedula": "un sédula",
